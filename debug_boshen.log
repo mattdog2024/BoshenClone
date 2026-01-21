@@ -1,0 +1,1630 @@
+2026-01-19 09:50:30,632 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(265, 342)
+2026-01-19 09:50:30,707 - Device Pixel Ratio: 1.0
+2026-01-19 09:50:30,708 - Analyzing column at physical x=265, y=342, image height=914
+2026-01-19 09:50:30,709 - Detected BG Color: #f7f7f7
+2026-01-19 09:50:30,709 - Pixel at click (265, 342) is candle? False (Color: #f7f7f7)
+2026-01-19 09:50:30,710 - Candle detected: Top=1, Bottom=342
+2026-01-19 09:52:47,311 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(413, 122)
+2026-01-19 09:52:47,381 - Device Pixel Ratio: 1.0
+2026-01-19 09:52:47,382 - Analyzing column at physical x=413, y=122, image height=914
+2026-01-19 09:52:47,382 - Detected BG Color: #f7f7f7
+2026-01-19 09:52:47,383 - Pixel at click (413, 122) is candle? False (Color: #f7f7f7)
+2026-01-19 09:52:47,383 - Candle detected: Top=1, Bottom=122
+2026-01-19 09:52:47,492 - Saved debug_last_capture.png
+2026-01-19 10:02:20,823 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(869, 807)
+2026-01-19 10:02:20,878 - Device Pixel Ratio: 1.0
+2026-01-19 10:02:20,878 - Analyzing column at physical x=869, y=807, image height=914
+2026-01-19 10:02:20,878 - Detected BG Color: #f7f7f7
+2026-01-19 10:02:20,878 - Pixel at click (869, 807) is candle? False (Color: #f7f7f7)
+2026-01-19 10:02:20,878 - Candle detected: Top=713, Bottom=913
+2026-01-19 10:02:21,008 - Saved debug_last_capture.png
+2026-01-19 10:02:34,732 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1050, 339)
+2026-01-19 10:02:34,784 - Device Pixel Ratio: 1.0
+2026-01-19 10:02:34,784 - Analyzing column at physical x=1050, y=339, image height=914
+2026-01-19 10:02:34,785 - Detected BG Color: #f7f7f7
+2026-01-19 10:02:34,785 - Pixel at click (1050, 339) is candle? True (Color: #379637)
+2026-01-19 10:02:34,785 - Candle detected: Top=332, Bottom=461
+2026-01-19 10:02:34,915 - Saved debug_last_capture.png
+2026-01-19 10:02:42,040 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(870, 842)
+2026-01-19 10:02:42,092 - Device Pixel Ratio: 1.0
+2026-01-19 10:02:42,093 - Analyzing column at physical x=870, y=842, image height=914
+2026-01-19 10:02:42,093 - Detected BG Color: #f7f7f7
+2026-01-19 10:02:42,093 - Pixel at click (870, 842) is candle? True (Color: #ff3c39)
+2026-01-19 10:02:42,093 - Candle detected: Top=676, Bottom=913
+2026-01-19 10:02:42,273 - Saved debug_last_capture.png
+2026-01-19 10:02:51,990 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(511, 326)
+2026-01-19 10:02:52,030 - Device Pixel Ratio: 1.0
+2026-01-19 10:02:52,030 - Analyzing column at physical x=511, y=326, image height=914
+2026-01-19 10:02:52,031 - Detected BG Color: #f7f7f7
+2026-01-19 10:02:52,031 - Pixel at click (511, 326) is candle? True (Color: #c0c0c0)
+2026-01-19 10:02:52,031 - Candle detected: Top=1, Bottom=633
+2026-01-19 10:02:52,172 - Saved debug_last_capture.png
+2026-01-19 10:05:15,279 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(873, 843)
+2026-01-19 10:05:15,353 - Device Pixel Ratio: 1.0
+2026-01-19 10:05:15,353 - Analyzing column at physical x=873, y=843, image height=914
+2026-01-19 10:05:15,354 - Detected BG Color: #f7f7f7
+2026-01-19 10:05:15,362 - Pixel at click (873, 843) is candle? False (Color: #f7f7f7)
+2026-01-19 10:05:15,362 - Candle detected: Top=713, Bottom=913
+2026-01-19 10:05:15,451 - Saved debug_last_capture.png
+2026-01-19 10:07:31,659 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(870, 841)
+2026-01-19 10:07:31,722 - Device Pixel Ratio: 1.0
+2026-01-19 10:07:31,722 - Analyzing column at physical x=870, y=841, image height=914
+2026-01-19 10:07:31,722 - Detected BG Color: #f7f7f7
+2026-01-19 10:07:31,722 - Pixel at click (870, 841) is candle? True (Color: #ff3c39)
+2026-01-19 10:07:31,723 - Target Candle Color: #ff3c39
+2026-01-19 10:07:31,725 - Final Candle Limit: Top=713, Bottom=844
+2026-01-19 10:07:31,775 - Candle detected: Top=713, Bottom=844
+2026-01-19 10:07:31,851 - Saved debug_last_capture.png
+2026-01-19 10:07:38,134 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1050, 333)
+2026-01-19 10:07:38,189 - Device Pixel Ratio: 1.0
+2026-01-19 10:07:38,189 - Analyzing column at physical x=1050, y=333, image height=914
+2026-01-19 10:07:38,189 - Detected BG Color: #f7f7f7
+2026-01-19 10:07:38,189 - Pixel at click (1050, 333) is candle? True (Color: #379637)
+2026-01-19 10:07:38,189 - Target Candle Color: #379637
+2026-01-19 10:07:38,217 - Final Candle Limit: Top=332, Bottom=461
+2026-01-19 10:07:38,258 - Candle detected: Top=332, Bottom=461
+2026-01-19 10:07:38,317 - Saved debug_last_capture.png
+2026-01-19 10:07:42,246 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(262, 166)
+2026-01-19 10:07:42,310 - Device Pixel Ratio: 1.0
+2026-01-19 10:07:42,310 - Analyzing column at physical x=262, y=166, image height=914
+2026-01-19 10:07:42,310 - Detected BG Color: #f7f7f7
+2026-01-19 10:07:42,310 - Pixel at click (262, 166) is candle? True (Color: #ff3c39)
+2026-01-19 10:07:42,311 - Target Candle Color: #ff3c39
+2026-01-19 10:07:42,313 - Final Candle Limit: Top=159, Bottom=231
+2026-01-19 10:07:42,351 - Candle detected: Top=159, Bottom=231
+2026-01-19 10:07:42,412 - Saved debug_last_capture.png
+2026-01-19 10:07:46,677 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(769, 384)
+2026-01-19 10:07:46,798 - Device Pixel Ratio: 1.0
+2026-01-19 10:07:46,798 - Analyzing column at physical x=769, y=384, image height=914
+2026-01-19 10:07:46,799 - Detected BG Color: #f7f7f7
+2026-01-19 10:07:46,799 - Pixel at click (769, 384) is candle? True (Color: #ff3c39)
+2026-01-19 10:07:46,799 - Target Candle Color: #ff3c39
+2026-01-19 10:07:46,801 - Final Candle Limit: Top=382, Bottom=452
+2026-01-19 10:07:46,820 - Candle detected: Top=382, Bottom=452
+2026-01-19 10:07:46,898 - Saved debug_last_capture.png
+2026-01-19 10:07:52,851 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1116, 352)
+2026-01-19 10:07:52,945 - Device Pixel Ratio: 1.0
+2026-01-19 10:07:52,945 - Analyzing column at physical x=1116, y=352, image height=914
+2026-01-19 10:07:52,945 - Detected BG Color: #f7f7f7
+2026-01-19 10:07:52,945 - Pixel at click (1116, 352) is candle? False (Color: #f7f7f7)
+2026-01-19 10:07:52,945 - Could not find any candle color near click.
+2026-01-19 10:07:52,947 - No candle found in scan width.
+2026-01-19 10:07:55,116 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(153, 114)
+2026-01-19 10:07:55,239 - Device Pixel Ratio: 1.0
+2026-01-19 10:07:55,239 - Analyzing column at physical x=153, y=114, image height=914
+2026-01-19 10:07:55,240 - Detected BG Color: #f7f7f7
+2026-01-19 10:07:55,240 - Pixel at click (153, 114) is candle? True (Color: #000000)
+2026-01-19 10:07:55,240 - Target Candle Color: #000000
+2026-01-19 10:07:55,243 - Final Candle Limit: Top=1, Bottom=149
+2026-01-19 10:07:55,252 - Candle detected: Top=1, Bottom=149
+2026-01-19 10:07:55,311 - Saved debug_last_capture.png
+2026-01-19 10:07:59,715 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1118, 354)
+2026-01-19 10:07:59,846 - Device Pixel Ratio: 1.0
+2026-01-19 10:07:59,847 - Analyzing column at physical x=1118, y=354, image height=914
+2026-01-19 10:07:59,847 - Detected BG Color: #f7f7f7
+2026-01-19 10:07:59,847 - Pixel at click (1118, 354) is candle? False (Color: #f7f7f7)
+2026-01-19 10:07:59,847 - Could not find any candle color near click.
+2026-01-19 10:07:59,849 - No candle found in scan width.
+2026-01-19 10:08:04,235 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1117, 347)
+2026-01-19 10:08:04,346 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:04,346 - Analyzing column at physical x=1117, y=347, image height=914
+2026-01-19 10:08:04,346 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:04,346 - Pixel at click (1117, 347) is candle? True (Color: #379637)
+2026-01-19 10:08:04,346 - Target Candle Color: #379637
+2026-01-19 10:08:04,348 - Final Candle Limit: Top=345, Bottom=461
+2026-01-19 10:08:04,394 - Candle detected: Top=345, Bottom=461
+2026-01-19 10:08:04,463 - Saved debug_last_capture.png
+2026-01-19 10:08:10,371 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1118, 348)
+2026-01-19 10:08:10,464 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:10,464 - Analyzing column at physical x=1118, y=348, image height=914
+2026-01-19 10:08:10,464 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:10,464 - Pixel at click (1118, 348) is candle? False (Color: #f7f7f7)
+2026-01-19 10:08:10,465 - Could not find any candle color near click.
+2026-01-19 10:08:10,466 - No candle found in scan width.
+2026-01-19 10:08:17,196 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1118, 380)
+2026-01-19 10:08:17,314 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:17,314 - Analyzing column at physical x=1118, y=380, image height=914
+2026-01-19 10:08:17,314 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:17,315 - Pixel at click (1118, 380) is candle? False (Color: #f7f7f7)
+2026-01-19 10:08:17,315 - Could not find any candle color near click.
+2026-01-19 10:08:17,317 - No candle found in scan width.
+2026-01-19 10:08:18,715 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1163, 405)
+2026-01-19 10:08:18,889 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:18,889 - Analyzing column at physical x=1163, y=405, image height=914
+2026-01-19 10:08:18,889 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:18,890 - Pixel at click (1163, 405) is candle? False (Color: #f7f7f7)
+2026-01-19 10:08:18,890 - Could not find any candle color near click.
+2026-01-19 10:08:18,893 - No candle found in scan width.
+2026-01-19 10:08:19,611 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1178, 394)
+2026-01-19 10:08:19,684 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:19,684 - Analyzing column at physical x=1178, y=394, image height=914
+2026-01-19 10:08:19,684 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:19,685 - Pixel at click (1178, 394) is candle? False (Color: #f7f7f7)
+2026-01-19 10:08:19,685 - Could not find any candle color near click.
+2026-01-19 10:08:19,686 - No candle found in scan width.
+2026-01-19 10:08:20,786 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1115, 347)
+2026-01-19 10:08:20,871 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:20,871 - Analyzing column at physical x=1115, y=347, image height=914
+2026-01-19 10:08:20,871 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:20,871 - Pixel at click (1115, 347) is candle? False (Color: #f7f7f7)
+2026-01-19 10:08:20,871 - Target Candle Color: #c0c0c0
+2026-01-19 10:08:20,873 - Final Candle Limit: Top=326, Bottom=347
+2026-01-19 10:08:20,899 - Candle detected: Top=326, Bottom=347
+2026-01-19 10:08:20,965 - Saved debug_last_capture.png
+2026-01-19 10:08:27,682 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(511, 326)
+2026-01-19 10:08:27,747 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:27,747 - Analyzing column at physical x=511, y=326, image height=914
+2026-01-19 10:08:27,747 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:27,747 - Pixel at click (511, 326) is candle? True (Color: #c0c0c0)
+2026-01-19 10:08:27,747 - Target Candle Color: #c0c0c0
+2026-01-19 10:08:27,750 - Final Candle Limit: Top=326, Bottom=326
+2026-01-19 10:08:27,791 - Top >= Bottom, invalid.
+2026-01-19 10:08:27,791 - Candle detected: Top=326, Bottom=326
+2026-01-19 10:08:27,815 - Top == Bottom, possible failure.
+2026-01-19 10:08:27,875 - Saved debug_last_capture.png
+2026-01-19 10:08:31,740 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(509, 319)
+2026-01-19 10:08:31,809 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:31,809 - Analyzing column at physical x=509, y=319, image height=914
+2026-01-19 10:08:31,810 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:31,810 - Pixel at click (509, 319) is candle? True (Color: #000000)
+2026-01-19 10:08:31,810 - Target Candle Color: #000000
+2026-01-19 10:08:31,812 - Final Candle Limit: Top=314, Bottom=319
+2026-01-19 10:08:31,837 - Candle detected: Top=314, Bottom=319
+2026-01-19 10:08:31,906 - Saved debug_last_capture.png
+2026-01-19 10:08:35,004 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(262, 171)
+2026-01-19 10:08:35,063 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:35,063 - Analyzing column at physical x=262, y=171, image height=914
+2026-01-19 10:08:35,064 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:35,064 - Pixel at click (262, 171) is candle? True (Color: #ff3c39)
+2026-01-19 10:08:35,064 - Target Candle Color: #ff3c39
+2026-01-19 10:08:35,070 - Final Candle Limit: Top=159, Bottom=231
+2026-01-19 10:08:35,184 - Candle detected: Top=159, Bottom=231
+2026-01-19 10:08:35,251 - Saved debug_last_capture.png
+2026-01-19 10:08:39,467 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(769, 383)
+2026-01-19 10:08:39,529 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:39,529 - Analyzing column at physical x=769, y=383, image height=914
+2026-01-19 10:08:39,530 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:39,530 - Pixel at click (769, 383) is candle? True (Color: #ff3c39)
+2026-01-19 10:08:39,530 - Target Candle Color: #ff3c39
+2026-01-19 10:08:39,532 - Final Candle Limit: Top=382, Bottom=452
+2026-01-19 10:08:39,602 - Candle detected: Top=382, Bottom=452
+2026-01-19 10:08:39,669 - Saved debug_last_capture.png
+2026-01-19 10:08:43,791 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1050, 332)
+2026-01-19 10:08:43,841 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:43,841 - Analyzing column at physical x=1050, y=332, image height=914
+2026-01-19 10:08:43,841 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:43,841 - Pixel at click (1050, 332) is candle? True (Color: #379637)
+2026-01-19 10:08:43,841 - Target Candle Color: #379637
+2026-01-19 10:08:43,845 - Final Candle Limit: Top=332, Bottom=461
+2026-01-19 10:08:43,883 - Candle detected: Top=332, Bottom=461
+2026-01-19 10:08:43,938 - Saved debug_last_capture.png
+2026-01-19 10:08:48,634 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1119, 347)
+2026-01-19 10:08:48,685 - Device Pixel Ratio: 1.0
+2026-01-19 10:08:48,685 - Analyzing column at physical x=1119, y=347, image height=914
+2026-01-19 10:08:48,686 - Detected BG Color: #f7f7f7
+2026-01-19 10:08:48,686 - Pixel at click (1119, 347) is candle? False (Color: #f7f7f7)
+2026-01-19 10:08:48,686 - Target Candle Color: #c0c0c0
+2026-01-19 10:08:48,688 - Final Candle Limit: Top=326, Bottom=347
+2026-01-19 10:08:48,725 - Candle detected: Top=326, Bottom=347
+2026-01-19 10:08:48,782 - Saved debug_last_capture.png
+2026-01-19 10:13:25,546 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1117, 348)
+2026-01-19 10:13:25,596 - Device Pixel Ratio: 1.0
+2026-01-19 10:13:25,596 - Analyzing column at physical x=1117, y=348, image height=914
+2026-01-19 10:13:25,597 - Detected BG Color: #f7f7f7
+2026-01-19 10:13:25,597 - Pixel at click (1117, 348) is candle? True (Color: #379637)
+2026-01-19 10:13:25,597 - Target Candle Color: #379637
+2026-01-19 10:13:25,599 - Final Candle Limit: Top=345, Bottom=461
+2026-01-19 10:13:25,641 - Candle detected: Top=345, Bottom=461
+2026-01-19 10:13:25,717 - Saved debug_last_capture.png
+2026-01-19 10:13:31,345 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(770, 380)
+2026-01-19 10:13:31,404 - Device Pixel Ratio: 1.0
+2026-01-19 10:13:31,405 - Analyzing column at physical x=770, y=380, image height=914
+2026-01-19 10:13:31,405 - Detected BG Color: #f7f7f7
+2026-01-19 10:13:31,405 - Pixel at click (770, 380) is candle? False (Color: #f7f7f7)
+2026-01-19 10:13:31,405 - Target Candle Color: #ff3c39
+2026-01-19 10:13:31,408 - Final Candle Limit: Top=380, Bottom=452
+2026-01-19 10:13:31,431 - Candle detected: Top=380, Bottom=452
+2026-01-19 10:13:31,513 - Saved debug_last_capture.png
+2026-01-19 10:13:47,307 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1138, 147)
+2026-01-19 10:13:47,346 - Device Pixel Ratio: 1.0
+2026-01-19 10:13:47,347 - Analyzing column at physical x=1138, y=147, image height=914
+2026-01-19 10:13:47,347 - Detected BG Color: #f7f7f7
+2026-01-19 10:13:47,347 - Pixel at click (1138, 147) is candle? False (Color: #f7f7f7)
+2026-01-19 10:13:47,347 - Target Candle Color: #ff3c39
+2026-01-19 10:13:47,350 - Final Candle Limit: Top=147, Bottom=243
+2026-01-19 10:13:47,381 - Candle detected: Top=147, Bottom=243
+2026-01-19 10:13:47,479 - Saved debug_last_capture.png
+2026-01-19 10:14:02,623 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(972, 149)
+2026-01-19 10:14:02,696 - Device Pixel Ratio: 1.0
+2026-01-19 10:14:02,696 - Analyzing column at physical x=972, y=149, image height=914
+2026-01-19 10:14:02,697 - Detected BG Color: #f7f7f7
+2026-01-19 10:14:02,697 - Pixel at click (972, 149) is candle? True (Color: #379637)
+2026-01-19 10:14:02,697 - Target Candle Color: #379637
+2026-01-19 10:14:02,699 - Final Candle Limit: Top=148, Bottom=216
+2026-01-19 10:14:02,720 - Candle detected: Top=148, Bottom=216
+2026-01-19 10:14:02,796 - Saved debug_last_capture.png
+2026-01-19 10:14:10,188 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1025, 438)
+2026-01-19 10:14:10,252 - Device Pixel Ratio: 1.0
+2026-01-19 10:14:10,252 - Analyzing column at physical x=1025, y=438, image height=914
+2026-01-19 10:14:10,252 - Detected BG Color: #f7f7f7
+2026-01-19 10:14:10,252 - Pixel at click (1025, 438) is candle? False (Color: #f7f7f7)
+2026-01-19 10:14:10,252 - Target Candle Color: #379637
+2026-01-19 10:14:10,256 - Final Candle Limit: Top=350, Bottom=442
+2026-01-19 10:14:10,283 - Candle detected: Top=350, Bottom=442
+2026-01-19 10:14:10,340 - Saved debug_last_capture.png
+2026-01-19 10:14:15,743 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1280, 171)
+2026-01-19 10:14:15,829 - Device Pixel Ratio: 1.0
+2026-01-19 10:14:15,829 - Analyzing column at physical x=1280, y=171, image height=914
+2026-01-19 10:14:15,829 - Detected BG Color: #f7f7f7
+2026-01-19 10:14:15,829 - Pixel at click (1280, 171) is candle? False (Color: #f7f7f7)
+2026-01-19 10:14:15,829 - Target Candle Color: #ff3c39
+2026-01-19 10:14:15,832 - Final Candle Limit: Top=165, Bottom=304
+2026-01-19 10:14:15,871 - Candle detected: Top=165, Bottom=304
+2026-01-19 10:14:15,931 - Saved debug_last_capture.png
+2026-01-19 10:16:59,706 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1279, 167)
+2026-01-19 10:16:59,752 - Device Pixel Ratio: 1.0
+2026-01-19 10:16:59,752 - Analyzing column at physical x=1279, y=167, image height=914
+2026-01-19 10:16:59,753 - Detected BG Color: #f7f7f7
+2026-01-19 10:16:59,753 - Pixel at click (1279, 167) is candle? True (Color: #ff3c39)
+2026-01-19 10:16:59,753 - Target Candle Color: #ff3c39
+2026-01-19 10:16:59,756 - Final Candle Limit: Top=165, Bottom=304
+2026-01-19 10:16:59,763 - Candle detected: Top=165, Bottom=304
+2026-01-19 10:16:59,843 - Saved debug_last_capture.png
+2026-01-19 16:46:58,490 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1076, 176)
+2026-01-19 16:46:58,596 - Device Pixel Ratio: 1.0
+2026-01-19 16:46:58,596 - Analyzing column at physical x=1076, y=176, image height=914
+2026-01-19 16:46:58,596 - Detected BG Color: #f7f7f7
+2026-01-19 16:46:58,597 - Pixel at click (1076, 176) is candle? False (Color: #f7f7f7)
+2026-01-19 16:46:58,597 - Target Candle Color: #000000
+2026-01-19 16:46:58,598 - No candle found in scan width.
+2026-01-19 16:47:00,979 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1078, 240)
+2026-01-19 16:47:01,085 - Device Pixel Ratio: 1.0
+2026-01-19 16:47:01,085 - Analyzing column at physical x=1078, y=240, image height=914
+2026-01-19 16:47:01,085 - Detected BG Color: #f7f7f7
+2026-01-19 16:47:01,085 - Pixel at click (1078, 240) is candle? False (Color: #f7f7f7)
+2026-01-19 16:47:01,085 - Target Candle Color: #ff3c39
+2026-01-19 16:47:01,086 - Final Candle Limit: Top=173, Bottom=247
+2026-01-19 16:47:01,128 - Candle detected: Top=173, Bottom=247
+2026-01-19 16:47:01,208 - Saved debug_last_capture.png
+2026-01-19 16:47:06,683 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1075, 173)
+2026-01-19 16:47:06,749 - Device Pixel Ratio: 1.0
+2026-01-19 16:47:06,749 - Analyzing column at physical x=1075, y=173, image height=914
+2026-01-19 16:47:06,750 - Detected BG Color: #f7f7f7
+2026-01-19 16:47:06,750 - Pixel at click (1075, 173) is candle? False (Color: #f7f7f7)
+2026-01-19 16:47:06,750 - Target Candle Color: #000000
+2026-01-19 16:47:06,751 - No candle found in scan width.
+2026-01-19 16:47:08,309 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1076, 239)
+2026-01-19 16:47:08,372 - Device Pixel Ratio: 1.0
+2026-01-19 16:47:08,372 - Analyzing column at physical x=1076, y=239, image height=914
+2026-01-19 16:47:08,372 - Detected BG Color: #f7f7f7
+2026-01-19 16:47:08,372 - Pixel at click (1076, 239) is candle? False (Color: #f7f7f7)
+2026-01-19 16:47:08,372 - Target Candle Color: #ff3c39
+2026-01-19 16:47:08,373 - Final Candle Limit: Top=173, Bottom=247
+2026-01-19 16:47:08,442 - Candle detected: Top=173, Bottom=247
+2026-01-19 16:47:08,522 - Saved debug_last_capture.png
+2026-01-19 16:47:15,136 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1076, 179)
+2026-01-19 16:47:15,186 - Device Pixel Ratio: 1.0
+2026-01-19 16:47:15,186 - Analyzing column at physical x=1076, y=179, image height=914
+2026-01-19 16:47:15,187 - Detected BG Color: #f7f7f7
+2026-01-19 16:47:15,187 - Pixel at click (1076, 179) is candle? False (Color: #f7f7f7)
+2026-01-19 16:47:15,187 - Target Candle Color: #000000
+2026-01-19 16:47:15,188 - No candle found in scan width.
+2026-01-19 16:47:20,364 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(500, 197)
+2026-01-19 16:47:20,473 - Device Pixel Ratio: 1.0
+2026-01-19 16:47:20,474 - Analyzing column at physical x=500, y=197, image height=914
+2026-01-19 16:47:20,474 - Detected BG Color: #f7f7f7
+2026-01-19 16:47:20,474 - Pixel at click (500, 197) is candle? False (Color: #f7f7f7)
+2026-01-19 16:47:20,474 - Could not find any candle color near click.
+2026-01-19 16:47:20,475 - No candle found in scan width.
+2026-01-19 16:51:36,774 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1076, 176)
+2026-01-19 16:51:36,844 - Device Pixel Ratio: 1.0
+2026-01-19 16:51:36,845 - Analyzing column at physical x=1076, y=176, image height=914
+2026-01-19 16:51:36,845 - Detected BG Color: #f7f7f7
+2026-01-19 16:51:36,845 - Pixel at click (1076, 176) is candle? False (Color: #f7f7f7)
+2026-01-19 16:51:36,845 - Target Candle Color: #ff3c39
+2026-01-19 16:51:36,847 - Final Candle Limit: Top=173, Bottom=247
+2026-01-19 16:51:36,885 - Candle detected: Top=173, Bottom=247
+2026-01-19 16:51:36,985 - Saved debug_last_capture.png
+2026-01-19 16:51:44,844 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(584, 148)
+2026-01-19 16:51:44,905 - Device Pixel Ratio: 1.0
+2026-01-19 16:51:44,905 - Analyzing column at physical x=584, y=148, image height=914
+2026-01-19 16:51:44,905 - Detected BG Color: #f7f7f7
+2026-01-19 16:51:44,905 - Pixel at click (584, 148) is candle? True (Color: #379637)
+2026-01-19 16:51:44,905 - Target Candle Color: #379637
+2026-01-19 16:51:44,907 - Final Candle Limit: Top=148, Bottom=216
+2026-01-19 16:51:44,967 - Candle detected: Top=148, Bottom=216
+2026-01-19 16:51:45,041 - Saved debug_last_capture.png
+2026-01-19 16:51:57,155 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(984, 151)
+2026-01-19 16:51:57,219 - Device Pixel Ratio: 1.0
+2026-01-19 16:51:57,219 - Analyzing column at physical x=984, y=151, image height=914
+2026-01-19 16:51:57,220 - Detected BG Color: #f7f7f7
+2026-01-19 16:51:57,220 - Pixel at click (984, 151) is candle? False (Color: #f7f7f7)
+2026-01-19 16:51:57,220 - Target Candle Color: #379637
+2026-01-19 16:51:57,221 - Final Candle Limit: Top=148, Bottom=216
+2026-01-19 16:51:57,269 - Candle detected: Top=148, Bottom=216
+2026-01-19 16:51:57,380 - Saved debug_last_capture.png
+2026-01-19 16:52:01,688 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1228, 172)
+2026-01-19 16:52:01,750 - Device Pixel Ratio: 1.0
+2026-01-19 16:52:01,750 - Analyzing column at physical x=1228, y=172, image height=914
+2026-01-19 16:52:01,751 - Detected BG Color: #f7f7f7
+2026-01-19 16:52:01,751 - Pixel at click (1228, 172) is candle? True (Color: #ff3c39)
+2026-01-19 16:52:01,751 - Target Candle Color: #ff3c39
+2026-01-19 16:52:01,752 - Final Candle Limit: Top=165, Bottom=304
+2026-01-19 16:52:01,808 - Candle detected: Top=165, Bottom=304
+2026-01-19 16:52:01,894 - Saved debug_last_capture.png
+2026-01-19 17:01:38,398 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(829, 621)
+2026-01-19 17:01:38,496 - Device Pixel Ratio: 1.0
+2026-01-19 17:01:38,496 - Analyzing column at physical x=829, y=621, image height=914
+2026-01-19 17:01:38,496 - Detected BG Color: #f7f7f7
+2026-01-19 17:01:38,496 - Pixel at click (829, 621) is candle? False (Color: #f7f7f7)
+2026-01-19 17:01:38,496 - Target Candle Color: #303030
+2026-01-19 17:01:38,497 - Final Candle Limit: Top=576, Bottom=622
+2026-01-19 17:01:38,513 - Candle detected: Top=576, Bottom=622
+2026-01-19 17:01:38,615 - Saved debug_last_capture.png
+2026-01-19 17:01:48,711 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(813, 620)
+2026-01-19 17:01:48,779 - Device Pixel Ratio: 1.0
+2026-01-19 17:01:48,779 - Analyzing column at physical x=813, y=620, image height=914
+2026-01-19 17:01:48,779 - Detected BG Color: #f7f7f7
+2026-01-19 17:01:48,779 - Pixel at click (813, 620) is candle? False (Color: #f7f7f7)
+2026-01-19 17:01:48,780 - Target Candle Color: #303030
+2026-01-19 17:01:48,781 - Final Candle Limit: Top=576, Bottom=627
+2026-01-19 17:01:48,823 - Candle detected: Top=576, Bottom=627
+2026-01-19 17:01:48,898 - Saved debug_last_capture.png
+2026-01-19 17:02:04,753 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1056, 151)
+2026-01-19 17:02:04,811 - Device Pixel Ratio: 1.0
+2026-01-19 17:02:04,811 - Analyzing column at physical x=1056, y=151, image height=914
+2026-01-19 17:02:04,811 - Detected BG Color: #f7f7f7
+2026-01-19 17:02:04,812 - Pixel at click (1056, 151) is candle? False (Color: #f7f7f7)
+2026-01-19 17:02:04,812 - Target Candle Color: #ff3c39
+2026-01-19 17:02:04,813 - Final Candle Limit: Top=143, Bottom=237
+2026-01-19 17:02:04,863 - Candle detected: Top=143, Bottom=237
+2026-01-19 17:02:04,949 - Saved debug_last_capture.png
+2026-01-19 17:02:10,290 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1213, 167)
+2026-01-19 17:02:10,342 - Device Pixel Ratio: 1.0
+2026-01-19 17:02:10,343 - Analyzing column at physical x=1213, y=167, image height=914
+2026-01-19 17:02:10,343 - Detected BG Color: #f7f7f7
+2026-01-19 17:02:10,343 - Pixel at click (1213, 167) is candle? False (Color: #f7f7f7)
+2026-01-19 17:02:10,343 - Target Candle Color: #ff3c39
+2026-01-19 17:02:10,344 - Final Candle Limit: Top=165, Bottom=308
+2026-01-19 17:02:10,396 - Candle detected: Top=165, Bottom=308
+2026-01-19 17:02:10,488 - Saved debug_last_capture.png
+2026-01-19 17:02:25,501 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1171, 174)
+2026-01-19 17:02:25,561 - Device Pixel Ratio: 1.0
+2026-01-19 17:02:25,562 - Analyzing column at physical x=1171, y=174, image height=914
+2026-01-19 17:02:25,562 - Detected BG Color: #f7f7f7
+2026-01-19 17:02:25,562 - Pixel at click (1171, 174) is candle? True (Color: #ff3c39)
+2026-01-19 17:02:25,562 - Target Candle Color: #ff3c39
+2026-01-19 17:02:25,563 - Final Candle Limit: Top=164, Bottom=195
+2026-01-19 17:02:25,659 - Candle detected: Top=164, Bottom=195
+2026-01-19 17:02:25,738 - Saved debug_last_capture.png
+2026-01-19 17:02:30,860 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1171, 173)
+2026-01-19 17:02:30,906 - Device Pixel Ratio: 1.0
+2026-01-19 17:02:30,906 - Analyzing column at physical x=1171, y=173, image height=914
+2026-01-19 17:02:30,906 - Detected BG Color: #f7f7f7
+2026-01-19 17:02:30,906 - Pixel at click (1171, 173) is candle? True (Color: #ff3c39)
+2026-01-19 17:02:30,906 - Target Candle Color: #ff3c39
+2026-01-19 17:02:30,907 - Final Candle Limit: Top=164, Bottom=195
+2026-01-19 17:02:30,959 - Candle detected: Top=164, Bottom=195
+2026-01-19 17:02:31,028 - Saved debug_last_capture.png
+2026-01-19 17:02:48,082 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1098, 174)
+2026-01-19 17:02:48,125 - Device Pixel Ratio: 1.0
+2026-01-19 17:02:48,125 - Analyzing column at physical x=1098, y=174, image height=914
+2026-01-19 17:02:48,125 - Detected BG Color: #f7f7f7
+2026-01-19 17:02:48,125 - Pixel at click (1098, 174) is candle? False (Color: #f7f7f7)
+2026-01-19 17:02:48,125 - Target Candle Color: #ff3c39
+2026-01-19 17:02:48,126 - Final Candle Limit: Top=173, Bottom=247
+2026-01-19 17:02:48,185 - Candle detected: Top=173, Bottom=247
+2026-01-19 17:02:48,282 - Saved debug_last_capture.png
+2026-01-19 17:03:15,885 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(873, 154)
+2026-01-19 17:03:15,939 - Device Pixel Ratio: 1.0
+2026-01-19 17:03:15,939 - Analyzing column at physical x=873, y=154, image height=914
+2026-01-19 17:03:15,939 - Detected BG Color: #f7f7f7
+2026-01-19 17:03:15,939 - Pixel at click (873, 154) is candle? False (Color: #f7f7f7)
+2026-01-19 17:03:15,939 - Target Candle Color: #379637
+2026-01-19 17:03:15,941 - Final Candle Limit: Top=143, Bottom=216
+2026-01-19 17:03:15,993 - Candle detected: Top=143, Bottom=216
+2026-01-19 17:03:16,063 - Saved debug_last_capture.png
+2026-01-19 17:03:23,409 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(776, 578)
+2026-01-19 17:03:23,476 - Device Pixel Ratio: 1.0
+2026-01-19 17:03:23,476 - Analyzing column at physical x=776, y=578, image height=914
+2026-01-19 17:03:23,476 - Detected BG Color: #f7f7f7
+2026-01-19 17:03:23,476 - Pixel at click (776, 578) is candle? False (Color: #f7f7f7)
+2026-01-19 17:03:23,476 - Target Candle Color: #379637
+2026-01-19 17:03:23,499 - Final Candle Limit: Top=500, Bottom=578
+2026-01-19 17:03:23,531 - Candle detected: Top=500, Bottom=578
+2026-01-19 17:03:23,601 - Saved debug_last_capture.png
+2026-01-19 17:03:35,668 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1287, 176)
+2026-01-19 17:03:35,718 - Device Pixel Ratio: 1.0
+2026-01-19 17:03:35,719 - Analyzing column at physical x=1287, y=176, image height=914
+2026-01-19 17:03:35,719 - Detected BG Color: #f7f7f7
+2026-01-19 17:03:35,719 - Pixel at click (1287, 176) is candle? True (Color: #ff3c39)
+2026-01-19 17:03:35,719 - Target Candle Color: #ff3c39
+2026-01-19 17:03:35,720 - Final Candle Limit: Top=168, Bottom=247
+2026-01-19 17:03:35,783 - Candle detected: Top=168, Bottom=247
+2026-01-19 17:03:35,910 - Saved debug_last_capture.png
+2026-01-20 08:56:55,399 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1404, 551)
+2026-01-20 08:56:55,481 - Device Pixel Ratio: 1.0
+2026-01-20 08:56:55,481 - Analyzing column at physical x=1404, y=551, image height=914
+2026-01-20 08:56:55,482 - Detected BG Color: #f7f7f7
+2026-01-20 08:56:55,482 - Pixel at click (1404, 551) is candle? False (Color: #f7f7f7)
+2026-01-20 08:56:55,482 - Target Candle Color: #379637
+2026-01-20 08:56:55,484 - Final Candle Limit: Top=487, Bottom=554
+2026-01-20 08:56:55,490 - Candle detected: Top=487, Bottom=554
+2026-01-20 08:56:55,563 - Saved debug_last_capture.png
+2026-01-20 08:58:01,381 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1404, 553)
+2026-01-20 08:58:01,435 - Device Pixel Ratio: 1.0
+2026-01-20 08:58:01,436 - Analyzing column at physical x=1404, y=553, image height=914
+2026-01-20 08:58:01,436 - Detected BG Color: #f7f7f7
+2026-01-20 08:58:01,436 - Pixel at click (1404, 553) is candle? False (Color: #f7f7f7)
+2026-01-20 08:58:01,436 - Target Candle Color: #000000
+2026-01-20 08:58:01,438 - Final Candle Limit: Top=550, Bottom=554
+2026-01-20 08:58:01,444 - Candle detected: Top=550, Bottom=554
+2026-01-20 08:58:01,521 - Saved debug_last_capture.png
+2026-01-20 08:58:07,139 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1404, 549)
+2026-01-20 08:58:07,187 - Device Pixel Ratio: 1.0
+2026-01-20 08:58:07,187 - Analyzing column at physical x=1404, y=549, image height=914
+2026-01-20 08:58:07,187 - Detected BG Color: #f7f7f7
+2026-01-20 08:58:07,187 - Pixel at click (1404, 549) is candle? False (Color: #f7f7f7)
+2026-01-20 08:58:07,187 - Target Candle Color: #379637
+2026-01-20 08:58:07,188 - Final Candle Limit: Top=487, Bottom=554
+2026-01-20 08:58:07,194 - Candle detected: Top=487, Bottom=554
+2026-01-20 08:58:07,257 - Saved debug_last_capture.png
+2026-01-20 09:00:10,325 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1406, 549)
+2026-01-20 09:00:10,376 - Device Pixel Ratio: 1.0
+2026-01-20 09:00:10,376 - Analyzing column at physical x=1406, y=549, image height=914
+2026-01-20 09:00:10,377 - Detected BG Color: #f7f7f7
+2026-01-20 09:00:10,377 - Pixel at click (1406, 549) is candle? False (Color: #f7f7f7)
+2026-01-20 09:00:10,377 - Target Candle Color: #379637
+2026-01-20 09:00:10,378 - Final Candle Limit: Top=506, Bottom=549
+2026-01-20 09:00:10,425 - Candle detected: Top=506, Bottom=549
+2026-01-20 09:00:10,511 - Saved debug_last_capture.png
+2026-01-20 09:00:15,966 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1404, 550)
+2026-01-20 09:00:16,033 - Device Pixel Ratio: 1.0
+2026-01-20 09:00:16,033 - Analyzing column at physical x=1404, y=550, image height=914
+2026-01-20 09:00:16,034 - Detected BG Color: #f7f7f7
+2026-01-20 09:00:16,034 - Pixel at click (1404, 550) is candle? False (Color: #f7f7f7)
+2026-01-20 09:00:16,034 - Target Candle Color: #379637
+2026-01-20 09:00:16,036 - Final Candle Limit: Top=487, Bottom=554
+2026-01-20 09:00:16,115 - Candle detected: Top=487, Bottom=554
+2026-01-20 09:00:16,177 - Saved debug_last_capture.png
+2026-01-20 09:01:47,096 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(731, 578)
+2026-01-20 09:01:47,186 - Device Pixel Ratio: 1.0
+2026-01-20 09:01:47,186 - Analyzing column at physical x=731, y=578, image height=914
+2026-01-20 09:01:47,186 - Detected BG Color: #f7f7f7
+2026-01-20 09:01:47,187 - Pixel at click (731, 578) is candle? True (Color: #379637)
+2026-01-20 09:01:47,187 - Target Candle Color: #379637
+2026-01-20 09:01:47,189 - Final Candle Limit: Top=500, Bottom=585
+2026-01-20 09:01:47,192 - Candle detected: Top=500, Bottom=585
+2026-01-20 09:01:47,276 - Saved debug_last_capture.png
+2026-01-20 09:22:01,733 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(732, 581)
+2026-01-20 09:22:01,781 - Device Pixel Ratio: 1.0
+2026-01-20 09:22:01,781 - Analyzing column at physical x=732, y=581, image height=914
+2026-01-20 09:22:01,781 - Detected BG Color: #f7f7f7
+2026-01-20 09:22:01,781 - Pixel at click (732, 581) is candle? False (Color: #f7f7f7)
+2026-01-20 09:22:01,781 - Target Candle Color: #379637
+2026-01-20 09:22:01,783 - Final Candle Limit: Top=500, Bottom=585
+2026-01-20 09:22:01,784 - Candle detected: Top=500, Bottom=585
+2026-01-20 09:22:01,843 - Saved debug_last_capture.png
+2026-01-20 09:22:14,904 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1403, 549)
+2026-01-20 09:22:14,967 - Device Pixel Ratio: 1.0
+2026-01-20 09:22:14,967 - Analyzing column at physical x=1403, y=549, image height=914
+2026-01-20 09:22:14,968 - Detected BG Color: #f7f7f7
+2026-01-20 09:22:14,968 - Pixel at click (1403, 549) is candle? True (Color: #379637)
+2026-01-20 09:22:14,968 - Target Candle Color: #379637
+2026-01-20 09:22:14,969 - Final Candle Limit: Top=487, Bottom=554
+2026-01-20 09:22:14,969 - Candle detected: Top=487, Bottom=554
+2026-01-20 09:22:15,025 - Saved debug_last_capture.png
+2026-01-20 09:23:49,540 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1074, 149)
+2026-01-20 09:23:49,593 - Device Pixel Ratio: 1.0
+2026-01-20 09:23:49,593 - Analyzing column at physical x=1074, y=149, image height=914
+2026-01-20 09:23:49,593 - Detected BG Color: #f7f7f7
+2026-01-20 09:23:49,593 - Pixel at click (1074, 149) is candle? False (Color: #f7f7f7)
+2026-01-20 09:23:49,593 - Target Candle Color: #ff3c39
+2026-01-20 09:23:49,594 - Final Candle Limit: Top=149, Bottom=217
+2026-01-20 09:23:49,631 - Candle detected: Top=149, Bottom=217
+2026-01-20 09:23:49,733 - Saved debug_last_capture.png
+2026-01-20 09:24:14,000 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1245, 176)
+2026-01-20 09:24:14,061 - Device Pixel Ratio: 1.0
+2026-01-20 09:24:14,061 - Analyzing column at physical x=1245, y=176, image height=914
+2026-01-20 09:24:14,061 - Detected BG Color: #f7f7f7
+2026-01-20 09:24:14,061 - Pixel at click (1245, 176) is candle? True (Color: #ff3c39)
+2026-01-20 09:24:14,061 - Target Candle Color: #ff3c39
+2026-01-20 09:24:14,062 - Final Candle Limit: Top=168, Bottom=247
+2026-01-20 09:24:14,147 - Candle detected: Top=168, Bottom=247
+2026-01-20 09:24:14,204 - Saved debug_last_capture.png
+2026-01-20 09:24:25,752 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(625, 151)
+2026-01-20 09:24:25,853 - Device Pixel Ratio: 1.0
+2026-01-20 09:24:25,853 - Analyzing column at physical x=625, y=151, image height=914
+2026-01-20 09:24:25,853 - Detected BG Color: #f7f7f7
+2026-01-20 09:24:25,853 - Pixel at click (625, 151) is candle? False (Color: #f7f7f7)
+2026-01-20 09:24:25,853 - Target Candle Color: #379637
+2026-01-20 09:24:25,855 - Final Candle Limit: Top=1, Bottom=216
+2026-01-20 09:24:25,923 - Candle detected: Top=1, Bottom=216
+2026-01-20 09:24:26,013 - Saved debug_last_capture.png
+2026-01-20 09:24:30,582 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(622, 145)
+2026-01-20 09:24:30,653 - Device Pixel Ratio: 1.0
+2026-01-20 09:24:30,653 - Analyzing column at physical x=622, y=145, image height=914
+2026-01-20 09:24:30,653 - Detected BG Color: #f7f7f7
+2026-01-20 09:24:30,653 - Pixel at click (622, 145) is candle? True (Color: #000000)
+2026-01-20 09:24:30,653 - Target Candle Color: #000000
+2026-01-20 09:24:30,655 - Final Candle Limit: Top=143, Bottom=147
+2026-01-20 09:24:30,696 - Candle detected: Top=143, Bottom=147
+2026-01-20 09:24:30,770 - Saved debug_last_capture.png
+2026-01-20 09:24:35,531 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(625, 150)
+2026-01-20 09:24:35,642 - Device Pixel Ratio: 1.0
+2026-01-20 09:24:35,642 - Analyzing column at physical x=625, y=150, image height=914
+2026-01-20 09:24:35,642 - Detected BG Color: #f7f7f7
+2026-01-20 09:24:35,642 - Pixel at click (625, 150) is candle? False (Color: #f7f7f7)
+2026-01-20 09:24:35,642 - Target Candle Color: #379637
+2026-01-20 09:24:35,644 - Final Candle Limit: Top=1, Bottom=216
+2026-01-20 09:24:35,668 - Candle detected: Top=1, Bottom=216
+2026-01-20 09:24:35,744 - Saved debug_last_capture.png
+2026-01-20 09:24:56,737 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(624, 152)
+2026-01-20 09:24:56,784 - Device Pixel Ratio: 1.0
+2026-01-20 09:24:56,784 - Analyzing column at physical x=624, y=152, image height=914
+2026-01-20 09:24:56,784 - Detected BG Color: #f7f7f7
+2026-01-20 09:24:56,784 - Pixel at click (624, 152) is candle? False (Color: #f7f7f7)
+2026-01-20 09:24:56,784 - Target Candle Color: #379637
+2026-01-20 09:24:56,786 - Final Candle Limit: Top=1, Bottom=216
+2026-01-20 09:24:56,833 - Candle detected: Top=1, Bottom=216
+2026-01-20 09:24:56,895 - Saved debug_last_capture.png
+2026-01-20 09:25:02,337 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(623, 146)
+2026-01-20 09:25:02,377 - Device Pixel Ratio: 1.0
+2026-01-20 09:25:02,377 - Analyzing column at physical x=623, y=146, image height=914
+2026-01-20 09:25:02,377 - Detected BG Color: #f7f7f7
+2026-01-20 09:25:02,378 - Pixel at click (623, 146) is candle? False (Color: #f7f7f7)
+2026-01-20 09:25:02,378 - Target Candle Color: #000000
+2026-01-20 09:25:02,379 - Final Candle Limit: Top=143, Bottom=147
+2026-01-20 09:25:02,457 - Candle detected: Top=143, Bottom=147
+2026-01-20 09:25:02,514 - Saved debug_last_capture.png
+2026-01-20 09:25:07,247 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(627, 148)
+2026-01-20 09:25:07,311 - Device Pixel Ratio: 1.0
+2026-01-20 09:25:07,311 - Analyzing column at physical x=627, y=148, image height=914
+2026-01-20 09:25:07,311 - Detected BG Color: #f7f7f7
+2026-01-20 09:25:07,311 - Pixel at click (627, 148) is candle? False (Color: #f7f7f7)
+2026-01-20 09:25:07,312 - Target Candle Color: #379637
+2026-01-20 09:25:07,314 - Final Candle Limit: Top=1, Bottom=229
+2026-01-20 09:25:07,368 - Candle detected: Top=1, Bottom=229
+2026-01-20 09:25:07,450 - Saved debug_last_capture.png
+2026-01-20 09:25:11,780 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(624, 154)
+2026-01-20 09:25:11,845 - Device Pixel Ratio: 1.0
+2026-01-20 09:25:11,845 - Analyzing column at physical x=624, y=154, image height=914
+2026-01-20 09:25:11,845 - Detected BG Color: #f7f7f7
+2026-01-20 09:25:11,845 - Pixel at click (624, 154) is candle? False (Color: #f7f7f7)
+2026-01-20 09:25:11,846 - Target Candle Color: #379637
+2026-01-20 09:25:11,847 - Final Candle Limit: Top=1, Bottom=216
+2026-01-20 09:25:11,949 - Candle detected: Top=1, Bottom=216
+2026-01-20 09:25:12,004 - Saved debug_last_capture.png
+2026-01-20 09:25:16,113 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(623, 147)
+2026-01-20 09:25:16,202 - Device Pixel Ratio: 1.0
+2026-01-20 09:25:16,202 - Analyzing column at physical x=623, y=147, image height=914
+2026-01-20 09:25:16,202 - Detected BG Color: #f7f7f7
+2026-01-20 09:25:16,202 - Pixel at click (623, 147) is candle? False (Color: #f7f7f7)
+2026-01-20 09:25:16,202 - Target Candle Color: #000000
+2026-01-20 09:25:16,203 - Final Candle Limit: Top=143, Bottom=147
+2026-01-20 09:25:16,220 - Candle detected: Top=143, Bottom=147
+2026-01-20 09:25:16,298 - Saved debug_last_capture.png
+2026-01-20 09:25:25,435 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(774, 844)
+2026-01-20 09:25:25,499 - Device Pixel Ratio: 1.0
+2026-01-20 09:25:25,499 - Analyzing column at physical x=774, y=844, image height=914
+2026-01-20 09:25:25,499 - Detected BG Color: #f7f7f7
+2026-01-20 09:25:25,499 - Pixel at click (774, 844) is candle? False (Color: #f7f7f7)
+2026-01-20 09:25:25,499 - Target Candle Color: #ff3c39
+2026-01-20 09:25:25,501 - Final Candle Limit: Top=694, Bottom=913
+2026-01-20 09:25:25,593 - Candle detected: Top=694, Bottom=913
+2026-01-20 09:25:25,659 - Saved debug_last_capture.png
+2026-01-20 09:25:30,682 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(774, 838)
+2026-01-20 09:25:30,718 - Device Pixel Ratio: 1.0
+2026-01-20 09:25:30,718 - Analyzing column at physical x=774, y=838, image height=914
+2026-01-20 09:25:30,718 - Detected BG Color: #f7f7f7
+2026-01-20 09:25:30,718 - Pixel at click (774, 838) is candle? False (Color: #f7f7f7)
+2026-01-20 09:25:30,718 - Target Candle Color: #ff3c39
+2026-01-20 09:25:30,720 - Final Candle Limit: Top=694, Bottom=913
+2026-01-20 09:25:30,779 - Candle detected: Top=694, Bottom=913
+2026-01-20 09:25:30,843 - Saved debug_last_capture.png
+2026-01-20 09:25:35,407 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(557, 218)
+2026-01-20 09:25:35,469 - Device Pixel Ratio: 1.0
+2026-01-20 09:25:35,469 - Analyzing column at physical x=557, y=218, image height=914
+2026-01-20 09:25:35,469 - Detected BG Color: #f7f7f7
+2026-01-20 09:25:35,469 - Pixel at click (557, 218) is candle? True (Color: #ff3c39)
+2026-01-20 09:25:35,469 - Target Candle Color: #ff3c39
+2026-01-20 09:25:35,471 - Final Candle Limit: Top=211, Bottom=312
+2026-01-20 09:25:35,592 - Candle detected: Top=211, Bottom=312
+2026-01-20 09:25:35,689 - Saved debug_last_capture.png
+2026-01-20 09:25:46,534 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(557, 217)
+2026-01-20 09:25:46,592 - Device Pixel Ratio: 1.0
+2026-01-20 09:25:46,592 - Analyzing column at physical x=557, y=217, image height=914
+2026-01-20 09:25:46,592 - Detected BG Color: #f7f7f7
+2026-01-20 09:25:46,592 - Pixel at click (557, 217) is candle? True (Color: #ff3c39)
+2026-01-20 09:25:46,592 - Target Candle Color: #ff3c39
+2026-01-20 09:25:46,594 - Final Candle Limit: Top=211, Bottom=312
+2026-01-20 09:25:46,675 - Candle detected: Top=211, Bottom=312
+2026-01-20 09:25:46,729 - Saved debug_last_capture.png
+2026-01-20 09:29:01,133 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(201, 147)
+2026-01-20 09:29:01,185 - Device Pixel Ratio: 1.0
+2026-01-20 09:29:01,186 - Analyzing column at physical x=201, y=147, image height=914
+2026-01-20 09:29:01,186 - Detected BG Color: #f7f7f7
+2026-01-20 09:29:01,186 - Pixel at click (201, 147) is candle? False (Color: #f7f7f7)
+2026-01-20 09:29:01,186 - Target Candle Color: #ff3c39
+2026-01-20 09:29:01,188 - Final Candle Limit: Top=1, Bottom=214
+2026-01-20 09:29:01,237 - Candle detected: Top=1, Bottom=214
+2026-01-20 09:29:01,294 - Saved debug_last_capture.png
+2026-01-20 09:29:06,172 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(200, 149)
+2026-01-20 09:29:06,217 - Device Pixel Ratio: 1.0
+2026-01-20 09:29:06,218 - Analyzing column at physical x=200, y=149, image height=914
+2026-01-20 09:29:06,218 - Detected BG Color: #f7f7f7
+2026-01-20 09:29:06,218 - Pixel at click (200, 149) is candle? True (Color: #ff3c39)
+2026-01-20 09:29:06,218 - Target Candle Color: #ff3c39
+2026-01-20 09:29:06,220 - Final Candle Limit: Top=1, Bottom=214
+2026-01-20 09:29:06,281 - Candle detected: Top=1, Bottom=214
+2026-01-20 09:29:06,366 - Saved debug_last_capture.png
+2026-01-20 09:36:31,715 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(198, 151)
+2026-01-20 09:36:31,784 - Device Pixel Ratio: 1.0
+2026-01-20 09:36:31,784 - Analyzing column at physical x=198, y=151, image height=914
+2026-01-20 09:36:31,784 - Detected BG Color: #f7f7f7
+2026-01-20 09:36:31,784 - Pixel at click (198, 151) is candle? False (Color: #f7f7f7)
+2026-01-20 09:36:31,784 - Target Candle Color: #ff3c39
+2026-01-20 09:36:37,191 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(567, 263)
+2026-01-20 09:36:37,280 - Device Pixel Ratio: 1.0
+2026-01-20 09:36:37,280 - Analyzing column at physical x=567, y=263, image height=914
+2026-01-20 09:36:37,280 - Detected BG Color: #f7f7f7
+2026-01-20 09:36:37,280 - Pixel at click (567, 263) is candle? False (Color: #f7f7f7)
+2026-01-20 09:36:37,282 - Could not find any candle color near click.
+2026-01-20 09:36:37,283 - Auto measure error: cannot access free variable 'matches_target' where it is not associated with a value in enclosing scope
+Traceback (most recent call last):
+  File "D:\kaifa\波神凯线\BoshenClone\overlay.py", line 230, in auto_measure
+    if is_valid_pixel(y):
+       ^^^^^^^^^^^^^^^^^
+  File "D:\kaifa\波神凯线\BoshenClone\overlay.py", line 224, in is_valid_pixel
+    return matches_target(c)
+           ^^^^^^^^^^^^^^
+NameError: cannot access free variable 'matches_target' where it is not associated with a value in enclosing scope
+2026-01-20 09:36:38,837 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(199, 148)
+2026-01-20 09:36:38,936 - Device Pixel Ratio: 1.0
+2026-01-20 09:36:38,936 - Analyzing column at physical x=199, y=148, image height=914
+2026-01-20 09:36:38,936 - Detected BG Color: #f7f7f7
+2026-01-20 09:36:38,936 - Pixel at click (199, 148) is candle? False (Color: #f7f7f7)
+2026-01-20 09:36:38,936 - Target Candle Color: #000000
+2026-01-20 09:36:46,033 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(200, 151)
+2026-01-20 09:36:46,093 - Device Pixel Ratio: 1.0
+2026-01-20 09:36:46,093 - Analyzing column at physical x=200, y=151, image height=914
+2026-01-20 09:36:46,093 - Detected BG Color: #f7f7f7
+2026-01-20 09:36:46,093 - Pixel at click (200, 151) is candle? True (Color: #ff3c39)
+2026-01-20 09:36:46,093 - Target Candle Color: #ff3c39
+2026-01-20 09:36:53,236 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1378, 169)
+2026-01-20 09:36:53,283 - Device Pixel Ratio: 1.0
+2026-01-20 09:36:53,284 - Analyzing column at physical x=1378, y=169, image height=914
+2026-01-20 09:36:53,284 - Detected BG Color: #f7f7f7
+2026-01-20 09:36:53,284 - Pixel at click (1378, 169) is candle? True (Color: #ff3c39)
+2026-01-20 09:36:53,284 - Target Candle Color: #ff3c39
+2026-01-20 09:40:26,219 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(201, 151)
+2026-01-20 09:40:26,323 - Device Pixel Ratio: 1.0
+2026-01-20 09:40:26,323 - Analyzing column at physical x=201, y=151, image height=914
+2026-01-20 09:40:26,323 - Detected BG Color: #f7f7f7
+2026-01-20 09:40:26,324 - Pixel at click (201, 151) is candle? False (Color: #f7f7f7)
+2026-01-20 09:40:26,324 - Target Candle Color: #ff3c39
+2026-01-20 09:40:32,513 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(506, 356)
+2026-01-20 09:40:32,562 - Device Pixel Ratio: 1.0
+2026-01-20 09:40:32,563 - Analyzing column at physical x=506, y=356, image height=914
+2026-01-20 09:40:32,563 - Detected BG Color: #f7f7f7
+2026-01-20 09:40:32,563 - Pixel at click (506, 356) is candle? False (Color: #f7f7f7)
+2026-01-20 09:40:32,563 - Target Candle Color: #ff3c39
+2026-01-20 09:48:31,024 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1106, 151)
+2026-01-20 09:48:31,174 - Device Pixel Ratio: 1.0
+2026-01-20 09:48:31,174 - Analyzing column at physical x=1106, y=151, image height=914
+2026-01-20 09:48:31,174 - Detected BG Color: #f7f7f7
+2026-01-20 09:48:31,174 - Pixel at click (1106, 151) is candle? False (Color: #f7f7f7)
+2026-01-20 09:48:31,175 - Target Candle Color: #379637
+2026-01-20 09:48:37,661 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1348, 166)
+2026-01-20 09:48:37,717 - Device Pixel Ratio: 1.0
+2026-01-20 09:48:37,717 - Analyzing column at physical x=1348, y=166, image height=914
+2026-01-20 09:48:37,717 - Detected BG Color: #f7f7f7
+2026-01-20 09:48:37,717 - Pixel at click (1348, 166) is candle? False (Color: #f7f7f7)
+2026-01-20 09:48:37,717 - Target Candle Color: #ff3c39
+2026-01-20 09:48:39,835 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(481, 175)
+2026-01-20 09:48:39,935 - Device Pixel Ratio: 1.0
+2026-01-20 09:48:39,935 - Analyzing column at physical x=481, y=175, image height=914
+2026-01-20 09:48:39,935 - Detected BG Color: #f7f7f7
+2026-01-20 09:48:39,935 - Pixel at click (481, 175) is candle? False (Color: #f0f0f0)
+2026-01-20 09:48:39,935 - Target Candle Color: #000000
+2026-01-20 09:57:26,935 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(302, 216)
+2026-01-20 09:57:27,005 - Device Pixel Ratio: 1.0
+2026-01-20 09:57:27,005 - Analyzing column at physical x=302, y=216, image height=914
+2026-01-20 09:57:27,005 - Detected BG Color: #f7f7f7
+2026-01-20 09:57:27,005 - Pixel at click (302, 216) is candle? True (Color: #ff3c39)
+2026-01-20 09:57:27,005 - Target Candle Color: #ff3c39
+2026-01-20 09:57:36,891 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1261, 151)
+2026-01-20 09:57:36,936 - Device Pixel Ratio: 1.0
+2026-01-20 09:57:36,937 - Analyzing column at physical x=1261, y=151, image height=914
+2026-01-20 09:57:36,937 - Detected BG Color: #f7f7f7
+2026-01-20 09:57:36,937 - Pixel at click (1261, 151) is candle? False (Color: #f7f7f7)
+2026-01-20 09:57:36,937 - Target Candle Color: #379637
+2026-01-20 09:57:39,021 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1163, 324)
+2026-01-20 09:57:39,123 - Device Pixel Ratio: 1.0
+2026-01-20 09:57:39,123 - Analyzing column at physical x=1163, y=324, image height=914
+2026-01-20 09:57:39,124 - Detected BG Color: #454545
+2026-01-20 09:57:39,124 - Pixel at click (1163, 324) is candle? True (Color: #f7f7f7)
+2026-01-20 09:57:39,124 - Target Candle Color: #f7f7f7
+2026-01-20 09:57:49,177 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(874, 359)
+2026-01-20 09:57:49,221 - Device Pixel Ratio: 1.0
+2026-01-20 09:57:49,221 - Analyzing column at physical x=874, y=359, image height=914
+2026-01-20 09:57:49,221 - Detected BG Color: #454545
+2026-01-20 09:57:49,221 - Pixel at click (874, 359) is candle? True (Color: #f7f7f7)
+2026-01-20 09:57:49,221 - Target Candle Color: #f7f7f7
+2026-01-20 10:00:33,763 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1257, 150)
+2026-01-20 10:00:33,814 - Device Pixel Ratio: 1.0
+2026-01-20 10:00:33,815 - Analyzing column at physical x=1257, y=150, image height=914
+2026-01-20 10:00:33,815 - Detected BG Color: #454545
+2026-01-20 10:00:33,815 - Pixel at click (1257, 150) is candle? False (Color: #454545)
+2026-01-20 10:00:33,815 - Target Candle Color: #f7f7f7
+2026-01-20 10:00:33,838 - Final Candle Limit: Top=40, Bottom=913
+2026-01-20 10:00:33,877 - Candle detected: Top=40, Bottom=913
+2026-01-20 10:00:34,009 - Saved debug_last_capture.png
+2026-01-20 10:00:40,469 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1256, 149)
+2026-01-20 10:00:40,530 - Device Pixel Ratio: 1.0
+2026-01-20 10:00:40,531 - Analyzing column at physical x=1256, y=149, image height=914
+2026-01-20 10:00:40,531 - Detected BG Color: #f7f7f7
+2026-01-20 10:00:40,531 - Pixel at click (1256, 149) is candle? False (Color: #f7f7f7)
+2026-01-20 10:00:40,531 - Target Candle Color: #379637
+2026-01-20 10:00:40,533 - Final Candle Limit: Top=148, Bottom=216
+2026-01-20 10:00:40,580 - Candle detected: Top=148, Bottom=216
+2026-01-20 10:00:40,678 - Saved debug_last_capture.png
+2026-01-20 10:00:45,975 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(296, 217)
+2026-01-20 10:00:46,030 - Device Pixel Ratio: 1.0
+2026-01-20 10:00:46,030 - Analyzing column at physical x=296, y=217, image height=914
+2026-01-20 10:00:46,030 - Detected BG Color: #f7f7f7
+2026-01-20 10:00:46,030 - Pixel at click (296, 217) is candle? False (Color: #f7f7f7)
+2026-01-20 10:00:46,030 - Target Candle Color: #ff3c39
+2026-01-20 10:00:46,032 - Final Candle Limit: Top=216, Bottom=274
+2026-01-20 10:00:46,112 - Candle detected: Top=216, Bottom=274
+2026-01-20 10:00:46,179 - Saved debug_last_capture.png
+2026-01-20 10:00:52,007 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(395, 231)
+2026-01-20 10:00:52,059 - Device Pixel Ratio: 1.0
+2026-01-20 10:00:52,059 - Analyzing column at physical x=395, y=231, image height=914
+2026-01-20 10:00:52,059 - Detected BG Color: #f7f7f7
+2026-01-20 10:00:52,059 - Pixel at click (395, 231) is candle? False (Color: #f7f7f7)
+2026-01-20 10:00:52,060 - Target Candle Color: #379637
+2026-01-20 10:00:52,061 - Final Candle Limit: Top=224, Bottom=274
+2026-01-20 10:00:52,102 - Candle detected: Top=224, Bottom=274
+2026-01-20 10:00:52,177 - Saved debug_last_capture.png
+2026-01-20 10:00:56,060 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(867, 357)
+2026-01-20 10:00:56,124 - Device Pixel Ratio: 1.0
+2026-01-20 10:00:56,125 - Analyzing column at physical x=867, y=357, image height=914
+2026-01-20 10:00:56,125 - Detected BG Color: #f7f7f7
+2026-01-20 10:00:56,125 - Pixel at click (867, 357) is candle? False (Color: #f7f7f7)
+2026-01-20 10:00:56,125 - Target Candle Color: #ff3c39
+2026-01-20 10:00:56,126 - Final Candle Limit: Top=354, Bottom=459
+2026-01-20 10:00:56,149 - Candle detected: Top=354, Bottom=459
+2026-01-20 10:00:56,214 - Saved debug_last_capture.png
+2026-01-20 10:01:00,658 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(632, 843)
+2026-01-20 10:01:00,812 - Device Pixel Ratio: 1.0
+2026-01-20 10:01:00,812 - Analyzing column at physical x=632, y=843, image height=914
+2026-01-20 10:01:00,812 - Detected BG Color: #f7f7f7
+2026-01-20 10:01:00,812 - Pixel at click (632, 843) is candle? False (Color: #f7f7f7)
+2026-01-20 10:01:00,812 - Target Candle Color: #ff3c39
+2026-01-20 10:01:00,814 - Final Candle Limit: Top=744, Bottom=844
+2026-01-20 10:01:00,818 - Candle detected: Top=744, Bottom=844
+2026-01-20 10:01:00,878 - Saved debug_last_capture.png
+2026-01-20 10:01:05,986 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1183, 621)
+2026-01-20 10:01:06,034 - Device Pixel Ratio: 1.0
+2026-01-20 10:01:06,035 - Analyzing column at physical x=1183, y=621, image height=914
+2026-01-20 10:01:06,035 - Detected BG Color: #f7f7f7
+2026-01-20 10:01:06,035 - Pixel at click (1183, 621) is candle? False (Color: #f7f7f7)
+2026-01-20 10:01:06,035 - Target Candle Color: #303030
+2026-01-20 10:01:06,036 - Final Candle Limit: Top=576, Bottom=627
+2026-01-20 10:01:06,075 - Candle detected: Top=576, Bottom=627
+2026-01-20 10:01:06,154 - Saved debug_last_capture.png
+2026-01-20 10:01:11,325 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1561, 419)
+2026-01-20 10:01:11,374 - Device Pixel Ratio: 1.0
+2026-01-20 10:01:11,375 - Analyzing column at physical x=1561, y=419, image height=914
+2026-01-20 10:01:11,375 - Detected BG Color: #f7f7f7
+2026-01-20 10:01:11,375 - Pixel at click (1561, 419) is candle? False (Color: #f7f7f7)
+2026-01-20 10:01:11,375 - Target Candle Color: #379637
+2026-01-20 10:01:11,376 - Final Candle Limit: Top=379, Bottom=421
+2026-01-20 10:01:11,425 - Candle detected: Top=379, Bottom=421
+2026-01-20 10:01:11,502 - Saved debug_last_capture.png
+2026-01-20 10:01:33,993 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(296, 218)
+2026-01-20 10:01:34,064 - Device Pixel Ratio: 1.0
+2026-01-20 10:01:34,065 - Analyzing column at physical x=296, y=218, image height=914
+2026-01-20 10:01:34,065 - Detected BG Color: #f7f7f7
+2026-01-20 10:01:34,065 - Pixel at click (296, 218) is candle? False (Color: #f7f7f7)
+2026-01-20 10:01:34,065 - Target Candle Color: #ff3c39
+2026-01-20 10:01:34,066 - Final Candle Limit: Top=216, Bottom=274
+2026-01-20 10:01:34,114 - Candle detected: Top=216, Bottom=274
+2026-01-20 10:01:34,195 - Saved debug_last_capture.png
+2026-01-20 10:01:40,671 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1254, 152)
+2026-01-20 10:01:40,719 - Device Pixel Ratio: 1.0
+2026-01-20 10:01:40,720 - Analyzing column at physical x=1254, y=152, image height=914
+2026-01-20 10:01:40,720 - Detected BG Color: #f7f7f7
+2026-01-20 10:01:40,720 - Pixel at click (1254, 152) is candle? True (Color: #379637)
+2026-01-20 10:01:40,720 - Target Candle Color: #379637
+2026-01-20 10:01:40,721 - Final Candle Limit: Top=148, Bottom=216
+2026-01-20 10:01:40,786 - Candle detected: Top=148, Bottom=216
+2026-01-20 10:01:40,848 - Saved debug_last_capture.png
+2026-01-20 10:22:57,746 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(571, 153)
+2026-01-20 10:22:57,835 - Device Pixel Ratio: 1.0
+2026-01-20 10:22:57,835 - Analyzing column at physical x=571, y=153, image height=914
+2026-01-20 10:22:57,835 - Detected BG Color: #f7f7f7
+2026-01-20 10:22:57,835 - Pixel at click (571, 153) is candle? True (Color: #379637)
+2026-01-20 10:22:57,835 - Target Candle Color: #379637
+2026-01-20 10:22:57,838 - Final Candle Limit: Top=11, Bottom=252
+2026-01-20 10:22:57,876 - Candle detected: Top=11, Bottom=252
+2026-01-20 10:22:57,959 - Saved debug_last_capture.png
+2026-01-20 10:31:28,899 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(885, 744)
+2026-01-20 10:31:29,002 - Device Pixel Ratio: 1.0
+2026-01-20 10:31:29,002 - Analyzing column at physical x=885, y=744, image height=914
+2026-01-20 10:31:29,003 - Detected BG Color: #f7f7f7
+2026-01-20 10:31:29,003 - Pixel at click (885, 744) is candle? False (Color: #f7f7f7)
+2026-01-20 10:31:29,003 - Target Candle Color: #ff3c39
+2026-01-20 10:31:29,004 - Final Candle Limit: Top=667, Bottom=744
+2026-01-20 10:31:29,018 - Candle detected: Top=667, Bottom=744
+2026-01-20 10:31:29,105 - Saved debug_last_capture.png
+2026-01-20 10:42:51,326 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(631, 843)
+2026-01-20 10:42:51,380 - Device Pixel Ratio: 1.0
+2026-01-20 10:42:51,380 - Analyzing column at physical x=631, y=843, image height=914
+2026-01-20 10:42:51,381 - Detected BG Color: #f7f7f7
+2026-01-20 10:42:51,381 - Pixel at click (631, 843) is candle? False (Color: #f7f7f7)
+2026-01-20 10:42:51,381 - Target Candle Color: #ff3c39
+2026-01-20 10:42:51,383 - Final Candle Limit: Top=756, Bottom=844
+2026-01-20 10:42:51,468 - Candle detected: Top=756, Bottom=844
+2026-01-20 10:42:51,542 - Saved debug_last_capture.png
+2026-01-20 10:43:48,449 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(702, 177)
+2026-01-20 10:43:48,498 - Device Pixel Ratio: 1.0
+2026-01-20 10:43:48,498 - Analyzing column at physical x=702, y=177, image height=914
+2026-01-20 10:43:48,498 - Detected BG Color: #f7f7f7
+2026-01-20 10:43:48,498 - Pixel at click (702, 177) is candle? True (Color: #ff3c39)
+2026-01-20 10:43:48,498 - Target Candle Color: #ff3c39
+2026-01-20 10:43:48,500 - Final Candle Limit: Top=173, Bottom=376
+2026-01-20 10:43:48,567 - Candle detected: Top=173, Bottom=376
+2026-01-20 10:43:48,633 - Saved debug_last_capture.png
+2026-01-20 10:44:25,919 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(723, 176)
+2026-01-20 10:44:25,970 - Device Pixel Ratio: 1.0
+2026-01-20 10:44:25,970 - Analyzing column at physical x=723, y=176, image height=914
+2026-01-20 10:44:25,970 - Detected BG Color: #f7f7f7
+2026-01-20 10:44:25,970 - Pixel at click (723, 176) is candle? False (Color: #f7f7f7)
+2026-01-20 10:44:25,970 - Target Candle Color: #ff3c39
+2026-01-20 10:44:25,972 - Final Candle Limit: Top=173, Bottom=247
+2026-01-20 10:44:26,028 - Candle detected: Top=173, Bottom=247
+2026-01-20 10:44:26,093 - Saved debug_last_capture.png
+2026-01-20 10:46:19,648 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(565, 150)
+2026-01-20 10:46:19,719 - Device Pixel Ratio: 1.0
+2026-01-20 10:46:19,719 - Analyzing column at physical x=565, y=150, image height=914
+2026-01-20 10:46:19,719 - Detected BG Color: #f7f7f7
+2026-01-20 10:46:19,719 - Pixel at click (565, 150) is candle? False (Color: #f7f7f7)
+2026-01-20 10:46:19,719 - Target Candle Color: #ff3c39
+2026-01-20 10:46:19,721 - Final Candle Limit: Top=148, Bottom=238
+2026-01-20 10:46:19,766 - Candle detected: Top=148, Bottom=238
+2026-01-20 10:46:19,844 - Saved debug_last_capture.png
+2026-01-20 10:46:26,282 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(697, 383)
+2026-01-20 10:46:26,343 - Device Pixel Ratio: 1.0
+2026-01-20 10:46:26,343 - Analyzing column at physical x=697, y=383, image height=914
+2026-01-20 10:46:26,343 - Detected BG Color: #f7f7f7
+2026-01-20 10:46:26,343 - Pixel at click (697, 383) is candle? False (Color: #f7f7f7)
+2026-01-20 10:46:26,344 - Target Candle Color: #379637
+2026-01-20 10:46:26,345 - Final Candle Limit: Top=377, Bottom=596
+2026-01-20 10:46:26,365 - Candle detected: Top=377, Bottom=596
+2026-01-20 10:46:26,434 - Saved debug_last_capture.png
+2026-01-20 10:54:03,868 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1052, 842)
+2026-01-20 10:54:03,906 - Device Pixel Ratio: 1.0
+2026-01-20 10:54:03,906 - Analyzing column at physical x=1052, y=842, image height=914
+2026-01-20 10:54:03,906 - Detected BG Color: #f7f7f7
+2026-01-20 10:54:03,906 - Pixel at click (1052, 842) is candle? False (Color: #f7f7f7)
+2026-01-20 10:54:03,906 - Target Candle Color: #ff3c39
+2026-01-20 10:54:03,907 - Final Candle Limit: Top=757, Bottom=844
+2026-01-20 10:54:03,957 - Candle detected: Top=757, Bottom=844
+2026-01-20 10:54:04,020 - Saved debug_last_capture.png
+2026-01-20 14:59:36,232 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(926, 844)
+2026-01-20 14:59:36,280 - Device Pixel Ratio: 1.0
+2026-01-20 14:59:36,281 - Analyzing column at physical x=926, y=844, image height=914
+2026-01-20 14:59:36,281 - Detected BG Color: #f7f7f7
+2026-01-20 14:59:36,281 - Pixel at click (926, 844) is candle? True (Color: #ff3c39)
+2026-01-20 14:59:36,281 - Target Candle Color: #ff3c39
+2026-01-20 14:59:36,282 - Final Candle Limit: Top=819, Bottom=844
+2026-01-20 14:59:36,368 - Candle detected: Top=819, Bottom=844
+2026-01-20 14:59:36,453 - Saved debug_last_capture.png
+2026-01-20 14:59:41,695 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(928, 849)
+2026-01-20 14:59:41,752 - Device Pixel Ratio: 1.0
+2026-01-20 14:59:41,752 - Analyzing column at physical x=928, y=849, image height=914
+2026-01-20 14:59:41,752 - Detected BG Color: #f7f7f7
+2026-01-20 14:59:41,752 - Pixel at click (928, 849) is candle? False (Color: #f7f7f7)
+2026-01-20 14:59:41,752 - Target Candle Color: #000000
+2026-01-20 14:59:41,754 - Final Candle Limit: Top=790, Bottom=913
+2026-01-20 14:59:41,798 - Candle detected: Top=790, Bottom=913
+2026-01-20 14:59:41,862 - Saved debug_last_capture.png
+2026-01-20 14:59:47,858 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(927, 845)
+2026-01-20 14:59:47,907 - Device Pixel Ratio: 1.0
+2026-01-20 14:59:47,907 - Analyzing column at physical x=927, y=845, image height=914
+2026-01-20 14:59:47,907 - Detected BG Color: #f7f7f7
+2026-01-20 14:59:47,908 - Pixel at click (927, 845) is candle? False (Color: #f7f7f7)
+2026-01-20 14:59:47,908 - Target Candle Color: #ff3c39
+2026-01-20 14:59:47,909 - Final Candle Limit: Top=819, Bottom=845
+2026-01-20 14:59:48,033 - Candle detected: Top=819, Bottom=845
+2026-01-20 14:59:48,092 - Saved debug_last_capture.png
+2026-01-20 15:02:41,171 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(927, 842)
+2026-01-20 15:02:41,235 - Device Pixel Ratio: 1.0
+2026-01-20 15:02:41,235 - Analyzing column at physical x=927, y=842, image height=914
+2026-01-20 15:02:41,235 - Detected BG Color: #f7f7f7
+2026-01-20 15:02:41,235 - Pixel at click (927, 842) is candle? False (Color: #f7f7f7)
+2026-01-20 15:02:41,235 - Target Candle Color: #ff3c39
+2026-01-20 15:02:41,237 - Final Candle Limit: Top=819, Bottom=844
+2026-01-20 15:02:41,285 - Candle detected: Top=819, Bottom=844
+2026-01-20 15:02:41,365 - Saved debug_last_capture.png
+2026-01-20 15:02:59,083 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1106, 370)
+2026-01-20 15:02:59,124 - Device Pixel Ratio: 1.0
+2026-01-20 15:02:59,124 - Analyzing column at physical x=1106, y=370, image height=914
+2026-01-20 15:02:59,124 - Detected BG Color: #f7f7f7
+2026-01-20 15:02:59,124 - Pixel at click (1106, 370) is candle? True (Color: #379637)
+2026-01-20 15:02:59,124 - Target Candle Color: #379637
+2026-01-20 15:02:59,126 - Final Candle Limit: Top=366, Bottom=486
+2026-01-20 15:02:59,163 - Candle detected: Top=366, Bottom=486
+2026-01-20 15:02:59,246 - Saved debug_last_capture.png
+2026-01-20 15:03:03,433 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(927, 842)
+2026-01-20 15:03:03,523 - Device Pixel Ratio: 1.0
+2026-01-20 15:03:03,523 - Analyzing column at physical x=927, y=842, image height=914
+2026-01-20 15:03:03,524 - Detected BG Color: #f7f7f7
+2026-01-20 15:03:03,524 - Pixel at click (927, 842) is candle? False (Color: #f7f7f7)
+2026-01-20 15:03:03,524 - Target Candle Color: #ff3c39
+2026-01-20 15:03:03,525 - Final Candle Limit: Top=819, Bottom=844
+2026-01-20 15:03:03,568 - Candle detected: Top=819, Bottom=844
+2026-01-20 15:03:03,626 - Saved debug_last_capture.png
+2026-01-20 15:04:56,670 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(926, 843)
+2026-01-20 15:04:56,724 - Device Pixel Ratio: 1.0
+2026-01-20 15:04:56,724 - Analyzing column at physical x=926, y=843, image height=914
+2026-01-20 15:04:56,724 - Detected BG Color: #f7f7f7
+2026-01-20 15:04:56,724 - Pixel at click (926, 843) is candle? True (Color: #ff3c39)
+2026-01-20 15:04:56,724 - Target Candle Color: #ff3c39
+2026-01-20 15:04:56,726 - Potential label/noise detected (H=25). Attempting Smart Snap...
+2026-01-20 15:04:56,757 - Smart Snap Success: Switched to Candle H=226 (687, 913)
+2026-01-20 15:04:56,763 - Final Candle Limit: Top=687, Bottom=913
+2026-01-20 15:04:56,800 - Candle detected: Top=687, Bottom=913
+2026-01-20 15:04:56,885 - Saved debug_last_capture.png
+2026-01-20 15:05:01,427 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(926, 843)
+2026-01-20 15:05:01,467 - Device Pixel Ratio: 1.0
+2026-01-20 15:05:01,467 - Analyzing column at physical x=926, y=843, image height=914
+2026-01-20 15:05:01,467 - Detected BG Color: #f7f7f7
+2026-01-20 15:05:01,468 - Pixel at click (926, 843) is candle? True (Color: #ff3c39)
+2026-01-20 15:05:01,468 - Target Candle Color: #ff3c39
+2026-01-20 15:05:01,469 - Potential label/noise detected (H=25). Attempting Smart Snap...
+2026-01-20 15:05:01,497 - Smart Snap Success: Switched to Candle H=226 (687, 913)
+2026-01-20 15:05:01,505 - Final Candle Limit: Top=687, Bottom=913
+2026-01-20 15:05:01,552 - Candle detected: Top=687, Bottom=913
+2026-01-20 15:05:01,628 - Saved debug_last_capture.png
+2026-01-20 15:07:11,344 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(928, 843)
+2026-01-20 15:07:11,499 - Device Pixel Ratio: 1.0
+2026-01-20 15:07:11,499 - Analyzing column at physical x=928, y=843, image height=914
+2026-01-20 15:07:11,499 - Detected BG Color: #f7f7f7
+2026-01-20 15:07:11,499 - Pixel at click (928, 843) is candle? False (Color: #f7f7f7)
+2026-01-20 15:07:11,500 - Target Candle Color: #ff3c39
+2026-01-20 15:07:11,501 - Final Candle Limit: Top=721, Bottom=844
+2026-01-20 15:07:11,522 - Candle detected: Top=721, Bottom=844
+2026-01-20 15:07:11,608 - Saved debug_last_capture.png
+2026-01-20 15:07:19,829 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(925, 845)
+2026-01-20 15:07:19,968 - Device Pixel Ratio: 1.0
+2026-01-20 15:07:19,969 - Analyzing column at physical x=925, y=845, image height=914
+2026-01-20 15:07:19,969 - Detected BG Color: #f7f7f7
+2026-01-20 15:07:19,969 - Pixel at click (925, 845) is candle? True (Color: #000000)
+2026-01-20 15:07:19,969 - Target Candle Color: #000000
+2026-01-20 15:07:19,971 - Potential label/noise detected (H=123). Attempting Smart Snap...
+2026-01-20 15:07:19,975 - Smart Snap Success: Switched to Candle H=192 (721, 913)
+2026-01-20 15:07:19,975 - Final Candle Limit: Top=721, Bottom=913
+2026-01-20 15:07:19,976 - Candle detected: Top=721, Bottom=913
+2026-01-20 15:07:20,042 - Saved debug_last_capture.png
+2026-01-20 15:07:24,312 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(927, 840)
+2026-01-20 15:07:24,469 - Device Pixel Ratio: 1.0
+2026-01-20 15:07:24,469 - Analyzing column at physical x=927, y=840, image height=914
+2026-01-20 15:07:24,469 - Detected BG Color: #f7f7f7
+2026-01-20 15:07:24,469 - Pixel at click (927, 840) is candle? False (Color: #f7f7f7)
+2026-01-20 15:07:24,469 - Target Candle Color: #ff3c39
+2026-01-20 15:07:24,471 - Potential label/noise detected (H=25). Attempting Smart Snap...
+2026-01-20 15:07:24,474 - Smart Snap Success: Switched to Candle H=266 (647, 913)
+2026-01-20 15:07:24,475 - Final Candle Limit: Top=647, Bottom=913
+2026-01-20 15:07:24,477 - Candle detected: Top=647, Bottom=913
+2026-01-20 15:07:24,548 - Saved debug_last_capture.png
+2026-01-20 15:07:28,808 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(823, 417)
+2026-01-20 15:07:28,969 - Device Pixel Ratio: 1.0
+2026-01-20 15:07:28,970 - Analyzing column at physical x=823, y=417, image height=914
+2026-01-20 15:07:28,970 - Detected BG Color: #f7f7f7
+2026-01-20 15:07:28,971 - Pixel at click (823, 417) is candle? False (Color: #f7f7f7)
+2026-01-20 15:07:28,971 - Target Candle Color: #ff3c39
+2026-01-20 15:07:28,972 - Final Candle Limit: Top=412, Bottom=478
+2026-01-20 15:07:28,973 - Candle detected: Top=412, Bottom=478
+2026-01-20 15:07:29,052 - Saved debug_last_capture.png
+2026-01-20 15:07:37,929 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1088, 744)
+2026-01-20 15:07:38,090 - Device Pixel Ratio: 1.0
+2026-01-20 15:07:38,090 - Analyzing column at physical x=1088, y=744, image height=914
+2026-01-20 15:07:38,091 - Detected BG Color: #f7f7f7
+2026-01-20 15:07:38,091 - Pixel at click (1088, 744) is candle? True (Color: #ff3c39)
+2026-01-20 15:07:38,091 - Target Candle Color: #ff3c39
+2026-01-20 15:07:38,093 - Final Candle Limit: Top=667, Bottom=744
+2026-01-20 15:07:38,093 - Candle detected: Top=667, Bottom=744
+2026-01-20 15:07:38,164 - Saved debug_last_capture.png
+2026-01-20 15:09:28,388 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1014, 534)
+2026-01-20 15:09:28,531 - Device Pixel Ratio: 1.0
+2026-01-20 15:09:28,532 - Analyzing column at physical x=1014, y=534, image height=914
+2026-01-20 15:09:28,532 - Detected BG Color: #f7f7f7
+2026-01-20 15:09:28,532 - Pixel at click (1014, 534) is candle? False (Color: #f7f7f7)
+2026-01-20 15:09:28,532 - Target Candle Color: #ff3c39
+2026-01-20 15:09:28,534 - Potential label/noise detected (H=33). Attempting Smart Snap...
+2026-01-20 15:09:28,537 - Smart Snap Success: Switched to Candle H=44 (869, 913)
+2026-01-20 15:09:28,538 - Final Candle Limit: Top=869, Bottom=913
+2026-01-20 15:09:28,539 - Candle detected: Top=869, Bottom=913
+2026-01-20 15:09:28,606 - Saved debug_last_capture.png
+2026-01-20 15:09:33,299 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1013, 530)
+2026-01-20 15:09:33,468 - Device Pixel Ratio: 1.0
+2026-01-20 15:09:33,468 - Analyzing column at physical x=1013, y=530, image height=914
+2026-01-20 15:09:33,468 - Detected BG Color: #f7f7f7
+2026-01-20 15:09:33,468 - Pixel at click (1013, 530) is candle? False (Color: #f7f7f7)
+2026-01-20 15:09:33,468 - Target Candle Color: #000000
+2026-01-20 15:09:33,469 - Potential label/noise detected (H=24). Attempting Smart Snap...
+2026-01-20 15:09:33,471 - Smart Snap Success: Switched to Candle H=44 (869, 913)
+2026-01-20 15:09:33,471 - Final Candle Limit: Top=869, Bottom=913
+2026-01-20 15:09:33,472 - Candle detected: Top=869, Bottom=913
+2026-01-20 15:09:33,539 - Saved debug_last_capture.png
+2026-01-20 15:09:38,575 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(642, 430)
+2026-01-20 15:09:38,716 - Device Pixel Ratio: 1.0
+2026-01-20 15:09:38,717 - Analyzing column at physical x=642, y=430, image height=914
+2026-01-20 15:09:38,717 - Detected BG Color: #f7f7f7
+2026-01-20 15:09:38,717 - Pixel at click (642, 430) is candle? False (Color: #f7f7f7)
+2026-01-20 15:09:38,717 - Target Candle Color: #ff3c39
+2026-01-20 15:09:38,718 - Potential label/noise detected (H=38). Attempting Smart Snap...
+2026-01-20 15:09:38,720 - Smart Snap Success: Switched to Candle H=107 (67, 174)
+2026-01-20 15:09:38,722 - Final Candle Limit: Top=67, Bottom=174
+2026-01-20 15:09:38,723 - Candle detected: Top=67, Bottom=174
+2026-01-20 15:09:38,785 - Saved debug_last_capture.png
+2026-01-20 15:09:46,180 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1221, 510)
+2026-01-20 15:09:46,344 - Device Pixel Ratio: 1.0
+2026-01-20 15:09:46,344 - Analyzing column at physical x=1221, y=510, image height=914
+2026-01-20 15:09:46,345 - Detected BG Color: #f7f7f7
+2026-01-20 15:09:46,345 - Pixel at click (1221, 510) is candle? True (Color: #379637)
+2026-01-20 15:09:46,345 - Target Candle Color: #379637
+2026-01-20 15:09:46,346 - Final Candle Limit: Top=508, Bottom=568
+2026-01-20 15:09:46,348 - Candle detected: Top=508, Bottom=568
+2026-01-20 15:09:46,418 - Saved debug_last_capture.png
+2026-01-20 15:09:54,265 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1223, 512)
+2026-01-20 15:09:54,435 - Device Pixel Ratio: 1.0
+2026-01-20 15:09:54,436 - Analyzing column at physical x=1223, y=512, image height=914
+2026-01-20 15:09:54,436 - Detected BG Color: #f7f7f7
+2026-01-20 15:09:54,436 - Pixel at click (1223, 512) is candle? False (Color: #f7f7f7)
+2026-01-20 15:09:54,436 - Target Candle Color: #379637
+2026-01-20 15:09:54,438 - Final Candle Limit: Top=508, Bottom=568
+2026-01-20 15:09:54,440 - Candle detected: Top=508, Bottom=568
+2026-01-20 15:09:54,505 - Saved debug_last_capture.png
+2026-01-20 15:15:44,579 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1089, 745)
+2026-01-20 15:15:44,719 - Device Pixel Ratio: 1.0
+2026-01-20 15:15:44,719 - Analyzing column at physical x=1089, y=745, image height=914
+2026-01-20 15:15:44,720 - Detected BG Color: #f7f7f7
+2026-01-20 15:15:44,720 - Pixel at click (1089, 745) is candle? False (Color: #f7f7f7)
+2026-01-20 15:15:44,720 - Target Candle Color: #ff3c39
+2026-01-20 15:15:44,721 - Final Candle Limit: Top=667, Bottom=745
+2026-01-20 15:15:44,728 - Candle detected: Top=667, Bottom=745
+2026-01-20 15:15:44,823 - Saved debug_last_capture.png
+2026-01-20 15:16:07,476 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1090, 743)
+2026-01-20 15:16:07,622 - Device Pixel Ratio: 1.0
+2026-01-20 15:16:07,622 - Analyzing column at physical x=1090, y=743, image height=914
+2026-01-20 15:16:07,622 - Detected BG Color: #f7f7f7
+2026-01-20 15:16:07,622 - Pixel at click (1090, 743) is candle? False (Color: #f7f7f7)
+2026-01-20 15:16:07,623 - Target Candle Color: #ff3c39
+2026-01-20 15:16:07,624 - Final Candle Limit: Top=667, Bottom=744
+2026-01-20 15:16:07,627 - Candle detected: Top=667, Bottom=744
+2026-01-20 15:16:07,689 - Saved debug_last_capture.png
+2026-01-20 15:23:55,520 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1087, 744)
+2026-01-20 15:23:55,688 - Device Pixel Ratio: 1.0
+2026-01-20 15:23:55,688 - Analyzing column at physical x=1087, y=744, image height=914
+2026-01-20 15:23:55,688 - Detected BG Color: #f7f7f7
+2026-01-20 15:23:55,688 - Pixel at click (1087, 744) is candle? False (Color: #f7f7f7)
+2026-01-20 15:23:55,688 - Target Candle Color: #ff3c39
+2026-01-20 15:23:55,691 - Final Candle Limit: Top=667, Bottom=744
+2026-01-20 15:23:55,692 - Candle detected: Top=667, Bottom=744
+2026-01-20 15:23:55,752 - Saved debug_last_capture.png
+2026-01-20 15:27:12,466 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1090, 745)
+2026-01-20 15:27:12,622 - Device Pixel Ratio: 1.0
+2026-01-20 15:27:12,622 - Analyzing column at physical x=1090, y=745, image height=914
+2026-01-20 15:27:12,622 - Detected BG Color: #f7f7f7
+2026-01-20 15:27:12,623 - Pixel at click (1090, 745) is candle? False (Color: #f7f7f7)
+2026-01-20 15:27:12,623 - Target Candle Color: #ff3c39
+2026-01-20 15:27:12,624 - Final Candle Limit: Top=667, Bottom=745
+2026-01-20 15:27:12,637 - Candle detected: Top=667, Bottom=745
+2026-01-20 15:27:12,696 - Saved debug_last_capture.png
+2026-01-20 15:32:19,554 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1090, 745)
+2026-01-20 15:32:19,721 - Device Pixel Ratio: 1.0
+2026-01-20 15:32:19,721 - Analyzing column at physical x=1090, y=745, image height=914
+2026-01-20 15:32:19,722 - Detected BG Color: #f7f7f7
+2026-01-20 15:32:19,722 - Pixel at click (1090, 745) is candle? False (Color: #f7f7f7)
+2026-01-20 15:32:19,722 - Target Candle Color: #ff3c39
+2026-01-20 15:32:19,724 - Final Candle Limit: Top=667, Bottom=745
+2026-01-20 15:32:19,724 - Candle detected: Top=667, Bottom=745
+2026-01-20 15:32:19,783 - Saved debug_last_capture.png
+2026-01-20 15:32:41,196 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1223, 512)
+2026-01-20 15:32:41,340 - Device Pixel Ratio: 1.0
+2026-01-20 15:32:41,340 - Analyzing column at physical x=1223, y=512, image height=914
+2026-01-20 15:32:41,341 - Detected BG Color: #f7f7f7
+2026-01-20 15:32:41,341 - Pixel at click (1223, 512) is candle? False (Color: #f7f7f7)
+2026-01-20 15:32:41,341 - Target Candle Color: #379637
+2026-01-20 15:32:41,342 - Final Candle Limit: Top=508, Bottom=568
+2026-01-20 15:32:41,343 - Candle detected: Top=508, Bottom=568
+2026-01-20 15:32:41,396 - Saved debug_last_capture.png
+2026-01-20 15:32:51,660 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1222, 511)
+2026-01-20 15:32:51,809 - Device Pixel Ratio: 1.0
+2026-01-20 15:32:51,809 - Analyzing column at physical x=1222, y=511, image height=914
+2026-01-20 15:32:51,810 - Detected BG Color: #f7f7f7
+2026-01-20 15:32:51,810 - Pixel at click (1222, 511) is candle? False (Color: #f7f7f7)
+2026-01-20 15:32:51,810 - Target Candle Color: #379637
+2026-01-20 15:32:51,812 - Final Candle Limit: Top=508, Bottom=568
+2026-01-20 15:32:51,812 - Candle detected: Top=508, Bottom=568
+2026-01-20 15:32:51,866 - Saved debug_last_capture.png
+2026-01-20 15:39:54,584 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1032, 798)
+2026-01-20 15:39:54,751 - Device Pixel Ratio: 1.0
+2026-01-20 15:39:54,752 - Analyzing column at physical x=1032, y=798, image height=914
+2026-01-20 15:39:54,752 - Detected BG Color: #f7f7f7
+2026-01-20 15:39:54,752 - Pixel at click (1032, 798) is candle? False (Color: #f7f7f7)
+2026-01-20 15:39:54,752 - Target Candle Color: #ff3c39
+2026-01-20 15:39:54,754 - Final Candle Limit: Top=714, Bottom=798
+2026-01-20 15:39:54,762 - Candle detected: Top=714, Bottom=798
+2026-01-20 15:39:54,828 - Saved debug_last_capture.png
+2026-01-20 15:40:17,971 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1031, 799)
+2026-01-20 15:40:18,125 - Device Pixel Ratio: 1.0
+2026-01-20 15:40:18,125 - Analyzing column at physical x=1031, y=799, image height=914
+2026-01-20 15:40:18,125 - Detected BG Color: #f7f7f7
+2026-01-20 15:40:18,125 - Pixel at click (1031, 799) is candle? False (Color: #f7f7f7)
+2026-01-20 15:40:18,125 - Target Candle Color: #ff3c39
+2026-01-20 15:40:18,126 - Final Candle Limit: Top=714, Bottom=799
+2026-01-20 15:40:18,171 - Candle detected: Top=714, Bottom=799
+2026-01-20 15:40:18,252 - Saved debug_last_capture.png
+2026-01-20 15:41:05,335 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1095, 175)
+2026-01-20 15:41:05,487 - Device Pixel Ratio: 1.0
+2026-01-20 15:41:05,487 - Analyzing column at physical x=1095, y=175, image height=914
+2026-01-20 15:41:05,487 - Detected BG Color: #f7f7f7
+2026-01-20 15:41:05,488 - Pixel at click (1095, 175) is candle? False (Color: #f7f7f7)
+2026-01-20 15:41:05,488 - Target Candle Color: #ff3c39
+2026-01-20 15:41:05,489 - Final Candle Limit: Top=170, Bottom=351
+2026-01-20 15:41:05,499 - Candle detected: Top=170, Bottom=351
+2026-01-20 15:41:05,565 - Saved debug_last_capture.png
+2026-01-20 15:41:53,200 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(972, 177)
+2026-01-20 15:41:53,373 - Device Pixel Ratio: 1.0
+2026-01-20 15:41:53,373 - Analyzing column at physical x=972, y=177, image height=914
+2026-01-20 15:41:53,374 - Detected BG Color: #f7f7f7
+2026-01-20 15:41:53,374 - Pixel at click (972, 177) is candle? True (Color: #ff3c39)
+2026-01-20 15:41:53,374 - Target Candle Color: #ff3c39
+2026-01-20 15:41:53,375 - Final Candle Limit: Top=173, Bottom=247
+2026-01-20 15:41:53,376 - Candle detected: Top=173, Bottom=247
+2026-01-20 15:41:53,437 - Saved debug_last_capture.png
+2026-01-20 15:44:14,846 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(975, 177)
+2026-01-20 15:44:14,998 - Device Pixel Ratio: 1.0
+2026-01-20 15:44:14,998 - Analyzing column at physical x=975, y=177, image height=914
+2026-01-20 15:44:14,998 - Detected BG Color: #f7f7f7
+2026-01-20 15:44:14,998 - Pixel at click (975, 177) is candle? False (Color: #f7f7f7)
+2026-01-20 15:44:14,998 - Target Candle Color: #ff3c39
+2026-01-20 15:44:15,000 - Final Candle Limit: Top=177, Bottom=241
+2026-01-20 15:44:15,002 - Candle detected: Top=177, Bottom=241
+2026-01-20 15:44:15,074 - Saved debug_last_capture.png
+2026-01-20 15:44:37,927 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1038, 168)
+2026-01-20 15:44:38,093 - Device Pixel Ratio: 1.0
+2026-01-20 15:44:38,094 - Analyzing column at physical x=1038, y=168, image height=914
+2026-01-20 15:44:38,094 - Detected BG Color: #f7f7f7
+2026-01-20 15:44:38,094 - Pixel at click (1038, 168) is candle? True (Color: #379637)
+2026-01-20 15:44:38,094 - Target Candle Color: #379637
+2026-01-20 15:44:38,096 - Final Candle Limit: Top=165, Bottom=275
+2026-01-20 15:44:38,096 - Candle detected: Top=165, Bottom=275
+2026-01-20 15:44:38,158 - Saved debug_last_capture.png
+2026-01-20 17:03:08,919 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(148, 116)
+2026-01-20 17:03:09,097 - Device Pixel Ratio: 1.0
+2026-01-20 17:03:09,097 - Analyzing column at physical x=148, y=116, image height=914
+2026-01-20 17:03:09,097 - Detected BG Color: #f7f7f7
+2026-01-20 17:03:09,098 - Pixel at click (148, 116) is candle? False (Color: #f0f0f0)
+2026-01-20 17:03:09,098 - Target Candle Color: #000000
+2026-01-20 17:03:09,099 - Potential label/noise detected (H=147). Attempting Smart Snap...
+2026-01-20 17:03:09,100 - Final Candle Limit: Top=1, Bottom=148
+2026-01-20 17:03:09,101 - Candle detected: Top=1, Bottom=148
+2026-01-20 17:03:09,162 - Saved debug_last_capture.png
+2026-01-20 17:03:18,259 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1110, 740)
+2026-01-20 17:03:18,435 - Device Pixel Ratio: 1.0
+2026-01-20 17:03:18,435 - Analyzing column at physical x=1110, y=740, image height=914
+2026-01-20 17:03:18,435 - Detected BG Color: #f7f7f7
+2026-01-20 17:03:18,436 - Pixel at click (1110, 740) is candle? False (Color: #f7f7f7)
+2026-01-20 17:03:18,436 - Target Candle Color: #ff3c39
+2026-01-20 17:03:18,437 - Final Candle Limit: Top=684, Bottom=740
+2026-01-20 17:03:18,439 - Candle detected: Top=684, Bottom=740
+2026-01-20 17:03:18,514 - Saved debug_last_capture.png
+2026-01-21 08:23:44,274 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(365, 252)
+2026-01-21 08:23:44,453 - Device Pixel Ratio: 1.0
+2026-01-21 08:23:44,453 - Analyzing column at physical x=365, y=252, image height=914
+2026-01-21 08:23:44,453 - Detected BG Color: #f7f7f7
+2026-01-21 08:23:44,453 - Pixel at click (365, 252) is candle? False (Color: #f7f7f7)
+2026-01-21 08:23:44,453 - Target Candle Color: #ff3c39
+2026-01-21 08:23:44,457 - Final Candle Limit: Top=248, Bottom=319
+2026-01-21 08:23:44,460 - Candle detected: Top=248, Bottom=319
+2026-01-21 08:23:44,570 - Saved debug_last_capture.png
+2026-01-21 08:23:48,645 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(972, 839)
+2026-01-21 08:23:48,815 - Device Pixel Ratio: 1.0
+2026-01-21 08:23:48,815 - Analyzing column at physical x=972, y=839, image height=914
+2026-01-21 08:23:48,815 - Detected BG Color: #f7f7f7
+2026-01-21 08:23:48,815 - Pixel at click (972, 839) is candle? False (Color: #f7f7f7)
+2026-01-21 08:23:48,815 - Target Candle Color: #ff3c39
+2026-01-21 08:23:48,817 - Final Candle Limit: Top=732, Bottom=844
+2026-01-21 08:23:48,818 - Candle detected: Top=732, Bottom=844
+2026-01-21 08:23:48,878 - Saved debug_last_capture.png
+2026-01-21 09:12:07,686 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(366, 255)
+2026-01-21 09:12:07,907 - Device Pixel Ratio: 1.0
+2026-01-21 09:12:07,907 - Analyzing column at physical x=366, y=255, image height=914
+2026-01-21 09:12:07,908 - Detected BG Color: #f7f7f7
+2026-01-21 09:12:07,908 - Pixel at click (366, 255) is candle? False (Color: #f7f7f7)
+2026-01-21 09:12:07,908 - Target Candle Color: #ff3c39
+2026-01-21 09:12:07,910 - Final Candle Limit: Top=248, Bottom=319
+2026-01-21 09:12:07,911 - Candle detected: Top=248, Bottom=319
+2026-01-21 09:12:07,997 - Saved debug_last_capture.png
+2026-01-21 09:12:12,165 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(970, 837)
+2026-01-21 09:12:12,341 - Device Pixel Ratio: 1.0
+2026-01-21 09:12:12,341 - Analyzing column at physical x=970, y=837, image height=914
+2026-01-21 09:12:12,341 - Detected BG Color: #f7f7f7
+2026-01-21 09:12:12,341 - Pixel at click (970, 837) is candle? False (Color: #f7f7f7)
+2026-01-21 09:12:12,342 - Target Candle Color: #ff3c39
+2026-01-21 09:12:12,344 - Final Candle Limit: Top=732, Bottom=844
+2026-01-21 09:12:12,349 - Candle detected: Top=732, Bottom=844
+2026-01-21 09:12:12,411 - Saved debug_last_capture.png
+2026-01-21 09:12:27,679 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(709, 154)
+2026-01-21 09:12:27,849 - Device Pixel Ratio: 1.0
+2026-01-21 09:12:27,850 - Analyzing column at physical x=709, y=154, image height=914
+2026-01-21 09:12:27,850 - Detected BG Color: #f7f7f7
+2026-01-21 09:12:27,850 - Pixel at click (709, 154) is candle? False (Color: #f7f7f7)
+2026-01-21 09:12:27,850 - Target Candle Color: #379637
+2026-01-21 09:12:27,853 - Final Candle Limit: Top=148, Bottom=247
+2026-01-21 09:12:27,868 - Candle detected: Top=148, Bottom=247
+2026-01-21 09:12:27,942 - Saved debug_last_capture.png
+2026-01-21 09:12:46,787 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1197, 327)
+2026-01-21 09:12:46,946 - Device Pixel Ratio: 1.0
+2026-01-21 09:12:46,946 - Analyzing column at physical x=1197, y=327, image height=914
+2026-01-21 09:12:46,946 - Detected BG Color: #f7f7f7
+2026-01-21 09:12:46,946 - Pixel at click (1197, 327) is candle? False (Color: #f7f7f7)
+2026-01-21 09:12:46,947 - Target Candle Color: #379637
+2026-01-21 09:12:46,952 - Final Candle Limit: Top=315, Bottom=493
+2026-01-21 09:12:46,972 - Candle detected: Top=315, Bottom=493
+2026-01-21 09:12:47,066 - Saved debug_last_capture.png
+2026-01-21 09:14:03,307 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(864, 619)
+2026-01-21 09:14:03,486 - Device Pixel Ratio: 1.0
+2026-01-21 09:14:03,486 - Analyzing column at physical x=864, y=619, image height=914
+2026-01-21 09:14:03,486 - Detected BG Color: #f7f7f7
+2026-01-21 09:14:03,486 - Pixel at click (864, 619) is candle? True (Color: #303030)
+2026-01-21 09:14:03,486 - Target Candle Color: #303030
+2026-01-21 09:14:03,488 - Potential label/noise detected (H=46). Attempting Smart Snap...
+2026-01-21 09:14:03,510 - Smart Snap Success: Switched to Candle H=60 (853, 913)
+2026-01-21 09:14:03,526 - Final Candle Limit: Top=853, Bottom=913
+2026-01-21 09:14:03,529 - Candle detected: Top=853, Bottom=913
+2026-01-21 09:14:03,603 - Saved debug_last_capture.png
+2026-01-21 09:14:08,032 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(864, 615)
+2026-01-21 09:14:08,185 - Device Pixel Ratio: 1.0
+2026-01-21 09:14:08,185 - Analyzing column at physical x=864, y=615, image height=914
+2026-01-21 09:14:08,185 - Detected BG Color: #f7f7f7
+2026-01-21 09:14:08,185 - Pixel at click (864, 615) is candle? True (Color: #303030)
+2026-01-21 09:14:08,185 - Target Candle Color: #303030
+2026-01-21 09:14:08,188 - Potential label/noise detected (H=46). Attempting Smart Snap...
+2026-01-21 09:14:08,198 - Smart Snap Success: Switched to Candle H=60 (853, 913)
+2026-01-21 09:14:08,198 - Final Candle Limit: Top=853, Bottom=913
+2026-01-21 09:14:08,206 - Candle detected: Top=853, Bottom=913
+2026-01-21 09:14:08,306 - Saved debug_last_capture.png
+2026-01-21 09:16:59,350 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(864, 619)
+2026-01-21 09:16:59,507 - Device Pixel Ratio: 1.0
+2026-01-21 09:16:59,508 - Analyzing column at physical x=864, y=619, image height=914
+2026-01-21 09:16:59,508 - Detected BG Color: #f7f7f7
+2026-01-21 09:16:59,509 - Pixel at click (864, 619) is candle? True (Color: #303030)
+2026-01-21 09:16:59,509 - Target Candle Color: #303030
+2026-01-21 09:16:59,512 - Potential label/noise detected (H=46). Attempting Smart Snap...
+2026-01-21 09:16:59,523 - Smart Snap: No better object found. Keeping original.
+2026-01-21 09:16:59,523 - Final Candle Limit: Top=576, Bottom=622
+2026-01-21 09:16:59,523 - Candle detected: Top=576, Bottom=622
+2026-01-21 09:16:59,611 - Saved debug_last_capture.png
+2026-01-21 09:17:04,955 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(955, 150)
+2026-01-21 09:17:05,136 - Device Pixel Ratio: 1.0
+2026-01-21 09:17:05,136 - Analyzing column at physical x=955, y=150, image height=914
+2026-01-21 09:17:05,136 - Detected BG Color: #f7f7f7
+2026-01-21 09:17:05,136 - Pixel at click (955, 150) is candle? True (Color: #379637)
+2026-01-21 09:17:05,136 - Target Candle Color: #379637
+2026-01-21 09:17:05,139 - Final Candle Limit: Top=148, Bottom=216
+2026-01-21 09:17:05,152 - Candle detected: Top=148, Bottom=216
+2026-01-21 09:17:05,215 - Saved debug_last_capture.png
+2026-01-21 09:46:32,984 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1264, 170)
+2026-01-21 09:46:33,154 - Device Pixel Ratio: 1.0
+2026-01-21 09:46:33,154 - Analyzing column at physical x=1264, y=170, image height=914
+2026-01-21 09:46:33,154 - Detected BG Color: #f7f7f7
+2026-01-21 09:46:33,154 - Pixel at click (1264, 170) is candle? False (Color: #f7f7f7)
+2026-01-21 09:46:33,154 - Target Candle Color: #ff3c39
+2026-01-21 09:46:33,156 - Final Candle Limit: Top=165, Bottom=304
+2026-01-21 09:46:33,158 - Candle detected: Top=165, Bottom=304
+2026-01-21 09:46:33,235 - Saved debug_last_capture.png
+2026-01-21 09:46:46,311 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1112, 180)
+2026-01-21 09:46:46,500 - Device Pixel Ratio: 1.0
+2026-01-21 09:46:46,500 - Analyzing column at physical x=1112, y=180, image height=914
+2026-01-21 09:46:46,500 - Detected BG Color: #f7f7f7
+2026-01-21 09:46:46,500 - Pixel at click (1112, 180) is candle? False (Color: #f7f7f7)
+2026-01-21 09:46:46,500 - Target Candle Color: #ff3c39
+2026-01-21 09:46:46,502 - Final Candle Limit: Top=173, Bottom=247
+2026-01-21 09:46:46,521 - Candle detected: Top=173, Bottom=247
+2026-01-21 09:46:46,591 - Saved debug_last_capture.png
+2026-01-21 09:47:04,822 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1015, 150)
+2026-01-21 09:47:04,967 - Device Pixel Ratio: 1.0
+2026-01-21 09:47:04,967 - Analyzing column at physical x=1015, y=150, image height=914
+2026-01-21 09:47:04,967 - Detected BG Color: #f7f7f7
+2026-01-21 09:47:04,967 - Pixel at click (1015, 150) is candle? False (Color: #f7f7f7)
+2026-01-21 09:47:04,967 - Target Candle Color: #ff3c39
+2026-01-21 09:47:04,970 - Final Candle Limit: Top=148, Bottom=237
+2026-01-21 09:47:04,970 - Candle detected: Top=148, Bottom=237
+2026-01-21 09:47:05,030 - Saved debug_last_capture.png
+2026-01-21 09:47:10,905 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1171, 171)
+2026-01-21 09:47:11,087 - Device Pixel Ratio: 1.0
+2026-01-21 09:47:11,087 - Analyzing column at physical x=1171, y=171, image height=914
+2026-01-21 09:47:11,087 - Detected BG Color: #f7f7f7
+2026-01-21 09:47:11,088 - Pixel at click (1171, 171) is candle? True (Color: #ff3c39)
+2026-01-21 09:47:11,088 - Target Candle Color: #ff3c39
+2026-01-21 09:47:11,090 - Final Candle Limit: Top=165, Bottom=308
+2026-01-21 09:47:11,090 - Candle detected: Top=165, Bottom=308
+2026-01-21 09:47:11,154 - Saved debug_last_capture.png
+2026-01-21 09:47:21,244 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1012, 153)
+2026-01-21 09:47:21,403 - Device Pixel Ratio: 1.0
+2026-01-21 09:47:21,403 - Analyzing column at physical x=1012, y=153, image height=914
+2026-01-21 09:47:21,403 - Detected BG Color: #f7f7f7
+2026-01-21 09:47:21,403 - Pixel at click (1012, 153) is candle? False (Color: #f7f7f7)
+2026-01-21 09:47:21,403 - Target Candle Color: #ff3c39
+2026-01-21 09:47:21,406 - Final Candle Limit: Top=148, Bottom=333
+2026-01-21 09:47:21,501 - Candle detected: Top=148, Bottom=333
+2026-01-21 09:47:21,559 - Saved debug_last_capture.png
+2026-01-21 09:47:30,560 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1015, 152)
+2026-01-21 09:47:30,715 - Device Pixel Ratio: 1.0
+2026-01-21 09:47:30,715 - Analyzing column at physical x=1015, y=152, image height=914
+2026-01-21 09:47:30,715 - Detected BG Color: #f7f7f7
+2026-01-21 09:47:30,715 - Pixel at click (1015, 152) is candle? False (Color: #f7f7f7)
+2026-01-21 09:47:30,716 - Target Candle Color: #ff3c39
+2026-01-21 09:47:30,718 - Final Candle Limit: Top=148, Bottom=237
+2026-01-21 09:47:30,729 - Candle detected: Top=148, Bottom=237
+2026-01-21 09:47:30,785 - Saved debug_last_capture.png
+2026-01-21 09:47:50,361 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(791, 153)
+2026-01-21 09:47:50,497 - Device Pixel Ratio: 1.0
+2026-01-21 09:47:50,497 - Analyzing column at physical x=791, y=153, image height=914
+2026-01-21 09:47:50,497 - Detected BG Color: #f7f7f7
+2026-01-21 09:47:50,498 - Pixel at click (791, 153) is candle? False (Color: #f7f7f7)
+2026-01-21 09:47:50,498 - Target Candle Color: #379637
+2026-01-21 09:47:50,509 - Final Candle Limit: Top=72, Bottom=236
+2026-01-21 09:47:50,534 - Candle detected: Top=72, Bottom=236
+2026-01-21 09:47:50,598 - Saved debug_last_capture.png
+2026-01-21 09:48:01,192 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1115, 154)
+2026-01-21 09:48:01,341 - Device Pixel Ratio: 1.0
+2026-01-21 09:48:01,341 - Analyzing column at physical x=1115, y=154, image height=914
+2026-01-21 09:48:01,341 - Detected BG Color: #f7f7f7
+2026-01-21 09:48:01,342 - Pixel at click (1115, 154) is candle? False (Color: #f7f7f7)
+2026-01-21 09:48:01,342 - Target Candle Color: #379637
+2026-01-21 09:48:01,344 - Final Candle Limit: Top=148, Bottom=216
+2026-01-21 09:48:01,346 - Candle detected: Top=148, Bottom=216
+2026-01-21 09:48:01,407 - Saved debug_last_capture.png
+2026-01-21 09:48:17,386 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(893, 156)
+2026-01-21 09:48:17,534 - Device Pixel Ratio: 1.0
+2026-01-21 09:48:17,534 - Analyzing column at physical x=893, y=156, image height=914
+2026-01-21 09:48:17,534 - Detected BG Color: #f7f7f7
+2026-01-21 09:48:17,534 - Pixel at click (893, 156) is candle? False (Color: #f7f7f7)
+2026-01-21 09:48:17,534 - Target Candle Color: #379637
+2026-01-21 09:48:17,537 - Final Candle Limit: Top=148, Bottom=247
+2026-01-21 09:48:17,553 - Candle detected: Top=148, Bottom=247
+2026-01-21 09:48:17,617 - Saved debug_last_capture.png
+2026-01-21 09:50:39,331 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(491, 812)
+2026-01-21 09:50:39,474 - Device Pixel Ratio: 1.0
+2026-01-21 09:50:39,475 - Analyzing column at physical x=491, y=812, image height=914
+2026-01-21 09:50:39,475 - Detected BG Color: #f7f7f7
+2026-01-21 09:50:39,475 - Pixel at click (491, 812) is candle? False (Color: #f7f7f7)
+2026-01-21 09:50:39,475 - Target Candle Color: #ff3c39
+2026-01-21 09:50:39,477 - Final Candle Limit: Top=697, Bottom=814
+2026-01-21 09:50:39,493 - Candle detected: Top=697, Bottom=814
+2026-01-21 09:50:39,568 - Saved debug_last_capture.png
+2026-01-21 09:50:46,835 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(494, 810)
+2026-01-21 09:50:47,007 - Device Pixel Ratio: 1.0
+2026-01-21 09:50:47,007 - Analyzing column at physical x=494, y=810, image height=914
+2026-01-21 09:50:47,007 - Detected BG Color: #f7f7f7
+2026-01-21 09:50:47,007 - Pixel at click (494, 810) is candle? False (Color: #f7f7f7)
+2026-01-21 09:50:47,007 - Target Candle Color: #ff3c39
+2026-01-21 09:50:47,010 - Final Candle Limit: Top=697, Bottom=814
+2026-01-21 09:50:47,011 - Candle detected: Top=697, Bottom=814
+2026-01-21 09:50:47,075 - Saved debug_last_capture.png
+2026-01-21 09:50:55,282 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(494, 812)
+2026-01-21 09:50:55,468 - Device Pixel Ratio: 1.0
+2026-01-21 09:50:55,468 - Analyzing column at physical x=494, y=812, image height=914
+2026-01-21 09:50:55,468 - Detected BG Color: #f7f7f7
+2026-01-21 09:50:55,468 - Pixel at click (494, 812) is candle? False (Color: #f7f7f7)
+2026-01-21 09:50:55,469 - Target Candle Color: #ff3c39
+2026-01-21 09:50:55,471 - Final Candle Limit: Top=697, Bottom=814
+2026-01-21 09:50:55,477 - Candle detected: Top=697, Bottom=814
+2026-01-21 09:50:55,543 - Saved debug_last_capture.png
+2026-01-21 09:56:35,313 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(893, 148)
+2026-01-21 09:56:35,482 - Device Pixel Ratio: 1.0
+2026-01-21 09:56:35,482 - Analyzing column at physical x=893, y=148, image height=914
+2026-01-21 09:56:35,482 - Detected BG Color: #f7f7f7
+2026-01-21 09:56:35,482 - Pixel at click (893, 148) is candle? False (Color: #f7f7f7)
+2026-01-21 09:56:35,482 - Target Candle Color: #379637
+2026-01-21 09:56:35,486 - Final Candle Limit: Top=148, Bottom=247
+2026-01-21 09:56:35,489 - Candle detected: Top=148, Bottom=247
+2026-01-21 09:56:35,570 - Saved debug_last_capture.png
+2026-01-21 09:57:01,770 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(554, 453)
+2026-01-21 09:57:01,999 - Device Pixel Ratio: 1.0
+2026-01-21 09:57:01,999 - Analyzing column at physical x=554, y=453, image height=914
+2026-01-21 09:57:02,000 - Detected BG Color: #f7f7f7
+2026-01-21 09:57:02,000 - Pixel at click (554, 453) is candle? False (Color: #f7f7f7)
+2026-01-21 09:57:02,000 - Target Candle Color: #ff3c39
+2026-01-21 09:57:02,002 - Final Candle Limit: Top=444, Bottom=549
+2026-01-21 09:57:02,002 - Candle detected: Top=444, Bottom=549
+2026-01-21 09:57:02,057 - Saved debug_last_capture.png
+2026-01-21 09:57:10,033 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(556, 450)
+2026-01-21 09:57:10,189 - Device Pixel Ratio: 1.0
+2026-01-21 09:57:10,189 - Analyzing column at physical x=556, y=450, image height=914
+2026-01-21 09:57:10,189 - Detected BG Color: #f7f7f7
+2026-01-21 09:57:10,189 - Pixel at click (556, 450) is candle? False (Color: #f7f7f7)
+2026-01-21 09:57:10,189 - Target Candle Color: #ff3c39
+2026-01-21 09:57:10,191 - Final Candle Limit: Top=444, Bottom=549
+2026-01-21 09:57:10,192 - Candle detected: Top=444, Bottom=549
+2026-01-21 09:57:10,257 - Saved debug_last_capture.png
+2026-01-21 10:01:31,678 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(744, 156)
+2026-01-21 10:01:31,842 - Device Pixel Ratio: 1.0
+2026-01-21 10:01:31,842 - Analyzing column at physical x=744, y=156, image height=914
+2026-01-21 10:01:31,843 - Detected BG Color: #f7f7f7
+2026-01-21 10:01:31,843 - Pixel at click (744, 156) is candle? True (Color: #379637)
+2026-01-21 10:01:31,843 - Target Candle Color: #379637
+2026-01-21 10:01:31,846 - Final Candle Limit: Top=148, Bottom=247
+2026-01-21 10:01:31,851 - Candle detected: Top=148, Bottom=247
+2026-01-21 10:01:31,929 - Saved debug_last_capture.png
+2026-01-21 10:01:42,631 - Updated Global Calibration from Manual Input: {'scale': -0.16161616161616163, 'ref_y': 148, 'ref_price': 3198.0}
+2026-01-21 10:01:51,941 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(628, 835)
+2026-01-21 10:01:52,121 - Device Pixel Ratio: 1.0
+2026-01-21 10:01:52,122 - Analyzing column at physical x=628, y=835, image height=914
+2026-01-21 10:01:52,122 - Detected BG Color: #f7f7f7
+2026-01-21 10:01:52,122 - Pixel at click (628, 835) is candle? True (Color: #303030)
+2026-01-21 10:01:52,122 - Target Candle Color: #303030
+2026-01-21 10:01:52,125 - Potential label/noise detected (H=161). Attempting Smart Snap...
+2026-01-21 10:01:52,180 - Smart Snap: No better object found. Keeping original.
+2026-01-21 10:01:52,181 - Final Candle Limit: Top=752, Bottom=913
+2026-01-21 10:01:52,182 - Candle detected: Top=752, Bottom=913
+2026-01-21 10:01:52,255 - Saved debug_last_capture.png
+2026-01-21 10:01:52,255 - Applied calibration to new drawing. PA=3074.3636363636365, PB=3100.3838383838383
+2026-01-21 10:01:56,969 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(409, 450)
+2026-01-21 10:01:57,124 - Device Pixel Ratio: 1.0
+2026-01-21 10:01:57,124 - Analyzing column at physical x=409, y=450, image height=914
+2026-01-21 10:01:57,124 - Detected BG Color: #f7f7f7
+2026-01-21 10:01:57,124 - Pixel at click (409, 450) is candle? False (Color: #f7f7f7)
+2026-01-21 10:01:57,125 - Target Candle Color: #ff3c39
+2026-01-21 10:01:57,127 - Final Candle Limit: Top=444, Bottom=549
+2026-01-21 10:01:57,130 - Candle detected: Top=444, Bottom=549
+2026-01-21 10:01:57,195 - Saved debug_last_capture.png
+2026-01-21 10:01:57,195 - Applied calibration to new drawing. PA=3150.161616161616, PB=3133.191919191919
+2026-01-21 10:02:09,165 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1133, 180)
+2026-01-21 10:02:09,310 - Device Pixel Ratio: 1.0
+2026-01-21 10:02:09,310 - Analyzing column at physical x=1133, y=180, image height=914
+2026-01-21 10:02:09,311 - Detected BG Color: #f7f7f7
+2026-01-21 10:02:09,311 - Pixel at click (1133, 180) is candle? True (Color: #ff3c39)
+2026-01-21 10:02:09,311 - Target Candle Color: #ff3c39
+2026-01-21 10:02:09,314 - Final Candle Limit: Top=173, Bottom=376
+2026-01-21 10:02:09,315 - Candle detected: Top=173, Bottom=376
+2026-01-21 10:02:09,376 - Saved debug_last_capture.png
+2026-01-21 10:02:09,376 - Applied calibration to new drawing. PA=3193.959595959596, PB=3161.151515151515
+2026-01-21 10:02:29,110 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(334, 839)
+2026-01-21 10:02:29,311 - Device Pixel Ratio: 1.0
+2026-01-21 10:02:29,311 - Analyzing column at physical x=334, y=839, image height=914
+2026-01-21 10:02:29,312 - Detected BG Color: #f7f7f7
+2026-01-21 10:02:29,312 - Pixel at click (334, 839) is candle? False (Color: #f7f7f7)
+2026-01-21 10:02:29,312 - Target Candle Color: #ff3c39
+2026-01-21 10:02:29,315 - Final Candle Limit: Top=744, Bottom=905
+2026-01-21 10:02:29,315 - Candle detected: Top=744, Bottom=905
+2026-01-21 10:02:29,374 - Saved debug_last_capture.png
+2026-01-21 10:02:29,374 - Applied calibration to new drawing. PA=3075.656565656566, PB=3101.6767676767677
+2026-01-21 10:02:34,937 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(333, 835)
+2026-01-21 10:02:35,103 - Device Pixel Ratio: 1.0
+2026-01-21 10:02:35,103 - Analyzing column at physical x=333, y=835, image height=914
+2026-01-21 10:02:35,103 - Detected BG Color: #f7f7f7
+2026-01-21 10:02:35,103 - Pixel at click (333, 835) is candle? True (Color: #ff3c39)
+2026-01-21 10:02:35,104 - Target Candle Color: #ff3c39
+2026-01-21 10:02:35,106 - Final Candle Limit: Top=744, Bottom=904
+2026-01-21 10:02:35,125 - Candle detected: Top=744, Bottom=904
+2026-01-21 10:02:35,193 - Saved debug_last_capture.png
+2026-01-21 10:02:35,193 - Applied calibration to new drawing. PA=3075.818181818182, PB=3101.6767676767677
+2026-01-21 10:02:39,865 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(335, 801)
+2026-01-21 10:02:40,031 - Device Pixel Ratio: 1.0
+2026-01-21 10:02:40,031 - Analyzing column at physical x=335, y=801, image height=914
+2026-01-21 10:02:40,031 - Detected BG Color: #f7f7f7
+2026-01-21 10:02:40,031 - Pixel at click (335, 801) is candle? False (Color: #f7f7f7)
+2026-01-21 10:02:40,031 - Target Candle Color: #ff3c39
+2026-01-21 10:02:40,034 - Final Candle Limit: Top=731, Bottom=904
+2026-01-21 10:02:40,089 - Candle detected: Top=731, Bottom=904
+2026-01-21 10:02:40,151 - Saved debug_last_capture.png
+2026-01-21 10:02:40,151 - Applied calibration to new drawing. PA=3103.777777777778, PB=3075.818181818182
+2026-01-21 10:02:46,718 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(331, 829)
+2026-01-21 10:02:46,872 - Device Pixel Ratio: 1.0
+2026-01-21 10:02:46,873 - Analyzing column at physical x=331, y=829, image height=914
+2026-01-21 10:02:46,873 - Detected BG Color: #f7f7f7
+2026-01-21 10:02:46,873 - Pixel at click (331, 829) is candle? False (Color: #f7f7f7)
+2026-01-21 10:02:46,873 - Target Candle Color: #ff3c39
+2026-01-21 10:02:46,875 - Final Candle Limit: Top=744, Bottom=896
+2026-01-21 10:02:46,881 - Candle detected: Top=744, Bottom=896
+2026-01-21 10:02:46,947 - Saved debug_last_capture.png
+2026-01-21 10:02:46,947 - Applied calibration to new drawing. PA=3077.1111111111113, PB=3101.6767676767677
+2026-01-21 10:02:52,377 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(592, 838)
+2026-01-21 10:02:52,528 - Device Pixel Ratio: 1.0
+2026-01-21 10:02:52,528 - Analyzing column at physical x=592, y=838, image height=914
+2026-01-21 10:02:52,528 - Detected BG Color: #f7f7f7
+2026-01-21 10:02:52,529 - Pixel at click (592, 838) is candle? False (Color: #f7f7f7)
+2026-01-21 10:02:52,529 - Target Candle Color: #ff3c39
+2026-01-21 10:02:52,531 - Final Candle Limit: Top=744, Bottom=905
+2026-01-21 10:02:52,556 - Candle detected: Top=744, Bottom=905
+2026-01-21 10:02:52,642 - Saved debug_last_capture.png
+2026-01-21 10:02:52,642 - Applied calibration to new drawing. PA=3075.656565656566, PB=3101.6767676767677
+2026-01-21 10:02:57,147 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(827, 359)
+2026-01-21 10:02:57,327 - Device Pixel Ratio: 1.0
+2026-01-21 10:02:57,327 - Analyzing column at physical x=827, y=359, image height=914
+2026-01-21 10:02:57,327 - Detected BG Color: #f7f7f7
+2026-01-21 10:02:57,327 - Pixel at click (827, 359) is candle? True (Color: #ff3c39)
+2026-01-21 10:02:57,334 - Target Candle Color: #ff3c39
+2026-01-21 10:02:57,337 - Final Candle Limit: Top=354, Bottom=459
+2026-01-21 10:02:57,342 - Candle detected: Top=354, Bottom=459
+2026-01-21 10:02:57,409 - Saved debug_last_capture.png
+2026-01-21 10:02:57,409 - Applied calibration to new drawing. PA=3164.7070707070707, PB=3147.7373737373737
+2026-01-21 10:03:17,648 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(618, 421)
+2026-01-21 10:03:17,824 - Device Pixel Ratio: 1.0
+2026-01-21 10:03:17,824 - Analyzing column at physical x=618, y=421, image height=914
+2026-01-21 10:03:17,825 - Detected BG Color: #f7f7f7
+2026-01-21 10:03:17,825 - Pixel at click (618, 421) is candle? True (Color: #ff3c39)
+2026-01-21 10:03:17,825 - Target Candle Color: #ff3c39
+2026-01-21 10:03:17,828 - Final Candle Limit: Top=412, Bottom=505
+2026-01-21 10:03:17,838 - Candle detected: Top=412, Bottom=505
+2026-01-21 10:03:17,912 - Saved debug_last_capture.png
+2026-01-21 10:03:17,913 - Applied calibration to new drawing. PA=3155.3333333333335, PB=3140.3030303030305
+2026-01-21 10:04:20,184 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1304, 237)
+2026-01-21 10:04:20,346 - Device Pixel Ratio: 1.0
+2026-01-21 10:04:20,347 - Analyzing column at physical x=1304, y=237, image height=914
+2026-01-21 10:04:20,347 - Detected BG Color: #f7f7f7
+2026-01-21 10:04:20,347 - Pixel at click (1304, 237) is candle? False (Color: #f7f7f7)
+2026-01-21 10:04:20,347 - Target Candle Color: #379637
+2026-01-21 10:04:20,349 - Final Candle Limit: Top=229, Bottom=292
+2026-01-21 10:04:20,351 - Candle detected: Top=229, Bottom=292
+2026-01-21 10:04:20,417 - Saved debug_last_capture.png
+2026-01-21 10:04:20,417 - Applied calibration to new drawing. PA=3184.909090909091, PB=3174.7272727272725
+2026-01-21 10:04:29,538 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1145, 474)
+2026-01-21 10:04:29,687 - Device Pixel Ratio: 1.0
+2026-01-21 10:04:29,687 - Analyzing column at physical x=1145, y=474, image height=914
+2026-01-21 10:04:29,687 - Detected BG Color: #f7f7f7
+2026-01-21 10:04:29,687 - Pixel at click (1145, 474) is candle? True (Color: #ff3c39)
+2026-01-21 10:04:29,687 - Target Candle Color: #ff3c39
+2026-01-21 10:04:29,690 - Final Candle Limit: Top=396, Bottom=477
+2026-01-21 10:04:29,691 - Candle detected: Top=396, Bottom=477
+2026-01-21 10:04:29,751 - Saved debug_last_capture.png
+2026-01-21 10:04:29,751 - Applied calibration to new drawing. PA=3144.8282828282827, PB=3157.9191919191917
+2026-01-21 10:04:42,487 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(832, 219)
+2026-01-21 10:04:42,657 - Device Pixel Ratio: 1.0
+2026-01-21 10:04:42,658 - Analyzing column at physical x=832, y=219, image height=914
+2026-01-21 10:04:42,658 - Detected BG Color: #f7f7f7
+2026-01-21 10:04:42,658 - Pixel at click (832, 219) is candle? False (Color: #f7f7f7)
+2026-01-21 10:04:42,658 - Target Candle Color: #379637
+2026-01-21 10:04:42,660 - Final Candle Limit: Top=219, Bottom=281
+2026-01-21 10:04:42,662 - Candle detected: Top=219, Bottom=281
+2026-01-21 10:04:42,725 - Saved debug_last_capture.png
+2026-01-21 10:04:42,725 - Applied calibration to new drawing. PA=3186.5252525252527, PB=3176.5050505050503
+2026-01-21 10:04:47,608 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(827, 214)
+2026-01-21 10:04:47,780 - Device Pixel Ratio: 1.0
+2026-01-21 10:04:47,780 - Analyzing column at physical x=827, y=214, image height=914
+2026-01-21 10:04:47,780 - Detected BG Color: #f7f7f7
+2026-01-21 10:04:47,780 - Pixel at click (827, 214) is candle? True (Color: #379637)
+2026-01-21 10:04:47,780 - Target Candle Color: #379637
+2026-01-21 10:04:47,782 - Final Candle Limit: Top=210, Bottom=297
+2026-01-21 10:04:47,788 - Candle detected: Top=210, Bottom=297
+2026-01-21 10:04:47,854 - Saved debug_last_capture.png
+2026-01-21 10:04:47,854 - Applied calibration to new drawing. PA=3187.979797979798, PB=3173.9191919191917
+2026-01-21 10:06:26,299 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1190, 239)
+2026-01-21 10:06:26,498 - Device Pixel Ratio: 1.0
+2026-01-21 10:06:26,498 - Analyzing column at physical x=1190, y=239, image height=914
+2026-01-21 10:06:26,499 - Detected BG Color: #f7f7f7
+2026-01-21 10:06:26,499 - Pixel at click (1190, 239) is candle? False (Color: #f7f7f7)
+2026-01-21 10:06:26,499 - Target Candle Color: #ff3c39
+2026-01-21 10:06:26,502 - Final Candle Limit: Top=232, Bottom=410
+2026-01-21 10:06:26,507 - Candle detected: Top=232, Bottom=410
+2026-01-21 10:06:26,580 - Saved debug_last_capture.png
+2026-01-21 10:06:26,580 - Applied calibration to new drawing. PA=3184.4242424242425, PB=3155.656565656566
+2026-01-21 10:06:31,581 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(830, 218)
+2026-01-21 10:06:31,747 - Device Pixel Ratio: 1.0
+2026-01-21 10:06:31,748 - Analyzing column at physical x=830, y=218, image height=914
+2026-01-21 10:06:31,748 - Detected BG Color: #f7f7f7
+2026-01-21 10:06:31,748 - Pixel at click (830, 218) is candle? False (Color: #f7f7f7)
+2026-01-21 10:06:31,748 - Target Candle Color: #379637
+2026-01-21 10:06:31,751 - Final Candle Limit: Top=210, Bottom=297
+2026-01-21 10:06:31,760 - Candle detected: Top=210, Bottom=297
+2026-01-21 10:06:31,831 - Saved debug_last_capture.png
+2026-01-21 10:06:31,831 - Applied calibration to new drawing. PA=3187.979797979798, PB=3173.9191919191917

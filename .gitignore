@@ -1,0 +1,11 @@
+
+__pycache__/
+dist/
+build/
+*.exe
+*.spec
+*.log
+temp_*.png
+debug_*.png
+session_state.json
+presets.json
