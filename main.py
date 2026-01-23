@@ -3,6 +3,7 @@ import sys
 from PySide6.QtWidgets import QApplication
 from ui_toolbar import BoshenToolbar
 from overlay import Overlay
+from ui_analysis import AnalysisDialog
 
 def main():
     app = QApplication(sys.argv)
@@ -57,7 +58,13 @@ def main():
     
     # Connect signals
     def on_tool_selected(tool_name):
-        overlay.set_tool(tool_name)
+        if tool_name == "量":
+            # Open Analysis Dialog with SNAPSHOT DATA
+            dialog = AnalysisDialog(overlay.analysis_data, parent=toolbar)
+            dialog.exec()
+            # Dont set tool to "量", just keep previous or None
+        else:
+            overlay.set_tool(tool_name)
         
     toolbar.tool_selected.connect(on_tool_selected)
     
@@ -65,6 +72,8 @@ def main():
     toolbar.close_requested.connect(app.quit)
     toolbar.color_changed.connect(overlay.set_line_color)
     toolbar.fast_mode_toggled.connect(overlay.toggle_fast_mode)
+    toolbar.timeframe_changed.connect(overlay.set_timeframe)
+    toolbar.save_requested.connect(overlay.save_snapshot)
     
     # Optional: Position toolbar initially
     toolbar.move(100, 100)

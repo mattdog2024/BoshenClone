@@ -1628,3 +1628,21 @@ NameError: cannot access free variable 'matches_target' where it is not associat
 2026-01-21 10:06:31,760 - Candle detected: Top=210, Bottom=297
 2026-01-21 10:06:31,831 - Saved debug_last_capture.png
 2026-01-21 10:06:31,831 - Applied calibration to new drawing. PA=3187.979797979798, PB=3173.9191919191917
+2026-01-23 10:14:31,637 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(904, 839)
+2026-01-23 10:14:31,783 - Device Pixel Ratio: 1.0
+2026-01-23 10:14:31,783 - Analyzing column at physical x=904, y=839, image height=914
+2026-01-23 10:14:31,784 - Detected BG Color: #f7f7f7
+2026-01-23 10:14:31,784 - Pixel at click (904, 839) is candle? True (Color: #ff3c39)
+2026-01-23 10:14:31,784 - Target Candle Color: #ff3c39
+2026-01-23 10:14:31,786 - Final Candle Limit: Top=713, Bottom=844
+2026-01-23 10:14:31,817 - Candle detected: Top=713, Bottom=844
+2026-01-23 10:14:31,883 - Saved debug_last_capture.png
+2026-01-23 10:14:38,399 - Auto measure triggered at logical pos: PySide6.QtCore.QPoint(1187, 618)
+2026-01-23 10:14:38,593 - Device Pixel Ratio: 1.0
+2026-01-23 10:14:38,593 - Analyzing column at physical x=1187, y=618, image height=914
+2026-01-23 10:14:38,593 - Detected BG Color: #f7f7f7
+2026-01-23 10:14:38,594 - Pixel at click (1187, 618) is candle? False (Color: #f7f7f7)
+2026-01-23 10:14:38,594 - Target Candle Color: #ff3c39
+2026-01-23 10:14:38,598 - Final Candle Limit: Top=565, Bottom=621
+2026-01-23 10:14:38,611 - Candle detected: Top=565, Bottom=621
+2026-01-23 10:14:38,681 - Saved debug_last_capture.png

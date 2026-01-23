@@ -33,6 +33,8 @@ class BoshenToolbar(DraggableWidget):
     close_requested = Signal()
     color_changed = Signal(QColor) # Emits the new color
     fast_mode_toggled = Signal(bool) # Emits whether fast mode is on/off
+    timeframe_changed = Signal(str) # Emits the selected timeframe name
+    save_requested = Signal() # Emits when "Save" button is clicked
 
     def __init__(self):
         super().__init__()
@@ -112,9 +114,18 @@ class BoshenToolbar(DraggableWidget):
         row1.addWidget(self.color_btn)
         
         # Dropdown
-        combo = QComboBox()
-        combo.setFixedWidth(20)
-        row1.addWidget(combo)
+        self.combo = QComboBox() # Save reference to access later if needed
+        self.combo.addItems(["日线", "4小时", "1小时"])
+        self.combo.setFixedWidth(60) # Increased width to fit text
+        self.combo.currentTextChanged.connect(self.timeframe_changed.emit)
+        row1.addWidget(self.combo)
+
+        # "Save" Button (Snapshot)
+        save_btn = QToolButton()
+        save_btn.setText("存") # Store/Save
+        save_btn.setToolTip("保存当前屏幕线段到选定时区 (Save current drawings to selected Timeframe)")
+        save_btn.clicked.connect(self.save_requested.emit)
+        row1.addWidget(save_btn)
         
         # Help and Close
         help_btn = QToolButton()

@@ -58,6 +58,12 @@ class Overlay(QWidget):
         
         # Strategy UI Removed per user request
         self.current_timeframe = "日线" # Default to daily or None
+        self.analysis_data = {
+            '日线': [],
+            '4小时': [],
+            '1小时': []
+        }
+        self.load_analysis_data()
         
         # Interaction state
         self.dragging_handle = None 
@@ -75,6 +81,10 @@ class Overlay(QWidget):
     def toggle_fast_mode(self, enabled):
         self.fast_mode = enabled
         print(f"Fast Mode set to: {enabled}")
+
+    def set_timeframe(self, timeframe_name):
+        self.current_timeframe = timeframe_name
+        print(f"Timeframe set to: {self.current_timeframe}")
 
     def auto_measure(self, pos):
         """
@@ -483,7 +493,9 @@ class Overlay(QWidget):
                 'type': 'boshen_single',
                 'start': start_p,
                 'end': end_p,
-                'timeframe': self.current_timeframe # Tag with current timeframe
+                # 'timeframe': ... we don't strictly need to tag them anymore if we use snapshots, 
+                # but might be good for visual debugging.
+                'timeframe': self.current_timeframe 
             }
             
             # Apply global calibration if available
@@ -499,6 +511,55 @@ class Overlay(QWidget):
         finally:
             self.setVisible(True)
             self.update()
+
+    def save_snapshot(self):
+        """
+        Saves the CURRENT drawings to the Analysis Bucket for the current timeframe.
+        Overwrites existing data for that timeframe.
+        """
+        import copy
+        current_tf = self.current_timeframe
+        
+        snapshot = []
+        for d in self.drawings:
+            # We copy specific fields to be safe and independent
+            new_d = {
+                'price_a': d.get('price_a', 0.0),
+                'price_b': d.get('price_b', 0.0),
+                'timeframe': current_tf, # Force tag to the slot we are saving into
+            }
+            snapshot.append(new_d)
+            
+        self.analysis_data[current_tf] = snapshot
+        self.save_analysis_data_to_file()
+        
+        # Feedback
+        print(f"SNAPSHOT SAVED: {len(snapshot)} drawings saved to '{current_tf}' slot.")
+        # Removed QMessageBox to avoid crash.
+
+    def load_analysis_data(self):
+        import json
+        import os
+        try:
+            if os.path.exists("analysis_data.json"):
+                with open("analysis_data.json", "r", encoding='utf-8') as f:
+                    data = json.load(f)
+                    # Merge with default structure to ensure all keys exist
+                    for key in self.analysis_data:
+                        if key in data:
+                            self.analysis_data[key] = data[key]
+                    print("Loaded analysis data from file.")
+        except Exception as e:
+            print(f"Error loading analysis data: {e}")
+
+    def save_analysis_data_to_file(self):
+        import json
+        try:
+            with open("analysis_data.json", "w", encoding='utf-8') as f:
+                json.dump(self.analysis_data, f, indent=4, ensure_ascii=False)
+            print("Saved analysis data to file.")
+        except Exception as e:
+             print(f"Error saving analysis data: {e}")
 
     def apply_calibration(self, drawing):
         """
@@ -567,11 +628,9 @@ class Overlay(QWidget):
         self.current_tool = tool_name
         self.dragging_handle = None 
         
-        # Auto-Calibration Trigger for K-Line
-        if tool_name == "k线":
-             import logging
-             logging.info("Triggering Auto-Calibration for K-Line Tool...")
-             self.auto_calibrate_axis()
+        # User requested to REMOVE auto-calibration on K-line selection to avoid lag.
+        # Calibration should only happen via "Auto" button (ocr_selection).
+        # if tool_name == "k线": ... [Removed]
              
         if tool_name:
             self.setCursor(Qt.CrossCursor)
