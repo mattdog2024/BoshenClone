@@ -84,7 +84,74 @@ class Overlay(QWidget):
 
     def set_timeframe(self, timeframe_name):
         self.current_timeframe = timeframe_name
-        print(f"Timeframe set to: {self.current_timeframe}")
+        print(f"Switching Timeframe to: {self.current_timeframe}")
+        
+        # Load data for this timeframe
+        data = self.analysis_data.get(timeframe_name)
+        
+        # Reset current state
+        self.drawings = []
+        self.global_calibration = None
+        
+        if not data:
+            self.update()
+            return
+            
+        # Check format
+        calibration_data = None
+        drawings_data = []
+        
+        if isinstance(data, list):
+            # Legacy format (List of dicts)
+            drawings_data = data
+        elif isinstance(data, dict):
+            # New format
+            calibration_data = data.get('calibration')
+            drawings_data = data.get('drawings', [])
+            
+        # Restore Calibration
+        if calibration_data:
+            self.global_calibration = calibration_data
+            print(f"Restored Calibration: {self.global_calibration}")
+            
+        # Restore Drawings
+        for d in drawings_data:
+            try:
+                # If we have saved coords, use them
+                if 'start_x' in d and 'start_y' in d:
+                    start_p = QPoint(d['start_x'], d['start_y'])
+                    end_p = QPoint(d['end_x'], d['end_y'])
+                else:
+                    # Fallback if we only have prices and calibration (Legacy restore attempt)
+                    if self.global_calibration and 'price_a' in d:
+                        scale = self.global_calibration['scale']
+                        ref_y = self.global_calibration['ref_y']
+                        ref_price = self.global_calibration['ref_price']
+                        
+                        ya = ref_y + (d['price_a'] - ref_price) / scale
+                        yb = ref_y + (d['price_b'] - ref_price) / scale
+                        
+                        # Use center of screen for X
+                        cx = self.width() // 2
+                        start_p = QPoint(cx, int(ya))
+                        end_p = QPoint(cx, int(yb))
+                    else:
+                        continue # Cannot restore
+                        
+                new_d = {
+                    'type': 'boshen_single',
+                    'start': start_p,
+                    'end': end_p,
+                    'price_a': d.get('price_a', 0.0),
+                    'price_b': d.get('price_b', 0.0),
+                    'timeframe': timeframe_name,
+                    'scale': self.global_calibration['scale'] if self.global_calibration else 1.0
+                }
+                self.drawings.append(new_d)
+            except Exception as e:
+                print(f"Error restoring drawing: {e}")
+                
+        self.update()
 
     def auto_measure(self, pos):
         """
@@ -514,28 +581,34 @@ class Overlay(QWidget):
 
     def save_snapshot(self):
         """
-        Saves the CURRENT drawings to the Analysis Bucket for the current timeframe.
-        Overwrites existing data for that timeframe.
+        Saves the CURRENT drawings AND Calibration to the Analysis Bucket.
         """
-        import copy
         current_tf = self.current_timeframe
         
         snapshot = []
         for d in self.drawings:
-            # We copy specific fields to be safe and independent
+            # Save prices AND coords
             new_d = {
                 'price_a': d.get('price_a', 0.0),
                 'price_b': d.get('price_b', 0.0),
-                'timeframe': current_tf, # Force tag to the slot we are saving into
+                'timeframe': current_tf,
+                'start_x': d['start'].x(),
+                'start_y': d['start'].y(),
+                'end_x': d['end'].x(),
+                'end_y': d['end'].y()
             }
             snapshot.append(new_d)
             
-        self.analysis_data[current_tf] = snapshot
+        data_packet = {
+            'drawings': snapshot,
+            'calibration': self.global_calibration
+        }
+
+        self.analysis_data[current_tf] = data_packet
         self.save_analysis_data_to_file()
         
         # Feedback
-        print(f"SNAPSHOT SAVED: {len(snapshot)} drawings saved to '{current_tf}' slot.")
-        # Removed QMessageBox to avoid crash.
+        print(f"SNAPSHOT SAVED: {len(snapshot)} drawings + Calibration saved to '{current_tf}' slot.")
 
     def load_analysis_data(self):
         import json
@@ -843,6 +916,19 @@ class Overlay(QWidget):
             no_presets_action.setEnabled(False)
             presets_menu.addAction(no_presets_action)
         else:
+            # Overwrite Section
+            overwrite_menu = QMenu("覆盖预设 (Overwrite Existing)", self)
+            overwrite_menu.setStyleSheet(MENU_STYLE)
+            presets_menu.addMenu(overwrite_menu)
+            
+            for name in presets.keys():
+                ov_action = QAction(f"覆盖: {name}", self)
+                ov_action.triggered.connect(lambda checked=False, n=name: self.overwrite_preset(index, n))
+                overwrite_menu.addAction(ov_action)
+                
+            presets_menu.addSeparator()
+
+            # Load Actions
             for name, data in presets.items():
                 load_action = QAction(f"加载: {name}", self)
                 # Capture name and data in lambda
@@ -870,6 +956,17 @@ class Overlay(QWidget):
             # Save calibration too!
             self.preset_manager.save_preset(name, price_a, price_b, self.global_calibration)
             print(f"Saved preset: {name} (with calibration)")
+
+    def overwrite_preset(self, index, name):
+        """
+        Directly overwrites the preset 'name' with current drawing values, skipping the dialog.
+        """
+        drawing = self.drawings[index]
+        price_a = drawing.get('price_a', 0.0)
+        price_b = drawing.get('price_b', 0.0)
+        
+        self.preset_manager.save_preset(name, price_a, price_b, self.global_calibration)
+        print(f"OVERWRITE SUCCESS: Preset '{name}' updated with A={price_a}, B={price_b}")
 
     def load_preset(self, index, name, data):
         import logging
