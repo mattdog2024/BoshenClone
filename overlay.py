@@ -716,10 +716,9 @@ class Overlay(QWidget):
         self.current_tool = tool_name
         self.dragging_handle = None 
         
-        # User requested to REMOVE auto-calibration on K-line selection to avoid lag.
+        # User requested to REMOVE auto-calibration on K-line selection to avoid lag used AND BAD DATA.
         # Calibration should only happen via "Auto" button (ocr_selection).
-        # UPDATE: User request "Zoom/Pan support" -> Re-enable Async Calibration for K-line
-        if tool_name in ["k线", "ocr_selection"]:
+        if tool_name == "ocr_selection":
              self.auto_calibrate_axis()
              
         if tool_name:
@@ -939,8 +938,8 @@ class Overlay(QWidget):
             presets_menu.addMenu(overwrite_menu)
             
             for name in presets.keys():
-                ov_action = QAction(f"覆盖: {name}", self)
-                ov_action.triggered.connect(lambda checked=False, n=name: self.overwrite_preset(index, n))
+                ov_action = QAction(f"覆盖: {name} (Overwrite)", self)
+                ov_action.triggered.connect(lambda checked=False, n=name: self.overwrite_preset(drawing_index, n))
                 overwrite_menu.addAction(ov_action)
                 
             presets_menu.addSeparator()
@@ -996,7 +995,29 @@ class Overlay(QWidget):
              self.global_calibration = data['calibration']
              logging.info(f"Restored Global Calibration from Preset '{name}': {self.global_calibration}")
              
-        self.update_price_scale(drawing)
+        # Update Visual Position of the line (Start/End Y) to match new Prices 
+        # using the valid calibration (Restored or Current).
+        if self.global_calibration:
+            try:
+                scale = self.global_calibration['scale']
+                ref_y = self.global_calibration['ref_y']
+                ref_price = self.global_calibration['ref_price']
+                
+                # Y = RefY + (Price - RefPrice) / Scale
+                new_start_y = ref_y + (drawing['price_a'] - ref_price) / scale
+                new_end_y = ref_y + (drawing['price_b'] - ref_price) / scale
+                
+                # Update points (Keep X, update Y)
+                drawing['start'].setY(int(new_start_y))
+                drawing['end'].setY(int(new_end_y))
+                logging.info(f"Realigned drawing to Y: {int(new_start_y)}, {int(new_end_y)}")
+            except Exception as e:
+                logging.error(f"Error realigning drawing: {e}")
+                print(f"Error realigning drawing: {e}")
+
+        # Do NOT call update_price_scale(drawing) here.
+        # We want the Line to move to the Price, not the Price Scale to warp to the old line.
+        
         self.update()
         print(f"Loaded preset: {name}")
 
