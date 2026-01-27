@@ -316,11 +316,16 @@ class Overlay(QWidget):
                     saturation = max(rgb) - min(rgb)
                     brightness = max(rgb)
                     
-                    # 1. Strict Black/Gray Check (For Text Rejection)
-                    # If pixel is very clearly Grayscale (Saturation < 10) AND Dark (Brightness < 100)
+                    # 1. Wick Detection (Allow Dark Pixels)
+                    # If pixel is very dark (Brightness < 60), it's likely a Wick.
+                    # We accept it even if the main candle is Red/Green.
+                    if brightness < 60:
+                        return True
+                        
+                    # 2. Strict Black/Gray Check (For Text Rejection)
+                    # If pixel is Grayscale (Sat < 10) AND Dark-ish (but not pitch black wick)
                     if saturation < 10 and brightness < 100:
                         # Only accept if the Target Candle itself was determined to be Black/Gray.
-                        # This filters out black text labels when clicking a colored candle.
                         return target_is_black
 
                     # 2. Dominant Channel Check
@@ -718,7 +723,9 @@ class Overlay(QWidget):
         
         # User requested to REMOVE auto-calibration on K-line selection to avoid lag used AND BAD DATA.
         # Calibration should only happen via "Auto" button (ocr_selection).
-        if tool_name == "ocr_selection":
+        # User requested Auto-Calibration for "Fluency".
+        # Enable for K-Line and Single tools.
+        if tool_name in ["k线", "单", "ocr_selection"]:
              self.auto_calibrate_axis()
              
         if tool_name:
@@ -753,14 +760,17 @@ class Overlay(QWidget):
              h_total = geo.height()
              
              # Define scan candidates
+             # Prioritize Left as user reported data is there.
              candidates = [
                  {'name': 'Left', 'x': 0, 'y': 0, 'w': 150, 'h': h_total},
                  {'name': 'Right', 'x': w_total - 200, 'y': 0, 'w': 200, 'h': h_total}
              ]
              
              was_visible = self.isVisible()
-             self.setVisible(False)
-             QApplication.processEvents()
+             if was_visible:
+                 self.setVisible(False)
+                 # FORCE UI update to ensure overlay is gone before grab
+                 QApplication.processEvents() 
              
              captured_paths = []
              
@@ -773,6 +783,7 @@ class Overlay(QWidget):
                      
              if was_visible:
                  self.setVisible(True)
+                 QApplication.processEvents() # Restore UI immediately
 
              # Start Async Worker
              # We create a new worker each time (simplest approach, though recycling could works)
