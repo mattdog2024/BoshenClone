@@ -120,14 +120,22 @@ class AnalysisDialog(QDialog):
                     })
 
         # Process from self.analysis_data dictionary
-        if '日线' in self.analysis_data:
-            process_list(self.analysis_data['日线'], self.table_daily, self.daily_levels)
-            
-        if '4小时' in self.analysis_data:
-            process_list(self.analysis_data['4小时'], self.table_4h, self.four_h_levels)
-            
-        if '1小时' in self.analysis_data:
-            process_list(self.analysis_data['1小时'], self.table_1h, self.one_h_levels)
+        timeframes = ['日线', '4小时', '1小时']
+        target_tables = [self.table_daily, self.table_4h, self.table_1h]
+        target_lists = [self.daily_levels, self.four_h_levels, self.one_h_levels]
+        
+        for tf, table, level_list in zip(timeframes, target_tables, target_lists):
+            if tf in self.analysis_data:
+                data = self.analysis_data[tf]
+                
+                # NEW: Check if data is dict (new format) or list (old format)
+                drawings = []
+                if isinstance(data, dict):
+                     drawings = data.get('drawings', [])
+                elif isinstance(data, list):
+                     drawings = data
+                
+                process_list(drawings, table, level_list)
 
                     
     def perform_analysis(self):
