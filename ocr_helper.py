@@ -93,48 +93,102 @@ class BoshenOCR:
         # Sort column items by Y again just in case
         column_items.sort(key=lambda x: x['y'])
         
-        # 2. Extract Longest Decreasing Subsequence (Prices decrease down)
-        # We allow small errors/noise but mainly want the dominant trend.
-        # Actually, for an axis, *every* number should be decreasing.
-        # But we might have OCR errors. 
-        # Let's clean outliers.
+        # 2. Extract Longest Consistent Subsequence (Linearity Check)
+        # We expect Price = Scale * Y + C
+        # We calculate the scale between every adjacent pair in the column.
+        # The "True Scale" should be the most common scale (mode).
         
         if len(column_items) < 2:
              logging.warning("Not enough numbers in best column.")
              return None
 
-        cleaned_items = [column_items[0]]
-        for i in range(1, len(column_items)):
-             curr = column_items[i]
-             prev = cleaned_items[-1]
-             
-             # Check if consistent
-             # We expect curr['val'] < prev['val'] (Price decreases down)
-             # And curr['y'] > prev['y'] (Y increases down) - already sorted by Y
-             
-             if curr['val'] < prev['val']:
-                 cleaned_items.append(curr)
-             else:
-                 # Violation. Is 'curr' the outlier or 'prev'?
-                 # If we have a chain, usually the new one is the outlier or the chain broke.
-                 # Let's skip 'curr' for now (greedy cleaning).
-                 logging.debug(f"Skipping non-decreasing value: {curr['val']} (Prev: {prev['val']})")
-                 pass
+        # Calculate scales between adjacent items
+        # scale = (val2 - val1) / (y2 - y1)
+        # We expect Y to increase (downwards) and Val to decrease.
+        # So scale is usually NEGATIVE.
         
+        scales = []
+        for i in range(len(column_items) - 1):
+            curr = column_items[i]
+            next_item = column_items[i+1] # Next one down
+            
+            dy = next_item['y'] - curr['y']
+            dp = next_item['val'] - curr['val']
+            
+            if dy < 10: continue # Too close
+            
+            scale = dp / dy
+            scales.append({'scale': scale, 'i': i, 'j': i+1})
+            
+        if not scales:
+            logging.warning("No valid pairs found.")
+            return None
+            
+        # Find dominant scale cluster
+        # We accept scales that are within 10% of each other?
+        # Or just use histogram binning.
+        
+        # Simple cluster:
+        clusters = []
+        
+        for s in scales:
+            sc = s['scale']
+            # Find if it fits an existing cluster
+            found = False
+            for cl in clusters:
+                 # Check relative error
+                 avg = sum([x['scale'] for x in cl]) / len(cl)
+                 if abs(sc - avg) / (abs(avg) + 0.0001) < 0.1: # 10% tolerance
+                     cl.append(s)
+                     found = True
+                     break
+            if not found:
+                 clusters.append([s])
+                 
+        # Best cluster is longest
+        if not clusters: return None
+        best_cluster = max(clusters, key=len)
+        
+        # Calculate weighted average scale of best cluster
+        avg_scale = sum([x['scale'] for x in best_cluster]) / len(best_cluster)
+        
+        logging.info(f"Dominant Scale Found: {avg_scale} (from {len(best_cluster)} pairs)")
+        
+        # Now filter items that fit this scale
+        # We pick the "Anchor" as the top item of the first pair in the cluster
+        anchor_pair_idx = best_cluster[0]['i']
+        anchor = column_items[anchor_pair_idx]
+        
+        cleaned_items = []
+        for item in column_items:
+            # Check if item lies on the line defined by Anchor and Scale
+            # Predicted Val = AnchorVal + (ItemY - AnchorY) * Scale
+            # Actual Val should be close.
+            
+            pred_val = anchor['val'] + (item['y'] - anchor['y']) * avg_scale
+            diff = abs(item['val'] - pred_val)
+            
+            # Tolerance? Maybe 5% of the value interval or absolute?
+            # Let's use visually relative tolerance.
+            # If the number is "3200", error shouldn't be "100".
+            # But if scale is 0.5 per pixel, and height error is 5px -> error 2.5.
+            
+            # Heuristic: error < abs(50 * avg_scale)  (approx 50 pixels worth of error)
+            limit = abs(50 * avg_scale)
+            if diff < limit:
+                cleaned_items.append(item)
+            else:
+                logging.warning(f"Rejecting outlier: {item['val']} (Pred: {pred_val:.2f})")
+                
         if len(cleaned_items) < 2:
-             logging.warning("No monotonic decreasing sequence found.")
+             logging.warning("Cleaned list too short.")
              return None
              
         # Pick Top and Bottom from the Cleaned list
         top_item = cleaned_items[0]
         bottom_item = cleaned_items[-1]
 
-        # Calculate Scale
-        # Scale = (P_bottom - P_top) / (Y_bottom - Y_top)
-        # Usually Price decreases as Y increases (downwards).
-        # So P_bottom < P_top.
-        # Scale should be negative.
-        
+        # Calculate Final Scale from extremes
         p_top = top_item['val']
         p_bottom = bottom_item['val']
         y_top = top_item['y']
@@ -143,15 +197,6 @@ class BoshenOCR:
         dy = y_bottom - y_top
         dp = p_bottom - p_top
         
-        if abs(dy) < 5: # Too close
-             logging.warning("Numbers too close vertically.")
-             return None
-             
-        if abs(dp) < 0.0001: # Price difference is zero
-             logging.warning(f"Zero price difference detected. (Top={p_top}, Bottom={p_bottom})")
-             logging.warning("Calibration Failed: All detected numbers are identical or zero.")
-             return None
-             
         scale = dp / dy
         
         # Calculate Average Gap
@@ -166,9 +211,9 @@ class BoshenOCR:
         
         # DENSITY CHECK: Filter out Order Book
         # Order Book usually has gaps < 25px. Price Axis usually > 40px.
-        # We set threshold at 30px.
-        if avg_gap < 30:
-             logging.warning(f"Rejected Column: Too dense (Avg Gap={avg_gap:.1f} < 30). Likely Order Book.")
+        # We set threshold at 15px.
+        if avg_gap < 15:
+             logging.warning(f"Rejected Column: Too dense (Avg Gap={avg_gap:.1f} < 15). Likely Order Book.")
              # We return None so the caller knows this column is bad.
              return None
         
