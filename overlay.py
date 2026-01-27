@@ -388,7 +388,9 @@ class Overlay(QWidget):
             object_h = abs(bottom_y - top_y)
             
             # Trigger if small object found OR if we explicitly detected a black target (label)
-            should_try_snap = (object_h < 50) or target_is_black
+            # FIX: If target is black (Wick), only snap if it's suspiciously small (< 50).
+            # If it's a large black object (>50), it's likely a valid Wick, so DON'T SNAP to body.
+            should_try_snap = (object_h < 50) 
             
             if should_try_snap:
                  logging.info(f"Potential label/noise detected (H={object_h}). Attempting Smart Snap...")
