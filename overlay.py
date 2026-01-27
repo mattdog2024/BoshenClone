@@ -83,6 +83,10 @@ class Overlay(QWidget):
         print(f"Fast Mode set to: {enabled}")
 
     def set_timeframe(self, timeframe_name):
+        # 1. Capture current drawings to preserve them across switch
+        # User wants to "carry over" lines if they forgot to switch beforehand.
+        current_drawings_preservation = self.drawings.copy()
+        
         self.current_timeframe = timeframe_name
         print(f"Switching Timeframe to: {self.current_timeframe}")
         
@@ -150,7 +154,16 @@ class Overlay(QWidget):
                 self.drawings.append(new_d)
             except Exception as e:
                 print(f"Error restoring drawing: {e}")
-                
+
+        # Restore preserved drawings (merging them in)
+        if current_drawings_preservation:
+             # Only add if not already present? 
+             # For now, just add them. They will be visually distinct or user can delete.
+             # Ideally we check for duplicates but 'merging' is safer to ensure nothing is lost.
+             for d in current_drawings_preservation:
+                 d['timeframe'] = self.current_timeframe 
+                 self.drawings.append(d)
+                 
         self.update()
 
     def auto_measure(self, pos):
@@ -705,7 +718,9 @@ class Overlay(QWidget):
         
         # User requested to REMOVE auto-calibration on K-line selection to avoid lag.
         # Calibration should only happen via "Auto" button (ocr_selection).
-        # if tool_name == "k线": ... [Removed]
+        # UPDATE: User request "Zoom/Pan support" -> Re-enable Async Calibration for K-line
+        if tool_name in ["k线", "ocr_selection"]:
+             self.auto_calibrate_axis()
              
         if tool_name:
             self.setCursor(Qt.CrossCursor)
