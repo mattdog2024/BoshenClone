@@ -991,32 +991,37 @@ class Overlay(QWidget):
         drawing['price_b'] = data['b']
         
         # Restore Calibration if exists
-        if 'calibration' in data and data['calibration']:
-             self.global_calibration = data['calibration']
+        preset_cal = data.get('calibration')
+        
+        if preset_cal:
+             self.global_calibration = preset_cal
              logging.info(f"Restored Global Calibration from Preset '{name}': {self.global_calibration}")
              
-        # Update Visual Position of the line (Start/End Y) to match new Prices 
-        # using the valid calibration (Restored or Current).
-        if self.global_calibration:
-            try:
-                scale = self.global_calibration['scale']
-                ref_y = self.global_calibration['ref_y']
-                ref_price = self.global_calibration['ref_price']
-                
-                # Y = RefY + (Price - RefPrice) / Scale
-                new_start_y = ref_y + (drawing['price_a'] - ref_price) / scale
-                new_end_y = ref_y + (drawing['price_b'] - ref_price) / scale
-                
-                # Update points (Keep X, update Y)
-                drawing['start'].setY(int(new_start_y))
-                drawing['end'].setY(int(new_end_y))
-                logging.info(f"Realigned drawing to Y: {int(new_start_y)}, {int(new_end_y)}")
-            except Exception as e:
-                logging.error(f"Error realigning drawing: {e}")
-                print(f"Error realigning drawing: {e}")
-
-        # Do NOT call update_price_scale(drawing) here.
-        # We want the Line to move to the Price, not the Price Scale to warp to the old line.
+             # Update Visual Position of the line (Start/End Y) to match new Prices 
+             # using the valid calibration.
+             if self.global_calibration:
+                 try:
+                     scale = self.global_calibration['scale']
+                     ref_y = self.global_calibration['ref_y']
+                     ref_price = self.global_calibration['ref_price']
+                     
+                     # Y = RefY + (Price - RefPrice) / Scale
+                     new_start_y = ref_y + (drawing['price_a'] - ref_price) / scale
+                     new_end_y = ref_y + (drawing['price_b'] - ref_price) / scale
+                     
+                     # Update points (Keep X, update Y)
+                     drawing['start'].setY(int(new_start_y))
+                     drawing['end'].setY(int(new_end_y))
+                     logging.info(f"Realigned drawing to Y: {int(new_start_y)}, {int(new_end_y)}")
+                 except Exception as e:
+                     logging.error(f"Error realigning drawing: {e}")
+                     print(f"Error realigning drawing: {e}")
+        else:
+             # Legacy/Price-Only Preset
+             # The user is applying Prices to an EXISTING line.
+             # We should use this line to ESTABLISH the calibration.
+             logging.info("Preset has no calibration. keying off existing line geometry.")
+             self.update_price_scale(drawing)
         
         self.update()
         print(f"Loaded preset: {name}")
