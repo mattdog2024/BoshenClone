@@ -89,7 +89,7 @@ class BoshenToolbar(DraggableWidget):
         
         # Icon placeholders (Text for now)
         # "Candles", "Vol", "Single", "Box", "Shadow", "Bar1", "Bar2", "Count", "Star", "Dx"
-        btns_r1 = ["k线", "量", "单", "箱", "影", "测1", "测2", "数", "米", "Dx", "自动"]
+        btns_r1 = ["k线", "量", "单", "箱", "影", "画", "测2", "数", "米", "Dx", "自动"]
         for b_text in btns_r1:
             btn = QToolButton()
             btn.setText(b_text)
@@ -97,6 +97,8 @@ class BoshenToolbar(DraggableWidget):
                 btn.clicked.connect(self.clear_requested.emit)
             elif b_text == "自动":
                  btn.clicked.connect(lambda: self.on_tool_click("ocr_selection"))
+            elif b_text == "画":
+                 btn.clicked.connect(lambda: self.on_tool_click("free_draw"))
             else:
                 btn.clicked.connect(lambda checked=False, t=b_text: self.on_tool_click(t))
             row1.addWidget(btn)

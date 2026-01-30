@@ -56,6 +56,13 @@ class Overlay(QWidget):
         self.global_calibration = None # {'scale': float, 'ref_y': int, 'ref_price': float}
         self.ocr_helper = BoshenOCR()
         
+        # Free Drawing State
+        self.free_drawings = [] # List of list of QPoints: [[p1, p2, ...], [p1, p2...]]
+        self.current_free_drawing = [] # Current stroke
+        self.free_draw_color = QColor(Qt.red)
+        self.free_draw_width = 2
+
+        
         # Strategy UI Removed per user request
         self.current_timeframe = "日线" # Default to daily or None
         self.analysis_data = {
@@ -786,7 +793,14 @@ class Overlay(QWidget):
                  QApplication.processEvents() # Restore UI immediately
 
              # Start Async Worker
-             # We create a new worker each time (simplest approach, though recycling could works)
+             # Cleanup existing worker if running
+             if hasattr(self, 'calib_worker') and self.calib_worker is not None:
+                 if self.calib_worker.isRunning():
+                     logging.info("Terminating previous calibration worker...")
+                     self.calib_worker.terminate()
+                     self.calib_worker.wait()
+                 self.calib_worker.deleteLater()
+             
              self.calib_worker = CalibrationWorker(self.ocr_helper, captured_paths)
              self.calib_worker.finished.connect(self.on_calibration_finished)
              self.calib_worker.start()
@@ -898,7 +912,12 @@ class Overlay(QWidget):
 
             self.start_point = event.pos()
             self.end_point = event.pos()
+            self.end_point = event.pos()
             self.is_drawing = True
+            
+            if self.current_tool == "free_draw":
+                 self.current_free_drawing = [event.pos()]
+
 
     def context_menu(self, drawing_index, pos):
         MENU_STYLE = """
@@ -1065,6 +1084,12 @@ class Overlay(QWidget):
         # DRAWING MODE
         if self.is_drawing:
             self.end_point = event.pos()
+            
+            if self.current_tool == "free_draw":
+                self.current_free_drawing.append(event.pos())
+                self.update()
+                return
+
             if self.current_tool == "单":
                 self.end_point.setX(self.start_point.x())
             self.update()
@@ -1101,6 +1126,20 @@ class Overlay(QWidget):
 
     def mouseReleaseEvent(self, event):
         print(f"DEBUG: MouseRelease - is_drawing: {self.is_drawing}")
+        
+        if self.current_tool == "free_draw" and self.is_drawing:
+            if self.current_free_drawing:
+                # Store a copy of the points
+                self.free_drawings.append(list(self.current_free_drawing))
+                self.current_free_drawing = []
+            
+            self.is_drawing = False
+            self.start_point = None
+            self.end_point = None
+            self.update()
+            # Do NOT reset tool to None. Keep drawing.
+            return
+
         if self.is_drawing and self.start_point and self.end_point:
             self.is_drawing = False
             
@@ -1213,7 +1252,7 @@ class Overlay(QWidget):
             if tf == self.current_timeframe:
                  self.draw_item(painter, d, is_hovering=(self.hover_handle and self.hover_handle[0] == i))
 
-        if self.is_drawing and self.start_point and self.end_point:
+        if self.is_drawing and self.start_point and self.end_point and self.current_tool != "free_draw":
             if self.current_tool == "ocr_selection":
                  # Draw Selection Rect
                  rect = QRect(self.start_point, self.end_point).normalized()
@@ -1227,6 +1266,17 @@ class Overlay(QWidget):
                     'end': self.end_point
                 }
                 self.draw_item(painter, temp_drawing)
+
+        # Draw Free Drawings
+        painter.setPen(QPen(self.free_draw_color, self.free_draw_width, Qt.SolidLine))
+        for stroke in self.free_drawings:
+            if len(stroke) > 1:
+                painter.drawPolyline(stroke)
+        
+        # Draw current free drawing
+        if self.current_free_drawing and len(self.current_free_drawing) > 1:
+             painter.drawPolyline(self.current_free_drawing)
+
 
         # Draw Instruction Text for OCR Mode
         if self.current_tool == "ocr_selection" and not self.is_drawing:
@@ -1385,5 +1435,8 @@ class Overlay(QWidget):
 
     def clear_all(self):
         self.drawings.clear()
+        self.free_drawings.clear() # Clear free drawings too
+        self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.update()
         self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         self.update()
