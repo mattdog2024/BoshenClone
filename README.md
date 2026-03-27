@@ -1,56 +1,79 @@
-# Boshen Kai Line (波神凯线) - Clone & Enhancement
+# 波神凯线期货测量系统 (BoshenClone)
 
-A specialized stock analysis overlay tool that replicates the logic of "Boshen Kai Line" measurements, featuring automatic price axis recognition, K-line snapping, and multi-timeframe strategy support.
+欢迎来到 **波神凯线期货测量系统** 的项目代码库！这是一个基于 Python 和 PySide6 开发的桌面辅助工具，专门用于期货和股票市场的技术分析。
 
-## 🚀 Key Features (v3.1.0)
-
-### 1. Smart K-Line Detection
-- **Auto-Measure**: Click any candle to automatically detect its High/Low.
-- **Improved Sensitivity**: Enhanced algorithm (v3.0) detects thin wicks and snaps to the candle correctly, avoiding interfering objects like text labels or volume bars.
-- **Smart Snap**: Intelligently prefers objects closer to your mouse click, preventing accidental jumps to distant chart elements.
-
-### 2. Intelligent Calibration (Ruler)
-- **OCR-Based Auto-Calibration**: Automatically scans the screen (Left & Right strips) to find the Price Axis.
-- **Robustness**: Uses a **Density Filter** to distinguish between the dense Order Book (Level 2) and the sparse Price Axis, ensuring accurate readings even when zooming or panning.
-- **Async Processing**: Calibration runs in the background, ensuring **Zero UI Freeze** when clicking tools.
-
-### 3. Workflow & Persistence
-- **Preset System**: Save your analysis configurations.
-- **Ruler Persistence**: Saving a preset now SAVES the Calibration Scale. You can switch timeframes, load a preset, and immediately measure new K-lines without re-calibrating.
-
-### 4. Technical Stack
-- **Python 3.11** + **PySide6** (Qt)
-- **RapidOCR-ONNXRuntime** for screen analysis
-- **Async/Threading** for non-blocking UI
-
-## 🛠 Installation & Usage
-
-### Method 1: Portable Executable (Recommended)
-Download the latest `BoshenKaiLine_v3.1.0.exe` from the Releases page.
-1. Run the `.exe`.
-2. A toolbar will appear at the top.
-3. Open your Stock Trading Software (e.g., Tonghuashun, EastMoney).
-4. Click **K-line** on the toolbar and click on a Red/Green candle to measure.
-
-### Method 2: Running form Source
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/mattdog2024/BoshenClone.git
-   cd BoshenClone
-   ```
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   (Key deps: `PySide6`, `rapidocr_onnxruntime`, `numpy`, `opencv-python`)
-3. Run:
-   ```bash
-   python main.py
-   ```
-
-## 📜 Shortcuts
-- **Right Click**: Cancel current tool / Exit drawing mode.
-- **Auto**: Force trigger screen calibration manually.
+本说明文档将用通俗易懂的语言，向您解释这个系统是怎么运行的，以及每个文件是干什么用的。这样以后您想增加新功能或修改 Bug 时，就能快速定位到对应的文件。
 
 ---
-*Developed for personal analysis and educational purposes.*
+
+## 🚀 系统是怎么运行的？
+
+这个系统并不是一个独立的看盘软件，而是一个**“透明的玻璃画板”**，它会覆盖在您现有的交易软件（如文华财经、博易大师等）上面。
+
+系统的运行逻辑主要分为以下几个步骤：
+1. **启动与覆盖**：程序启动后，会生成一个全屏透明的窗口（覆盖在您的屏幕上），以及一个可以拖动的悬浮工具栏。
+2. **选择工具与画线**：您在工具栏上点击不同的按钮（比如“单”、“K线”），透明窗口就会进入画图模式。您的鼠标点击和拖动会被透明窗口拦截，从而在屏幕上画出测量线。
+3. **自动吸附与识别**：为了画得准，系统会偷偷截取您鼠标位置的屏幕画面，分析像素颜色来自动找到 K 线的最高点和最低点（智能吸附）。
+4. **OCR 价格轴校准**：系统还会截取屏幕右侧的价格轴，利用 OCR（光学字符识别）技术把图片里的数字读出来，计算出“屏幕上的1个像素等于多少价格”，从而让画出的线自动对应真实的价格。
+5. **多周期共振分析**：当您在“日线”、“4小时”、“1小时”等不同周期画好线并保存后，点击“量”按钮，系统会用波神凯线的核心算法（固定的比例系数）计算出各个周期的关键线位（如3线、6线、8线），并对比它们是否在相近的价格重合，从而找出“共振点”。
+
+---
+
+## 📂 文件与目录结构说明（想改哪里看这里）
+
+项目里的文件各司其职，就像一个团队里的不同角色。以下是每个核心文件的通俗解释：
+
+### 1. 核心主程序（入口）
+* **`main.py`**
+  * **作用**：程序的总开关。
+  * **想改这里**：如果您想修改程序启动时的全局样式（比如按钮颜色、字体）、或者调整透明窗口和工具栏的初始位置，就在这里改。
+
+### 2. 界面与交互（用户能看到的部分）
+* **`ui_toolbar.py`**
+  * **作用**：悬浮工具栏。上面有各种画线按钮、颜色选择、周期下拉框等。
+  * **想改这里**：如果您想在工具栏上加一个新按钮、修改按钮的名字、或者调整工具栏的长相，就在这里改。
+* **`overlay.py`**
+  * **作用**：全屏透明画板。负责处理所有的鼠标点击、拖动、画线逻辑，以及屏幕截图和智能吸附 K 线的逻辑。这是代码最多、最复杂的地方。
+  * **想改这里**：如果您觉得画线的鼠标手感不对、想增加一种新的画线形状、或者修改智能吸附 K 线的灵敏度，就在这里改。
+* **`ui_analysis.py`**
+  * **作用**：多周期共振分析弹窗（点击“量”按钮出来的那个窗口）。
+  * **想改这里**：如果您想修改分析结果的显示格式、调整共振分析的“容差”范围、或者改变表格的样式，就在这里改。
+* **`ui_strategy.py`**
+  * **作用**：策略指导侧边栏（辅助功能）。根据当前画线给出一些文字性的操作建议。
+  * **想改这里**：如果您想修改界面上的指导文案或按钮，就在这里改。
+
+### 3. 核心算法与数据处理（幕后大脑）
+* **`algorithms.py`**
+  * **作用**：波神凯线的数学公式。负责根据起点和终点价格，乘以固定的比例（如 1.784, 2.351 等），计算出所有的波神线价格。
+  * **想改这里**：如果您想修改波神线的计算公式，就在这里改。
+* **`ocr_helper.py`**
+  * **作用**：价格轴识别助手。负责把屏幕截图里的价格数字认出来，并计算像素和价格的比例。
+  * **想改这里**：如果系统经常认错价格轴，或者您换了看盘软件导致识别失败，需要调整图像识别的逻辑，就在这里改。
+* **`preset_manager.py`**
+  * **作用**：预设数据管家。负责把您画的线和校准数据保存到本地文件里，下次打开还能加载出来。
+  * **想改这里**：如果您想修改数据的保存格式，就在这里改。
+* **`strategy_manager.py`**
+  * **作用**：策略状态管家。负责分析当前的趋势是涨是跌，并生成对应的波神口诀和指导建议。
+  * **想改这里**：如果您想修改系统的分析逻辑（比如什么情况下算上涨、什么情况下提示风险），就在这里改。
+
+### 4. 配置文件与打包脚本
+* **`config.json`**
+  * **作用**：配置文件。里面存着波神线的 9 个核心比例系数，以及默认的线条颜色和粗细。
+  * **想改这里**：如果您只想微调比例系数或默认颜色，直接改这个文件，不需要动代码。
+* **`build_v3_2_9.bat`** (及其他 build 脚本)
+  * **作用**：Windows 打包脚本。双击运行它，就可以把一堆 Python 代码打包成一个独立的 `.exe` 可执行文件，方便发给别人用。
+  * **想改这里**：如果您升级了版本号，或者引入了新的第三方库需要打包进去，就在这里改。
+* **`analysis_data.json`**
+  * **作用**：系统自动生成的文件，用来临时保存您在各个周期画的线的数据。
+
+---
+
+## 💡 以后如何给我下达指令？
+
+因为您已经了解了每个文件的作用，以后如果您想让我帮您修改代码，可以这样告诉我：
+
+* **例子 1**：“帮我在工具栏上加一个‘清空所有’的快捷按钮。”（我会知道要去改 `ui_toolbar.py`）
+* **例子 2**：“现在画线的时候，鼠标吸附 K 线的范围太小了，帮我调大一点。”（我会知道要去改 `overlay.py`）
+* **例子 3**：“多周期共振分析的时候，我希望把 2 线也加进去对比，不仅限于 3、5、6、7、8 线。”（我会知道要去改 `ui_analysis.py`）
+
+希望这份说明能帮助您更好地掌控这个项目！随时准备为您进行下一步的开发。
