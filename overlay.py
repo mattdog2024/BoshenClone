@@ -346,7 +346,13 @@ class Overlay(QWidget):
                         return True
 
                     # Rule 2: Grayscale mid-tone rejection (grid lines / text).
-                    if saturation < 15 and brightness < 160:
+                    # Chart grid lines are typically RGB=(192,192,192): saturation=0,
+                    # brightness=192.  The old threshold was 160, which MISSED these!
+                    # A pixel that is gray (saturation<15) and not very dark (brightness>120)
+                    # is almost certainly a grid line or axis label, NOT a candle.
+                    # Raise threshold to 220 to cover all common grid line shades.
+                    # (True wick pixels have brightness < 120, handled by Rule 1 above.)
+                    if saturation < 15 and brightness >= 120:
                         return target_is_black
 
                     # Rule 3: Dominant-channel match for colored candle bodies.
