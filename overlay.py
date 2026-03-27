@@ -329,23 +329,27 @@ class Overlay(QWidget):
                     rgb = c.red(), c.green(), c.blue()
                     saturation = max(rgb) - min(rgb)
                     brightness = max(rgb)
+                    bg_r, bg_g, bg_b = bg_color.red(), bg_color.green(), bg_color.blue()
 
-                    # Rule 1: WICK pixels are always dark (brightness < 120).
-                    # Accept them unconditionally — this is the key fix for long wicks.
-                    # The original threshold was 60, which missed medium-dark wicks
-                    # rendered by anti-aliasing or semi-transparent chart themes.
-                    if brightness < 120:
+                    # Must be meaningfully different from background first.
+                    # If the pixel is very close to background color, reject it
+                    # regardless of brightness — this prevents the chart's bottom
+                    # axis bar (which is slightly darker gray) from being accepted.
+                    dist_from_bg = color_distance(c, bg_color)
+                    if dist_from_bg < 30:
+                        return False
+
+                    # Rule 1: WICK pixels — dark AND clearly different from background.
+                    # Wicks on light-theme charts are rendered as near-black lines.
+                    # Accept if brightness is low AND the pixel is far from background.
+                    if brightness < 120 and dist_from_bg > 50:
                         return True
 
                     # Rule 2: Grayscale mid-tone rejection (grid lines / text).
-                    # A pixel that is nearly gray (low saturation) and mid-brightness
-                    # is likely a grid line or label, NOT a candle body or wick.
-                    # Only accept if the target candle itself is also gray/black.
                     if saturation < 15 and brightness < 160:
                         return target_is_black
 
                     # Rule 3: Dominant-channel match for colored candle bodies.
-                    # Red candle body → R dominant; Green candle body → G dominant.
                     tr, tg, tb = target_color.red(), target_color.green(), target_color.blue()
                     cr, cg, cb = c.red(), c.green(), c.blue()
 
@@ -358,23 +362,23 @@ class Overlay(QWidget):
                     return False
 
 
-            # KEY FIX for long-wick candles:
-            # A K-line with a very long lower wick looks like this in pixels:
-            #   [body: red/green, ~10-30px]
-            #   [gap: background, 0px  -- wicks are continuous, no gap]
-            #   [wick: dark/thin, ~100-300px]
-            # The wick IS continuous, so gap_tolerance doesn't matter for the wick
-            # itself.  BUT the wick color is very dark (near-black), while the body
-            # is bright red/green.  The matches_target() function uses dominant-channel
-            # matching: body=RED dominant, wick=dark (no dominant channel) → wick
-            # pixels FAIL the color match and are treated as gaps.
-            # With gap_tolerance=60, a 60+px wick is cut off → bottom stays at body.
+            # gap_tolerance: how many consecutive background pixels to tolerate
+            # before deciding the candle has ended.
             #
-            # Fix 1: raise gap_tolerance to 400 so the scan never stops mid-wick.
-            # Fix 2: in matches_target, treat any pixel that is darker than the
-            #         background by >30 AND has brightness < 120 as a valid wick pixel
-            #         regardless of dominant channel (wicks are always dark).
-            gap_tolerance = 400  # Long wicks can be 200-400px on daily charts
+            # History of bugs caused by wrong values:
+            #   - Too small (e.g. 8):  long wicks get cut off mid-wick.
+            #   - Too large (e.g. 400): after the candle body ends, the scan keeps
+            #     going through 400px of pure background all the way to the screen
+            #     edge, and sets col_bottom_y = screen_bottom.  This makes the
+            #     measured range span the entire chart height → A and B lines are
+            #     placed at the wrong positions.
+            #
+            # Correct value: wicks are 1-2px wide, continuous, with NO background
+            # gaps inside them.  The only gap we need to tolerate is the transition
+            # from body to wick (a few anti-aliased pixels).  8px is sufficient.
+            # For the rare case of a very long wick that has a 1-pixel gap due to
+            # sub-pixel rendering, we use 12px as a safe margin.
+            gap_tolerance = 12  # pixels of background gap before scan stops
             
             for scan_x in range(x_start, x_end):
                 # Helper for this column
