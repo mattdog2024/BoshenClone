@@ -426,14 +426,39 @@ class Overlay(QWidget):
                 # Fix: After Phase-1 top scan, if col_top_y is within the upper
                 # portion of the screen (< 250px from top), do a second upward pass
                 # with a much larger gap_tolerance (120px) to bridge the toolbar.
-                # We only update col_top_y if the bridged pixel is a valid candle
-                # pixel — this prevents false positives from other UI elements.
+                #
+                # CRITICAL: We must NOT use is_valid_pixel here because Rule 1 of
+                # matches_target accepts ANY dark pixel (brightness<120, dist>50),
+                # which includes the Windows title bar (RGB≈16,16,16).  The title
+                # bar is always near y=0 and would be accepted as a wick pixel,
+                # pulling top_y all the way to y=2.
+                #
+                # Safe bridge pixel check: the pixel must share the same dominant
+                # color channel as target_color.  This rejects black/blue title-bar
+                # pixels when the candle is green or red.
+                def is_bridge_pixel(y):
+                    """Like is_valid_pixel but also requires dominant-channel match
+                    with target_color to avoid accepting title-bar / toolbar pixels."""
+                    if not is_valid_pixel(y): return False
+                    c = image.pixelColor(scan_x, y)
+                    cr, cg, cb = c.red(), c.green(), c.blue()
+                    tr2, tg2, tb2 = target_color.red(), target_color.green(), target_color.blue()
+                    # Dominant channel of candidate pixel
+                    c_dom = 'r' if cr > cg and cr > cb else ('g' if cg > cr and cg > cb else 'b')
+                    t_dom = 'r' if tr2 > tg2 and tr2 > tb2 else ('g' if tg2 > tr2 and tg2 > tb2 else 'b')
+                    # For black-wick candles (target_is_black), accept any dark pixel
+                    # that is clearly non-background — same as is_valid_pixel.
+                    if target_is_black:
+                        return True
+                    # For colored candles, dominant channel must match.
+                    return c_dom == t_dom
+
                 if col_top_y < 250:
                     bridge_top_y = col_top_y
                     bridge_gap = 0
                     bridge_gap_tolerance = 120  # large enough to span any toolbar
                     for y in range(col_top_y, max(0, col_top_y - 300), -1):
-                        if is_valid_pixel(y):
+                        if is_bridge_pixel(y):
                             bridge_top_y = y
                             bridge_gap = 0
                         else:
