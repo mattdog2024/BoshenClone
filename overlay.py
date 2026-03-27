@@ -457,7 +457,13 @@ class Overlay(QWidget):
                 # top above the click point (col_top_y < click_y).  If Phase-1
                 # found nothing (col_top_y == click_y), the click was in empty
                 # chart space — bridging upward would only find toolbar icons.
-                if col_top_y < click_y and col_top_y < 250:
+                # Threshold: toolbar bottom is at y≈100.  Only bridge if the
+                # candle top is within 10px of the toolbar (col_top_y < 110).
+                # Using 250 was too aggressive — it triggered for any candle
+                # in the upper quarter of the screen, causing toolbar icons
+                # (e.g. the green 'daily' button at y≈72) to be mistaken for
+                # wick pixels.
+                if col_top_y < click_y and col_top_y < 110:
                     bridge_top_y = col_top_y
                     bridge_gap = 0
                     bridge_gap_tolerance = 120  # large enough to span any toolbar
