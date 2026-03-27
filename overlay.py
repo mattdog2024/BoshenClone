@@ -178,7 +178,16 @@ class Overlay(QWidget):
         Captures screen, analyzes column at pos.x(), finds High/Low.
         """
         import logging
-        logging.basicConfig(filename='debug_boshen.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+        # Overwrite log each time (filemode='w') so the file always reflects the latest run.
+        # Use DEBUG level to capture per-column scan details for diagnosing recognition bugs.
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+        logging.basicConfig(
+            filename='debug_boshen.log',
+            filemode='w',
+            level=logging.DEBUG,
+            format='%(asctime)s %(levelname)s %(message)s'
+        )
         
         logging.info(f"Auto measure triggered at logical pos: {pos}")
         
@@ -422,26 +431,18 @@ class Overlay(QWidget):
                         current_gap += 1
                         if current_gap > gap_tolerance:
                             break
-                # KEY FIX: If the loop hit the screen edge while still inside a valid
-                # segment (gap never exceeded tolerance), col_bottom_y is already the
-                # last valid pixel — no extra recovery needed.  But if the candle body
-                # was clipped (col_bottom_y == click_y because every pixel below was
-                # background), extend the search all the way to the screen edge using
-                # the looser is_candle_pixel check (ignores color-matching).
-                if col_bottom_y == click_y:
-                    for y in range(click_y, height):
-                        if is_candle_pixel(y):
-                            col_bottom_y = y
-                            
-                # Check if this column actually found something meaningful
-                # If col_top_y == click_y and we started at BG, it might be invalid.
-                # But we just track min/max
-                
-                # If we found valid pixels in this column?
+                # Only accept this column's result if it actually found valid candle pixels.
+                # IMPORTANT: Do NOT use a fallback that scans with is_candle_pixel (which
+                # ignores color-matching) — that fallback was the root cause of Bottom=828
+                # because it accepted the chart's bottom axis bar as a candle pixel.
+                col_found = (col_top_y != click_y or is_valid_pixel(col_top_y)) and \
+                            (col_bottom_y != click_y or is_valid_pixel(col_bottom_y))
+
                 if is_valid_pixel(col_top_y) or is_valid_pixel(col_bottom_y):
                     found_any_candle = True
                     if col_top_y < global_top_y: global_top_y = col_top_y
                     if col_bottom_y > global_bottom_y: global_bottom_y = col_bottom_y
+                    logging.debug(f"  col x={scan_x}: top={col_top_y}, bottom={col_bottom_y}")
 
             if not found_any_candle:
                  logging.warning("No candle found in scan width.")
