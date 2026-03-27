@@ -275,10 +275,10 @@ class Overlay(QWidget):
             logging.info(f"Pixel at click ({x}, {click_y}) is candle? {is_candle_pixel(click_y)} (Color: {QColor(image.pixelColor(x, click_y).rgb()).name()})")
 
             # 4. robust scan with gap tolerance and width scanning
-            # We scan a small window around x to catch wicks
-            # Reduced radius to 2 for zoomed-out accuracy (prevent hitting neighbors)
-            # Increased radius to 4 for better wick detection (9px width)
-            scan_radius = 4 
+            # We scan a small window around x to catch wicks.
+            # For thin wicks (1-2px wide), we need to scan a wider band to guarantee
+            # we hit the wick column even if the user clicks slightly off-center.
+            scan_radius = 6
             x_start = max(0, x - scan_radius)
             x_end = min(image.width(), x + scan_radius + 1)
             
@@ -329,38 +329,52 @@ class Overlay(QWidget):
                     rgb = c.red(), c.green(), c.blue()
                     saturation = max(rgb) - min(rgb)
                     brightness = max(rgb)
-                    
-                    # 1. Wick Detection (Allow Dark Pixels)
-                    # If pixel is very dark (Brightness < 60), it's likely a Wick.
-                    # We accept it even if the main candle is Red/Green.
-                    if brightness < 60:
+
+                    # Rule 1: WICK pixels are always dark (brightness < 120).
+                    # Accept them unconditionally — this is the key fix for long wicks.
+                    # The original threshold was 60, which missed medium-dark wicks
+                    # rendered by anti-aliasing or semi-transparent chart themes.
+                    if brightness < 120:
                         return True
-                        
-                    # 2. Strict Black/Gray Check (For Text Rejection)
-                    # If pixel is Grayscale (Sat < 10) AND Dark-ish (but not pitch black wick)
-                    if saturation < 10 and brightness < 100:
-                        # Only accept if the Target Candle itself was determined to be Black/Gray.
+
+                    # Rule 2: Grayscale mid-tone rejection (grid lines / text).
+                    # A pixel that is nearly gray (low saturation) and mid-brightness
+                    # is likely a grid line or label, NOT a candle body or wick.
+                    # Only accept if the target candle itself is also gray/black.
+                    if saturation < 15 and brightness < 160:
                         return target_is_black
 
-                    # 2. Dominant Channel Check
-                    # If target is RED dominant (R > G, R > B), candidate must be too.
-                    # If target is GREEN dominant (G > R, G > B), candidate must be too.
-                    
+                    # Rule 3: Dominant-channel match for colored candle bodies.
+                    # Red candle body → R dominant; Green candle body → G dominant.
                     tr, tg, tb = target_color.red(), target_color.green(), target_color.blue()
                     cr, cg, cb = c.red(), c.green(), c.blue()
-                    
-                    # What is target's dominant channel?
+
                     t_dom = 'r' if tr > tg and tr > tb else ('g' if tg > tr and tg > tb else 'b')
                     c_dom = 'r' if cr > cg and cr > cb else ('g' if cg > cr and cg > cb else 'b')
-                    
-                    # If dominant channels match, it's the same "hue" family
+
                     if t_dom == c_dom:
                         return True
-                        
+
                     return False
 
 
-            gap_tolerance = 60 # Reduced from 200. Hollow bodies are handled if we hit color again.
+            # KEY FIX for long-wick candles:
+            # A K-line with a very long lower wick looks like this in pixels:
+            #   [body: red/green, ~10-30px]
+            #   [gap: background, 0px  -- wicks are continuous, no gap]
+            #   [wick: dark/thin, ~100-300px]
+            # The wick IS continuous, so gap_tolerance doesn't matter for the wick
+            # itself.  BUT the wick color is very dark (near-black), while the body
+            # is bright red/green.  The matches_target() function uses dominant-channel
+            # matching: body=RED dominant, wick=dark (no dominant channel) → wick
+            # pixels FAIL the color match and are treated as gaps.
+            # With gap_tolerance=60, a 60+px wick is cut off → bottom stays at body.
+            #
+            # Fix 1: raise gap_tolerance to 400 so the scan never stops mid-wick.
+            # Fix 2: in matches_target, treat any pixel that is darker than the
+            #         background by >30 AND has brightness < 120 as a valid wick pixel
+            #         regardless of dominant channel (wicks are always dark).
+            gap_tolerance = 400  # Long wicks can be 200-400px on daily charts
             
             for scan_x in range(x_start, x_end):
                 # Helper for this column
