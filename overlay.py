@@ -226,12 +226,19 @@ class Overlay(QWidget):
 
             # 3. Analyze Column
             # Heuristic: Find background color (most common color in the strip)
-            # Sample central strip to find dominant color
+            # KEY FIX: When the K-line is near the bottom of the screen, the original
+            # sampling window (click_y ± 300px) spills into the chart's bottom toolbar
+            # area.  That toolbar is often a solid dark/gray band whose color becomes
+            # the "most common" color and is mistakenly identified as the background.
+            # Once the chart background is wrong, every candle pixel looks like
+            # background → the scan finds nothing → top == bottom → red line.
+            #
+            # Fix: always bias the sampling window UPWARD so it stays inside the
+            # chart area.  We take 500px above the click and only 100px below.
             color_counts = {}
-            scan_height = 600 # Analyze +/- 300 pixels
-            start_scan = max(0, click_y - 300)
-            end_scan = min(height, click_y + 300)
-            
+            start_scan = max(0, click_y - 500)
+            end_scan   = min(height, click_y + 100)
+
             # Sanity check scan range
             if start_scan >= end_scan:
                  start_scan = 0
@@ -380,27 +387,27 @@ class Overlay(QWidget):
                 # Find Bottom
                 col_bottom_y = click_y
                 current_gap = 0
-                # BUG FIX: When K-line is near the bottom of the screen, the scan
-                # hits the screen edge (height-1) and stops, leaving col_bottom_y == click_y.
-                # We must clamp the scan end to (height - 1) and also accept the last
-                # valid pixel even when the loop terminates at the screen boundary.
+                last_valid_y = click_y  # track the last valid pixel seen
                 scan_bottom_end = min(height, click_y + 800)
                 for y in range(click_y, scan_bottom_end):
                     if is_valid_pixel(y):
                         col_bottom_y = y
+                        last_valid_y = y
                         current_gap = 0
                     else:
                         current_gap += 1
                         if current_gap > gap_tolerance:
                             break
-                # If the loop reached the very bottom of the screen while still inside a
-                # valid segment (gap never exceeded tolerance), the last valid pixel is
-                # at (scan_bottom_end - 1 - current_gap).  Recover it.
-                if col_bottom_y == click_y and current_gap < gap_tolerance:
-                    # Scan was still in a segment when it hit the boundary
-                    recovered = scan_bottom_end - 1 - current_gap
-                    if recovered > click_y and is_valid_pixel(recovered):
-                        col_bottom_y = recovered
+                # KEY FIX: If the loop hit the screen edge while still inside a valid
+                # segment (gap never exceeded tolerance), col_bottom_y is already the
+                # last valid pixel — no extra recovery needed.  But if the candle body
+                # was clipped (col_bottom_y == click_y because every pixel below was
+                # background), extend the search all the way to the screen edge using
+                # the looser is_candle_pixel check (ignores color-matching).
+                if col_bottom_y == click_y:
+                    for y in range(click_y, height):
+                        if is_candle_pixel(y):
+                            col_bottom_y = y
                             
                 # Check if this column actually found something meaningful
                 # If col_top_y == click_y and we started at BG, it might be invalid.
@@ -465,8 +472,7 @@ class Overlay(QWidget):
                  gap_tol_v = 40    # Reduced gap tolerance
                  
                  v_scan_start = max(0, click_y - scan_range_v)
-                 # BUG FIX: When K-line is at the bottom, click_y + scan_range_v may exceed
-                 # the screen height.  Clamp to (height - 1) so we include the last row.
+                 # Clamp to (height - 1) so the Smart Snap scan includes the last screen row.
                  v_scan_end = min(height - 1, click_y + scan_range_v)
                  
                  # Identify the longest vibrant segment
@@ -546,22 +552,22 @@ class Overlay(QWidget):
             logging.info(f"Final Candle Limit: Top={top_y}, Bottom={bottom_y}")
             print(f"Candle detected: Top={top_y}, Bottom={bottom_y}")
             
-            # BUG FIX: If top_y >= bottom_y the scan collapsed to a single point
-            # (most common when the K-line bottom is clipped by the screen edge).
-            # In that case, extend the bottom scan all the way to the screen edge
-            # so we at least capture the visible portion of the candle.
+            # FINAL GUARD: if top_y >= bottom_y the whole scan collapsed to a point.
+            # This can still happen when the candle is very short OR when the bottom
+            # wick is cut off by the chart's bottom axis bar (a solid horizontal band
+            # of background-like color that interrupts the gap-tolerance scan).
+            # Strategy: walk downward from top_y using the broadest possible check
+            # (is_candle_pixel, which only requires "not background") all the way to
+            # the screen edge, and take the last hit as the true bottom.
             if top_y >= bottom_y:
-                logging.warning("Top >= Bottom after scan — K-line likely touches screen edge. Extending bottom to screen boundary.")
-                # Walk downward from click_y to the last non-BG pixel before the edge
-                extended_bottom = click_y
-                for y in range(click_y, height):
+                logging.warning("top_y >= bottom_y — running edge-extension fallback.")
+                extended_bottom = top_y
+                for y in range(top_y, height):
                     if is_candle_pixel(y):
                         extended_bottom = y
-                    # Don't break on BG — keep going to find the true bottom
                 bottom_y = extended_bottom
-                # If still collapsed, force a minimum height so a line is not drawn
                 if top_y >= bottom_y:
-                    logging.warning("Still collapsed after extension — aborting draw.")
+                    logging.warning("Edge-extension failed — aborting draw to avoid zero-height line.")
                     self.setVisible(True)
                     return
 
