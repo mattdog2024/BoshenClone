@@ -441,124 +441,95 @@ class Overlay(QWidget):
             top_y = global_top_y
             bottom_y = global_bottom_y
             
-            # --- SMART SNAP HEURISTIC (Improved) ---
-            # Issue: User clicks text label (e.g. "3031"). Previous check was too strict.
-            # Fix: If object is small (< 50px), assume it's noise/label and look for the REAL candle.
+            # --- SMART SNAP HEURISTIC ---
+            # Purpose: when the user accidentally clicks a price-axis label or grid line
+            # (a tiny object, H < 20px), snap to the nearest real candle.
+            #
+            # IMPORTANT: Smart Snap must NOT fire when the user clicked a valid wick.
+            # A wick is a thin (1-2px wide) but TALL vertical line.  The original scan
+            # (scan_radius=6 columns) already captured the full wick height in global_top_y
+            # / global_bottom_y.  So object_h already reflects the true candle height.
+            # We must only snap when object_h is genuinely tiny (< 20px) — i.e. the user
+            # clicked something that is NOT a candle at all.
             object_h = abs(bottom_y - top_y)
-            
-            # Trigger if small object found OR if we explicitly detected a black target (label)
-            # FIX: If target is black (Wick), only snap if it's suspiciously small (< 50).
-            # If it's a large black object (>50), it's likely a valid Wick, so DON'T SNAP to body.
-            should_try_snap = (object_h < 50) 
-            
+            should_try_snap = (object_h < 20)
+
             if should_try_snap:
-                 logging.info(f"Potential label/noise detected (H={object_h}). Attempting Smart Snap...")
+                 logging.info(f"Tiny object (H={object_h}) — attempting Smart Snap to nearest candle...")
                  print("Attempting Smart Snap to Candle...")
-                 
-                 found_vibrant = False
-                 v_top = float('inf')
-                 v_bottom = float('-inf')
-                 
-                 # Define "Candle-like": 
-                 # 1. Not Background
-                 # 2. significant difference from BG
+
                  def is_candidate_pixel(c):
                      dist = color_distance(c, bg_color)
-                     if dist < 30: return False # Too close to BG
-                     
-                     # If we have a 'strict' target (e.g. user clicked a Red candle), match it?
-                     # No, here we assume user clicked 'Black Text' so we don't know the candle color.
-                     # We just accept "Visible" things.
-                     # But we want to avoid black text again.
-                     
+                     if dist < 30: return False
                      rgb = c.red(), c.green(), c.blue()
                      sat = max(rgb) - min(rgb)
                      val = max(rgb)
-                     
-                     # Reject purely black/gray things (likely other text/grid lines)
-                     # Unless they are very bright (white text?)
-                     if sat < 20 and val < 150: 
+                     if sat < 20 and val < 150:
                          return False
-                         
                      return True
 
-                 scan_range_v = 80 # Reduced from 400 to avoid snapping to Volume bars at bottom
-                 gap_tol_v = 40    # Reduced gap tolerance
-                 
+                 # Search ±200px vertically so we can find the candle body even when
+                 # the user clicked the wick tip far from the body.
+                 scan_range_v = 200
+                 gap_tol_v = 40
+
                  v_scan_start = max(0, click_y - scan_range_v)
-                 # Clamp to (height - 1) so the Smart Snap scan includes the last screen row.
                  v_scan_end = min(height - 1, click_y + scan_range_v)
-                 
-                 # Identify the longest vibrant segment
-                 best_segment = None 
-                 best_score = -1 
-                 
-                 # Scan width for smart snap too!
-                 snap_scan_radius = 4
+
+                 best_segment = None
+                 best_score = -1
+
+                 snap_scan_radius = 6
                  snap_x_start = max(0, x - snap_scan_radius)
                  snap_x_end = min(image.width(), x + snap_scan_radius + 1)
-                 
+
                  for snap_x in range(snap_x_start, snap_x_end):
                      in_segment = False
                      seg_start = -1
                      gap_count = 0
-                     
-                     # Check this column
+
                      for y in range(v_scan_start, v_scan_end):
                          c = image.pixelColor(snap_x, y)
                          valid = is_candidate_pixel(c)
-                         
+
                          if valid:
                              if not in_segment:
                                  in_segment = True
                                  seg_start = y
-                             gap_count = 0 # Reset gap
+                             gap_count = 0
                          else:
                              if in_segment:
                                  gap_count += 1
                                  if gap_count > gap_tol_v:
-                                     # Segment ended
                                      in_segment = False
                                      seg_end = y - gap_count
-                                     h = seg_end - seg_start
-                                     
-                                     if h > 20: # Min candle height
-                                         # Score = Height - Distance_from_click * 2
-                                         # We prefer Taller objects, but penalize being far away
+                                     seg_h = seg_end - seg_start
+                                     if seg_h > 20:
                                          mid_y = (seg_start + seg_end) / 2
-                                         dist = abs(mid_y - click_y)
-                                         score = h - (dist * 1.5) 
-                                         
+                                         d = abs(mid_y - click_y)
+                                         score = seg_h - (d * 1.5)
                                          if score > best_score:
                                              best_score = score
                                              best_segment = (seg_start, seg_end)
-                     
-                     # Check last segment
+
                      if in_segment:
                          seg_end = v_scan_end - 1
-                         h = seg_end - seg_start
-                         if h > 20:
+                         seg_h = seg_end - seg_start
+                         if seg_h > 20:
                              mid_y = (seg_start + seg_end) / 2
-                             dist = abs(mid_y - click_y)
-                             score = h - (dist * 1.5)
+                             d = abs(mid_y - click_y)
+                             score = seg_h - (d * 1.5)
                              if score > best_score:
                                  best_score = score
                                  best_segment = (seg_start, seg_end)
 
-                 # Only override if we found something significantly better
-                 if best_segment: 
-                     # Check if result is "better" than original small object?
-                     # Since we are using Score, assume if Score > 0 it's decent.
-                     # Original object_h is likely small (<50).
-                     # Only switch if the found segment is Taller than the original "Noise"
-                     
+                 if best_segment:
                      found_h = best_segment[1] - best_segment[0]
-                     
                      if found_h > object_h:
                          top_y = best_segment[0]
                          bottom_y = best_segment[1]
-                         logging.info(f"Smart Snap Success: Switched to Candle H={found_h} ({top_y}, {bottom_y})")
-                         print(f"Smart Snap: Found Better Candle H={found_h}")
+                         logging.info(f"Smart Snap: Switched to Candle H={found_h} ({top_y}, {bottom_y})")
+                         print(f"Smart Snap: Found Candle H={found_h}")
                  else:
                      logging.info("Smart Snap: No better object found. Keeping original.")
             
