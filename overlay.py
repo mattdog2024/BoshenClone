@@ -451,7 +451,87 @@ class Overlay(QWidget):
 
             top_y = global_top_y
             bottom_y = global_bottom_y
-            
+
+            # --- PHASE 2: WICK EXTENSION SCAN ---
+            # Problem: The candle wick (影线) is only 1-2px wide and may be horizontally
+            # offset from the candle body by up to ~50px (especially on daily charts with
+            # wide bodies).  Phase 1 only scans click_x ± scan_radius (13 columns), which
+            # may miss the wick entirely.
+            #
+            # Strategy:
+            #   1. Find the horizontal center of the candle body found in Phase 1.
+            #   2. From that center, scan ±wick_search_radius columns.
+            #   3. For each column, extend top_y upward and bottom_y downward using the
+            #      same gap_tolerance, starting from the current top_y / bottom_y.
+            #
+            # This correctly handles:
+            #   - Long upper wicks (上影线) that are offset left of the body
+            #   - Long lower wicks (下影线) that are offset left of the body
+            #   - Thin wicks (1-2px wide) that Phase 1 missed
+            wick_search_radius = 40  # search ±40px from body center for wick columns
+
+            # Compute body center from Phase 1 results
+            body_center_x = x  # default to click x
+            # Find the horizontal span of valid pixels at the body's vertical midpoint
+            body_mid_y = (top_y + bottom_y) // 2
+            body_xs = []
+            for bx in range(x_start, x_end):
+                c = image.pixelColor(bx, body_mid_y)
+                if color_distance(c, bg_color) > 30 and matches_target(c):
+                    body_xs.append(bx)
+            if body_xs:
+                body_center_x = (min(body_xs) + max(body_xs)) // 2
+                logging.debug(f"Phase2: body center x={body_center_x} (from xs={min(body_xs)}~{max(body_xs)})")
+            else:
+                logging.debug(f"Phase2: body center x={body_center_x} (fallback to click x)")
+
+            wick_x_start = max(0, body_center_x - wick_search_radius)
+            wick_x_end = min(image.width(), body_center_x + wick_search_radius + 1)
+
+            def is_valid_pixel_at(sx, y):
+                """Check if pixel at (sx, y) is a valid candle pixel."""
+                if y < 0 or y >= height: return False
+                c = image.pixelColor(sx, y)
+                if color_distance(c, bg_color) <= 30: return False
+                return matches_target(c)
+
+            for wick_x in range(wick_x_start, wick_x_end):
+                # Skip columns already covered by Phase 1
+                if x_start <= wick_x < x_end:
+                    continue
+
+                # Extend upward from current top_y
+                col_top_y2 = top_y
+                current_gap2 = 0
+                for y in range(top_y, max(0, top_y - 600), -1):
+                    if is_valid_pixel_at(wick_x, y):
+                        col_top_y2 = y
+                        current_gap2 = 0
+                    else:
+                        current_gap2 += 1
+                        if current_gap2 > gap_tolerance:
+                            break
+
+                # Extend downward from current bottom_y
+                col_bottom_y2 = bottom_y
+                current_gap2 = 0
+                for y in range(bottom_y, min(height, bottom_y + 600)):
+                    if is_valid_pixel_at(wick_x, y):
+                        col_bottom_y2 = y
+                        current_gap2 = 0
+                    else:
+                        current_gap2 += 1
+                        if current_gap2 > gap_tolerance:
+                            break
+
+                if col_top_y2 < top_y or col_bottom_y2 > bottom_y:
+                    logging.debug(f"  Phase2 wick col x={wick_x}: top={col_top_y2}, bottom={col_bottom_y2}")
+                    if col_top_y2 < top_y: top_y = col_top_y2
+                    if col_bottom_y2 > bottom_y: bottom_y = col_bottom_y2
+
+            logging.info(f"After Phase2 wick scan: Top={top_y}, Bottom={bottom_y}")
+            # --- END PHASE 2 ---
+
             # --- SMART SNAP HEURISTIC ---
             # Purpose: when the user accidentally clicks a price-axis label or grid line
             # (a tiny object, H < 20px), snap to the nearest real candle.
