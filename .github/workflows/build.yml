@@ -35,7 +35,7 @@ jobs:
       - name: PyInstaller 打包
         run: |
           pyinstaller --noconfirm --onefile --windowed `
-            --name "BoshenKaiLine_v3.2.9" `
+            --name "BoshenKaiLine_v3.3.0" `
             --hidden-import="rapidocr_onnxruntime" `
             --collect-all="rapidocr_onnxruntime" `
             main.py
@@ -44,6 +44,6 @@ jobs:
       - name: 上传 EXE
         uses: actions/upload-artifact@v4
         with:
-          name: BoshenKaiLine_v3.2.9
-          path: dist/BoshenKaiLine_v3.2.9.exe
+          name: BoshenKaiLine_v3.3.0
+          path: dist/BoshenKaiLine_v3.3.0.exe
           retention-days: 30  # 保留30天

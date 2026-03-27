@@ -415,7 +415,34 @@ class Overlay(QWidget):
                     else:
                         current_gap += 1
                         if current_gap > gap_tolerance:
-                            break 
+                            break
+
+                # TOOLBAR BRIDGE SCAN (向上跨越工具栏)
+                # Problem: When a candle's upper wick extends behind the app toolbar
+                # (e.g. y=94~158), there is a ~65px gap of non-candle pixels that
+                # exceeds gap_tolerance=12.  The scan stops at the toolbar bottom,
+                # missing the wick tip above the toolbar.
+                #
+                # Fix: After Phase-1 top scan, if col_top_y is within the upper
+                # portion of the screen (< 250px from top), do a second upward pass
+                # with a much larger gap_tolerance (120px) to bridge the toolbar.
+                # We only update col_top_y if the bridged pixel is a valid candle
+                # pixel — this prevents false positives from other UI elements.
+                if col_top_y < 250:
+                    bridge_top_y = col_top_y
+                    bridge_gap = 0
+                    bridge_gap_tolerance = 120  # large enough to span any toolbar
+                    for y in range(col_top_y, max(0, col_top_y - 300), -1):
+                        if is_valid_pixel(y):
+                            bridge_top_y = y
+                            bridge_gap = 0
+                        else:
+                            bridge_gap += 1
+                            if bridge_gap > bridge_gap_tolerance:
+                                break
+                    if bridge_top_y < col_top_y:
+                        logging.debug(f"  col x={scan_x}: toolbar bridge: top {col_top_y} -> {bridge_top_y}")
+                        col_top_y = bridge_top_y
 
                 # Find Bottom
                 col_bottom_y = click_y
