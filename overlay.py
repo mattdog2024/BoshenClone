@@ -380,7 +380,12 @@ class Overlay(QWidget):
                 # Find Bottom
                 col_bottom_y = click_y
                 current_gap = 0
-                for y in range(click_y, min(height, click_y + 800)):
+                # BUG FIX: When K-line is near the bottom of the screen, the scan
+                # hits the screen edge (height-1) and stops, leaving col_bottom_y == click_y.
+                # We must clamp the scan end to (height - 1) and also accept the last
+                # valid pixel even when the loop terminates at the screen boundary.
+                scan_bottom_end = min(height, click_y + 800)
+                for y in range(click_y, scan_bottom_end):
                     if is_valid_pixel(y):
                         col_bottom_y = y
                         current_gap = 0
@@ -388,6 +393,14 @@ class Overlay(QWidget):
                         current_gap += 1
                         if current_gap > gap_tolerance:
                             break
+                # If the loop reached the very bottom of the screen while still inside a
+                # valid segment (gap never exceeded tolerance), the last valid pixel is
+                # at (scan_bottom_end - 1 - current_gap).  Recover it.
+                if col_bottom_y == click_y and current_gap < gap_tolerance:
+                    # Scan was still in a segment when it hit the boundary
+                    recovered = scan_bottom_end - 1 - current_gap
+                    if recovered > click_y and is_valid_pixel(recovered):
+                        col_bottom_y = recovered
                             
                 # Check if this column actually found something meaningful
                 # If col_top_y == click_y and we started at BG, it might be invalid.
@@ -452,7 +465,9 @@ class Overlay(QWidget):
                  gap_tol_v = 40    # Reduced gap tolerance
                  
                  v_scan_start = max(0, click_y - scan_range_v)
-                 v_scan_end = min(height, click_y + scan_range_v)
+                 # BUG FIX: When K-line is at the bottom, click_y + scan_range_v may exceed
+                 # the screen height.  Clamp to (height - 1) so we include the last row.
+                 v_scan_end = min(height - 1, click_y + scan_range_v)
                  
                  # Identify the longest vibrant segment
                  best_segment = None 
@@ -531,15 +546,30 @@ class Overlay(QWidget):
             logging.info(f"Final Candle Limit: Top={top_y}, Bottom={bottom_y}")
             print(f"Candle detected: Top={top_y}, Bottom={bottom_y}")
             
+            # BUG FIX: If top_y >= bottom_y the scan collapsed to a single point
+            # (most common when the K-line bottom is clipped by the screen edge).
+            # In that case, extend the bottom scan all the way to the screen edge
+            # so we at least capture the visible portion of the candle.
             if top_y >= bottom_y:
-                 logging.warning("Top >= Bottom, invalid.")
+                logging.warning("Top >= Bottom after scan — K-line likely touches screen edge. Extending bottom to screen boundary.")
+                # Walk downward from click_y to the last non-BG pixel before the edge
+                extended_bottom = click_y
+                for y in range(click_y, height):
+                    if is_candle_pixel(y):
+                        extended_bottom = y
+                    # Don't break on BG — keep going to find the true bottom
+                bottom_y = extended_bottom
+                # If still collapsed, force a minimum height so a line is not drawn
+                if top_y >= bottom_y:
+                    logging.warning("Still collapsed after extension — aborting draw.")
+                    self.setVisible(True)
+                    return
 
-            
             logging.info(f"Candle detected: Top={top_y}, Bottom={bottom_y}")
             print(f"Candle detected: Top={top_y}, Bottom={bottom_y}")
-            
+
             if top_y == bottom_y:
-                 logging.warning("Top == Bottom, possible failure.")
+                logging.warning("Top == Bottom, possible failure.")
                  
             # --- VISUAL DEBUGGING ---
             # Save the captured image with markings to verify what we saw
