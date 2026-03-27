@@ -31,33 +31,19 @@ jobs:
           pip install numpy opencv-python
           pip install pyinstaller
 
-      # 第4步：读取版本号（从 version.txt）
-      - name: 读取版本号
-        id: version
-        shell: python
-        run: |
-          import os
-          try:
-              with open("version.txt", "r") as f:
-                  version = f.read().strip()
-          except:
-              version = "3.2.9"
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"version={version}\n")
-
-      # 第5步：用 PyInstaller 打包成单文件 exe
+      # 第4步：用 PyInstaller 打包成单文件 exe
       - name: PyInstaller 打包
         run: |
           pyinstaller --noconfirm --onefile --windowed `
-            --name "BoshenKaiLine_v${{ steps.version.outputs.version }}" `
+            --name "BoshenKaiLine_v3.2.9" `
             --hidden-import="rapidocr_onnxruntime" `
             --collect-all="rapidocr_onnxruntime" `
             main.py
 
-      # 第6步：把打包好的 exe 上传为 Artifact（可在 Actions 页面下载）
+      # 第5步：把打包好的 exe 上传为 Artifact（可在 Actions 页面下载）
       - name: 上传 EXE
         uses: actions/upload-artifact@v4
         with:
-          name: BoshenKaiLine_v${{ steps.version.outputs.version }}
-          path: dist/BoshenKaiLine_v${{ steps.version.outputs.version }}.exe
+          name: BoshenKaiLine_v3.2.9
+          path: dist/BoshenKaiLine_v3.2.9.exe
           retention-days: 30  # 保留30天
