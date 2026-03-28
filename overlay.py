@@ -266,7 +266,46 @@ class Overlay(QWidget):
             bg_color_rgb = max(color_counts, key=color_counts.get)
             bg_color = QColor(bg_color_rgb)
             logging.info(f"Detected BG Color: {bg_color.name()}")
-            
+
+            # --- SMART TOOLBAR DETECTION ---
+            # Scan downward from the top of the screen to find where the chart
+            # area begins (i.e. the toolbar bottom).  We look for the first row
+            # where the majority of pixels in the chart column range match the
+            # background color.  This works regardless of screen resolution,
+            # DPI scaling, or how many toolbar rows the software shows.
+            toolbar_bottom_y = 0  # default: no toolbar
+            bg_r = QColor(bg_color).red()
+            bg_g = QColor(bg_color).green()
+            bg_b = QColor(bg_color).blue()
+            # Sample a horizontal band in the middle of the chart (avoid side panels)
+            sample_x_start = max(100, image.width() // 6)
+            sample_x_end   = min(image.width() - 200, image.width() * 5 // 6)
+            sample_width   = max(1, sample_x_end - sample_x_start)
+            consecutive_bg_rows = 0
+            for ty in range(0, min(300, height)):
+                bg_count = 0
+                for tx in range(sample_x_start, sample_x_end, 4):  # step 4 for speed
+                    tc = image.pixelColor(tx, ty)
+                    dr = abs(tc.red()   - bg_r)
+                    dg = abs(tc.green() - bg_g)
+                    db = abs(tc.blue()  - bg_b)
+                    if max(dr, dg, db) < 25:
+                        bg_count += 1
+                sampled = (sample_x_end - sample_x_start) // 4
+                if sampled > 0 and bg_count / sampled > 0.80:
+                    consecutive_bg_rows += 1
+                    if consecutive_bg_rows >= 3:
+                        toolbar_bottom_y = ty - 2  # first row of chart area
+                        break
+                else:
+                    consecutive_bg_rows = 0
+            logging.info(f"Smart toolbar_bottom_y={toolbar_bottom_y}")
+            # bridge_threshold: if Phase-1/Phase-2 finds a candle top within
+            # this many pixels of the toolbar bottom, we allow a large gap scan
+            # to bridge the toolbar and find the true wick top above it.
+            bridge_threshold = toolbar_bottom_y + 80
+            # --- END SMART TOOLBAR DETECTION ---
+
             def color_distance(c1, c2):
                 # Euclidean distance in RGB space
                 r_diff = c1.red() - c2.red()
@@ -463,7 +502,7 @@ class Overlay(QWidget):
                 # in the upper quarter of the screen, causing toolbar icons
                 # (e.g. the green 'daily' button at y≈72) to be mistaken for
                 # wick pixels.
-                if col_top_y < click_y and col_top_y < 110:
+                if col_top_y < click_y and col_top_y < bridge_threshold:
                     bridge_top_y = col_top_y
                     bridge_gap = 0
                     bridge_gap_tolerance = 120  # large enough to span any toolbar
@@ -563,15 +602,28 @@ class Overlay(QWidget):
                     continue
 
                 # Extend upward from current top_y
+                # Smart bridge: if the scan stalls near the toolbar, switch to
+                # a large gap_tolerance to cross the toolbar and find the true
+                # wick tip that may be hidden above it.
                 col_top_y2 = top_y
                 current_gap2 = 0
+                bridged2 = False
                 for y in range(top_y, max(0, top_y - 600), -1):
                     if is_valid_pixel_at(wick_x, y):
                         col_top_y2 = y
                         current_gap2 = 0
+                        bridged2 = False  # reset once we find a pixel
                     else:
                         current_gap2 += 1
+                        # Normal stop
                         if current_gap2 > gap_tolerance:
+                            # If we're still within bridge_threshold of the
+                            # toolbar bottom, allow one bridge attempt with a
+                            # large tolerance to cross the toolbar.
+                            if not bridged2 and y < bridge_threshold:
+                                bridged2 = True
+                                # Continue scanning with large tolerance
+                                continue
                             break
 
                 # Extend downward from current bottom_y
