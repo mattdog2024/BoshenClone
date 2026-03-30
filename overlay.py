@@ -620,9 +620,10 @@ class Overlay(QWidget):
                 # Skip columns already covered by Phase 1
                 if x_start <= wick_x < x_end:
                     continue
-                # Connectivity check: column must have a pixel near current top_y
+                # Connectivity check: column must have a pixel VERY CLOSE to current top_y
+                # Use strict +-3px window to avoid picking up adjacent candles' wicks
                 connected_top = False
-                for probe_y in range(top_y, max(0, top_y - gap_tolerance - 1), -1):
+                for probe_y in range(max(0, top_y - 3), min(height, top_y + 4)):
                     if is_valid_pixel_at(wick_x, probe_y):
                         connected_top = True
                         break
@@ -656,7 +657,9 @@ class Overlay(QWidget):
             # has a small gap. Re-scan the same columns with gap_tolerance=25.
             # CRITICAL: Do NOT scan outside x_start~x_end here. Adjacent candles
             # of the same color would extend bottom_y incorrectly.
-            lower_gap_tolerance = 25
+            # Keep gap_tolerance small (same as Phase-1) to avoid jumping over
+            # price-axis horizontal lines or chart bottom borders.
+            lower_gap_tolerance = 8
             for rescan_x in range(x_start, x_end):
                 col_bottom_y2 = bottom_y
                 current_gap2 = 0
