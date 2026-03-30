@@ -484,6 +484,32 @@ class Overlay(QWidget):
             # These are GLOBAL logical Y coordinates
             # We must map them to LOCAL coordinates for drawing on the overlay
             
+            # ================================================================
+            # wick_mode 专用：水平宽度扫描，精确区分实体和影线
+            # 原理：实体是宽的（多列有像素），影线是细的（1~2列有像素）
+            # ================================================================
+            if wick_mode and top_y < bottom_y:
+                # 对 top_y~bottom_y 每一行，统计 x_start~x_end 内有多少列有非背景色像素
+                row_widths = []
+                for ry in range(top_y, bottom_y + 1):
+                    w = 0
+                    for rx in range(x_start, x_end):
+                        c = image.pixelColor(rx, ry)
+                        if color_distance(c, bg_color) > 30:
+                            w += 1
+                    row_widths.append((ry, w))
+                # 找宽度 >= 2 的行（实体行）
+                body_rows = [ry for (ry, w) in row_widths if w >= 2]
+                if body_rows:
+                    body_top_y    = body_rows[0]
+                    body_bottom_y = body_rows[-1]
+                    logging.info(f"Wick horizontal scan: body=({body_top_y},{body_bottom_y}), full=({top_y},{bottom_y})")
+                else:
+                    # 如果没有宽度>=2的行，回退到全范围
+                    body_top_y    = top_y
+                    body_bottom_y = bottom_y
+                    logging.info(f"Wick horizontal scan: no body rows found, fallback to full")
+
             # Create global QPoints
             if wick_mode:
                 # ============================================================
