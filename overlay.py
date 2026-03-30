@@ -554,6 +554,20 @@ class Overlay(QWidget):
             bottom_y = global_bottom_y
 
             # --- PHASE 2: WICK EXTENSION SCAN ---
+            # DESIGN PRINCIPLES (learned from many debugging sessions):
+            #
+            # UPPER WICK (上影线): May be horizontally offset from the body by ~50px.
+            #   Solution: scan a wide range (±wick_search_radius) UPWARD only.
+            #   Connectivity check: column must have a pixel near current top_y.
+            #   Toolbar bridge: if scan stalls near toolbar, allow one bridge.
+            #
+            # LOWER WICK (下影线): Always within the body's x-range (x_start~x_end).
+            #   Phase-1 already covers x_start~x_end but uses gap_tolerance=12.
+            #   If the wick has a small gap (e.g. 1px), Phase-1 may stop early.
+            #   Solution: re-scan x_start~x_end DOWNWARD with larger gap_tolerance=25.
+            #   NEVER scan outside x_start~x_end downward — adjacent candles of the
+            #   same color would be picked up and bottom_y would be wrong.
+            #
             # Problem: The candle wick (影线) is only 1-2px wide and may be horizontally
             # offset from the candle body by up to ~50px (especially on daily charts with
             # wide bodies).  Phase 1 only scans click_x ± scan_radius (13 columns), which
@@ -596,46 +610,25 @@ class Overlay(QWidget):
                 if color_distance(c, bg_color) <= 30: return False
                 return matches_target(c)
 
+            # ================================================================
+            # PHASE 2A: UPPER WICK SCAN (wide horizontal range, upward only)
+            # ================================================================
+            # Upper wicks can be offset left/right of the body by up to ~50px.
+            # We scan +-wick_search_radius columns, but ONLY upward.
+            # Downward scan is excluded here to avoid picking up adjacent candles.
             for wick_x in range(wick_x_start, wick_x_end):
                 # Skip columns already covered by Phase 1
                 if x_start <= wick_x < x_end:
                     continue
-
-                # Extend upward from current top_y
-                # Connectivity check: only scan upward if this column has a
-                # pixel near top_y (connected to the candle body above).
+                # Connectivity check: column must have a pixel near current top_y
                 connected_top = False
                 for probe_y in range(top_y, max(0, top_y - gap_tolerance - 1), -1):
                     if is_valid_pixel_at(wick_x, probe_y):
                         connected_top = True
                         break
                 if not connected_top:
-                    col_top_y2 = top_y  # skip upward scan for this column
-                    col_bottom_y2 = bottom_y
-                    # jump to connectivity check for downward scan below
-                    connected_bottom = False
-                    for probe_y in range(bottom_y, min(height, bottom_y + gap_tolerance + 1)):
-                        if is_valid_pixel_at(wick_x, probe_y):
-                            connected_bottom = True
-                            break
-                    if connected_bottom:
-                        current_gap2 = 0
-                        for y in range(bottom_y, min(height, bottom_y + 600)):
-                            if is_valid_pixel_at(wick_x, y):
-                                col_bottom_y2 = y
-                                current_gap2 = 0
-                            else:
-                                current_gap2 += 1
-                                if current_gap2 > gap_tolerance:
-                                    break
-                    if col_top_y2 < top_y or col_bottom_y2 > bottom_y:
-                        logging.debug(f"  Phase2 wick col x={wick_x}: top={col_top_y2}, bottom={col_bottom_y2}")
-                        if col_top_y2 < top_y: top_y = col_top_y2
-                        if col_bottom_y2 > bottom_y: bottom_y = col_bottom_y2
-                    continue  # skip the rest of the loop body
-                # Smart bridge: if the scan stalls near the toolbar, switch to
-                # a large gap_tolerance to cross the toolbar and find the true
-                # wick tip that may be hidden above it.
+                    continue  # not connected to target candle, skip entirely
+                # Scan upward with toolbar bridge support
                 col_top_y2 = top_y
                 current_gap2 = 0
                 bridged2 = False
@@ -643,49 +636,41 @@ class Overlay(QWidget):
                     if is_valid_pixel_at(wick_x, y):
                         col_top_y2 = y
                         current_gap2 = 0
-                        bridged2 = False  # reset once we find a pixel
+                        bridged2 = False
                     else:
                         current_gap2 += 1
-                        # Normal stop
                         if current_gap2 > gap_tolerance:
-                            # If we're still within bridge_threshold of the
-                            # toolbar bottom, allow one bridge attempt with a
-                            # large tolerance to cross the toolbar.
                             if not bridged2 and y < bridge_threshold:
                                 bridged2 = True
-                                # Continue scanning with large tolerance
                                 continue
                             break
+                if col_top_y2 < top_y:
+                    logging.debug(f"  Phase2A upper wick x={wick_x}: top {top_y}->{col_top_y2}")
+                    top_y = col_top_y2
 
-                # Extend downward from current bottom_y
-                # IMPORTANT: Only scan downward if this column is already
-                # connected to the candle at bottom_y (i.e. has a pixel at
-                # bottom_y or within gap_tolerance rows below it).
-                # This prevents Phase-2 from picking up a neighbouring candle
-                # that happens to share the same color but is NOT connected to
-                # the target candle's lower wick.
+            # ================================================================
+            # PHASE 2B: LOWER WICK RE-SCAN (body x-range only, larger gap)
+            # ================================================================
+            # Lower wicks are always within the body x-range (x_start~x_end).
+            # Phase-1 uses gap_tolerance=12 which may stop early if the wick
+            # has a small gap. Re-scan the same columns with gap_tolerance=25.
+            # CRITICAL: Do NOT scan outside x_start~x_end here. Adjacent candles
+            # of the same color would extend bottom_y incorrectly.
+            lower_gap_tolerance = 25
+            for rescan_x in range(x_start, x_end):
                 col_bottom_y2 = bottom_y
-                # Check connectivity: does this column have a pixel near bottom_y?
-                connected_bottom = False
-                for probe_y in range(bottom_y, min(height, bottom_y + gap_tolerance + 1)):
-                    if is_valid_pixel_at(wick_x, probe_y):
-                        connected_bottom = True
-                        break
-                if connected_bottom:
-                    current_gap2 = 0
-                    for y in range(bottom_y, min(height, bottom_y + 600)):
-                        if is_valid_pixel_at(wick_x, y):
-                            col_bottom_y2 = y
-                            current_gap2 = 0
-                        else:
-                            current_gap2 += 1
-                            if current_gap2 > gap_tolerance:
-                                break
-
-                if col_top_y2 < top_y or col_bottom_y2 > bottom_y:
-                    logging.debug(f"  Phase2 wick col x={wick_x}: top={col_top_y2}, bottom={col_bottom_y2}")
-                    if col_top_y2 < top_y: top_y = col_top_y2
-                    if col_bottom_y2 > bottom_y: bottom_y = col_bottom_y2
+                current_gap2 = 0
+                for y in range(bottom_y, min(height, bottom_y + 600)):
+                    if is_valid_pixel_at(rescan_x, y):
+                        col_bottom_y2 = y
+                        current_gap2 = 0
+                    else:
+                        current_gap2 += 1
+                        if current_gap2 > lower_gap_tolerance:
+                            break
+                if col_bottom_y2 > bottom_y:
+                    logging.debug(f"  Phase2B lower wick x={rescan_x}: bottom {bottom_y}->{col_bottom_y2}")
+                    bottom_y = col_bottom_y2
 
             logging.info(f"After Phase2 wick scan: Top={top_y}, Bottom={bottom_y}")
             # --- END PHASE 2 ---
