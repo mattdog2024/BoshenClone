@@ -328,7 +328,7 @@ class Overlay(QWidget):
             #   将每列的非背景色像素分成连续段，
             #   最长的段 = K线实体，整体范围顶底 = 完整K线（含影线）
             # ================================================================
-            scan_radius = 6
+            scan_radius = 12
             x_start = max(0, x - scan_radius)
             x_end = min(image.width(), x + scan_radius + 1)
             
@@ -395,7 +395,7 @@ class Overlay(QWidget):
                 # 不用所有段的联合，避免工具栏/价格轴等非K线像素混入
                 target_seg = None
                 for seg in segs:
-                    if seg[0] - 30 <= click_y <= seg[1] + 30:
+                    if seg[0] - 20 <= click_y <= seg[1] + 20:
                         target_seg = seg
                         break
                 # 如果没有包含点击点的段，跳过这列（不用最近段，避免误判）
