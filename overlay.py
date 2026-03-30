@@ -602,6 +602,37 @@ class Overlay(QWidget):
                     continue
 
                 # Extend upward from current top_y
+                # Connectivity check: only scan upward if this column has a
+                # pixel near top_y (connected to the candle body above).
+                connected_top = False
+                for probe_y in range(top_y, max(0, top_y - gap_tolerance - 1), -1):
+                    if is_valid_pixel_at(wick_x, probe_y):
+                        connected_top = True
+                        break
+                if not connected_top:
+                    col_top_y2 = top_y  # skip upward scan for this column
+                    col_bottom_y2 = bottom_y
+                    # jump to connectivity check for downward scan below
+                    connected_bottom = False
+                    for probe_y in range(bottom_y, min(height, bottom_y + gap_tolerance + 1)):
+                        if is_valid_pixel_at(wick_x, probe_y):
+                            connected_bottom = True
+                            break
+                    if connected_bottom:
+                        current_gap2 = 0
+                        for y in range(bottom_y, min(height, bottom_y + 600)):
+                            if is_valid_pixel_at(wick_x, y):
+                                col_bottom_y2 = y
+                                current_gap2 = 0
+                            else:
+                                current_gap2 += 1
+                                if current_gap2 > gap_tolerance:
+                                    break
+                    if col_top_y2 < top_y or col_bottom_y2 > bottom_y:
+                        logging.debug(f"  Phase2 wick col x={wick_x}: top={col_top_y2}, bottom={col_bottom_y2}")
+                        if col_top_y2 < top_y: top_y = col_top_y2
+                        if col_bottom_y2 > bottom_y: bottom_y = col_bottom_y2
+                    continue  # skip the rest of the loop body
                 # Smart bridge: if the scan stalls near the toolbar, switch to
                 # a large gap_tolerance to cross the toolbar and find the true
                 # wick tip that may be hidden above it.
@@ -627,16 +658,29 @@ class Overlay(QWidget):
                             break
 
                 # Extend downward from current bottom_y
+                # IMPORTANT: Only scan downward if this column is already
+                # connected to the candle at bottom_y (i.e. has a pixel at
+                # bottom_y or within gap_tolerance rows below it).
+                # This prevents Phase-2 from picking up a neighbouring candle
+                # that happens to share the same color but is NOT connected to
+                # the target candle's lower wick.
                 col_bottom_y2 = bottom_y
-                current_gap2 = 0
-                for y in range(bottom_y, min(height, bottom_y + 600)):
-                    if is_valid_pixel_at(wick_x, y):
-                        col_bottom_y2 = y
-                        current_gap2 = 0
-                    else:
-                        current_gap2 += 1
-                        if current_gap2 > gap_tolerance:
-                            break
+                # Check connectivity: does this column have a pixel near bottom_y?
+                connected_bottom = False
+                for probe_y in range(bottom_y, min(height, bottom_y + gap_tolerance + 1)):
+                    if is_valid_pixel_at(wick_x, probe_y):
+                        connected_bottom = True
+                        break
+                if connected_bottom:
+                    current_gap2 = 0
+                    for y in range(bottom_y, min(height, bottom_y + 600)):
+                        if is_valid_pixel_at(wick_x, y):
+                            col_bottom_y2 = y
+                            current_gap2 = 0
+                        else:
+                            current_gap2 += 1
+                            if current_gap2 > gap_tolerance:
+                                break
 
                 if col_top_y2 < top_y or col_bottom_y2 > bottom_y:
                     logging.debug(f"  Phase2 wick col x={wick_x}: top={col_top_y2}, bottom={col_bottom_y2}")
