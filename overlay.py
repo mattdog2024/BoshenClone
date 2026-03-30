@@ -173,7 +173,7 @@ class Overlay(QWidget):
                  
         self.update()
 
-    def auto_measure(self, pos):
+    def auto_measure(self, pos, wick_mode=False):
         """
         Captures screen, analyzes column at pos.x(), finds High/Low.
         """
@@ -833,8 +833,14 @@ class Overlay(QWidget):
             # We must map them to LOCAL coordinates for drawing on the overlay
             
             # Create global QPoints
-            global_start_p = QPoint(pos.x(), int(bottom_y_logical if dist_to_bottom < dist_to_top else top_y_logical))
-            global_end_p = QPoint(pos.x(), int(top_y_logical if dist_to_bottom < dist_to_top else bottom_y_logical))
+            if wick_mode:
+                # 影线模式：固定 A=最高点(top)，B=最低点(bottom)，不做距离判断
+                global_start_p = QPoint(pos.x(), int(top_y_logical))
+                global_end_p = QPoint(pos.x(), int(bottom_y_logical))
+                logging.info(f"Wick mode: A=top({top_y_logical}), B=bottom({bottom_y_logical})")
+            else:
+                global_start_p = QPoint(pos.x(), int(bottom_y_logical if dist_to_bottom < dist_to_top else top_y_logical))
+                global_end_p = QPoint(pos.x(), int(top_y_logical if dist_to_bottom < dist_to_top else bottom_y_logical))
             
             # Map to local
             start_p = self.mapFromGlobal(global_start_p)
@@ -1166,6 +1172,11 @@ class Overlay(QWidget):
                 print("DEBUG: Triggering auto_measure on K-Line tool")
                 # Use global position for screen analysis to avoid local coord issues
                 self.auto_measure(event.globalPosition().toPoint())
+                return
+            # 影线模式：点击任意 K 线自动识别最高点(A)和最低点(B)
+            if self.current_tool == "影":
+                print("DEBUG: Triggering auto_measure in wick_mode")
+                self.auto_measure(event.globalPosition().toPoint(), wick_mode=True)
                 return
 
             self.start_point = event.pos()
