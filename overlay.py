@@ -391,22 +391,26 @@ class Overlay(QWidget):
                 if not segs:
                     continue
 
-                # 找包含点击点的段（允许 ±30px 偏差）
+                # 只取包含点击点的段（允许 ±30px 偏差）
+                # 不用所有段的联合，避免工具栏/价格轴等非K线像素混入
                 target_seg = None
                 for seg in segs:
                     if seg[0] - 30 <= click_y <= seg[1] + 30:
                         target_seg = seg
                         break
-                # 如果没有包含点击点的段，取距离最近的段
+                # 如果没有包含点击点的段，跳过这列（不用最近段，避免误判）
                 if target_seg is None:
-                    target_seg = min(segs, key=lambda s: min(abs(s[0]-click_y), abs(s[1]-click_y)))
+                    continue
 
-                # 全范围：该列所有段的联合（含影线）
-                col_full_top = min(s[0] for s in segs)
-                col_full_bottom = max(s[1] for s in segs)
-
-                # 实体：该列最长段
+                # 实体：该列所有段中最长的段
                 longest_seg = max(segs, key=lambda s: s[1] - s[0])
+                # 但实体必须与 target_seg 相邻或重叠，否则用 target_seg 本身
+                if abs(longest_seg[0] - target_seg[0]) > 200:
+                    longest_seg = target_seg
+
+                # full 范围 = target_seg（就是包含点击点的那根K线段）
+                col_full_top    = target_seg[0]
+                col_full_bottom = target_seg[1]
 
                 found_any_candle = True
                 if all_full_top is None or col_full_top < all_full_top:
@@ -418,7 +422,7 @@ class Overlay(QWidget):
                 if all_body_bottom is None or longest_seg[1] > all_body_bottom:
                     all_body_bottom = longest_seg[1]
 
-                logging.debug(f"  col x={scan_x}: full={col_full_top}~{col_full_bottom}, body={longest_seg[0]}~{longest_seg[1]}")
+                logging.debug(f"  col x={scan_x}: target={col_full_top}~{col_full_bottom}, body={longest_seg[0]}~{longest_seg[1]}")
 
             if not found_any_candle:
                 logging.warning("No candle found in scan width.")
