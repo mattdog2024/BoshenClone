@@ -626,7 +626,10 @@ class Overlay(QWidget):
                 _conn_window = 15 if wick_mode else 3
                 connected_top = False
                 for probe_y in range(max(0, top_y - _conn_window), min(height, top_y + _conn_window + 1)):
-                    if is_valid_pixel_at(wick_x, probe_y):
+                    # wick_mode: 上影线也可能是黑色，放宽颜色匹配
+                    _probe_ok = (color_distance(image.pixelColor(wick_x, probe_y), bg_color) > 30) \
+                                if wick_mode else is_valid_pixel_at(wick_x, probe_y)
+                    if _probe_ok:
                         connected_top = True
                         break
                 if not connected_top:
@@ -636,7 +639,9 @@ class Overlay(QWidget):
                 current_gap2 = 0
                 bridged2 = False
                 for y in range(top_y, max(0, top_y - 600), -1):
-                    if is_valid_pixel_at(wick_x, y):
+                    _scan_ok = (color_distance(image.pixelColor(wick_x, y), bg_color) > 30) \
+                               if wick_mode else is_valid_pixel_at(wick_x, y)
+                    if _scan_ok:
                         col_top_y2 = y
                         current_gap2 = 0
                         bridged2 = False
@@ -669,7 +674,10 @@ class Overlay(QWidget):
                 col_bottom_y2 = bottom_y
                 current_gap2 = 0
                 for y in range(bottom_y, min(height, bottom_y + 600)):
-                    if is_valid_pixel_at(rescan_x, y):
+                    # wick_mode: 下影线可能是黑色细线，不强制匹配目标颜色，只要不是背景色即接受
+                    _px_ok = (color_distance(image.pixelColor(rescan_x, y), bg_color) > 30) \
+                             if wick_mode else is_valid_pixel_at(rescan_x, y)
+                    if _px_ok:
                         col_bottom_y2 = y
                         current_gap2 = 0
                     else:
