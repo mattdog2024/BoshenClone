@@ -845,10 +845,46 @@ class Overlay(QWidget):
             
             # Create global QPoints
             if wick_mode:
-                # 影线模式：固定 A=最高点(top)，B=最低点(bottom)，不做距离判断
-                global_start_p = QPoint(pos.x(), int(top_y_logical))
-                global_end_p = QPoint(pos.x(), int(bottom_y_logical))
-                logging.info(f"Wick mode: A=top({top_y_logical}), B=bottom({bottom_y_logical})")
+                # ============================================================
+                # 影模式 A/B 点逻辑：
+                #   A = 影线端点（最高价或最低价）
+                #   B = K 线实体端点（收盘价）
+                #   根据点击位置判断方向：靠近上方→上影；靠近下方→下影
+                # ============================================================
+                
+                # 第一步：用严格颜色匹配重新扫描 x_start~x_end，找实体范围
+                body_top_y = bottom_y   # 初始化为最大值，向上找
+                body_bottom_y = top_y   # 初始化为最小值，向下找
+                for bx in range(x_start, x_end):
+                    for by in range(top_y, bottom_y + 1):
+                        c = image.pixelColor(bx, by)
+                        # 严格匹配：必须是目标颜色（实体颜色）
+                        if color_distance(c, bg_color) > 30 and matches_target(c):
+                            if by < body_top_y:    body_top_y = by
+                            if by > body_bottom_y: body_bottom_y = by
+                
+                # 安全回退：如果实体范围无效，回退到全范围
+                if body_top_y >= body_bottom_y:
+                    body_top_y = top_y
+                    body_bottom_y = bottom_y
+                
+                logging.info(f"Wick mode: body=({body_top_y},{body_bottom_y}), full=({top_y},{bottom_y})")
+                
+                # 第二步：根据点击位置判断方向
+                body_mid_y2 = (body_top_y + body_bottom_y) / 2
+                if click_y <= body_mid_y2:
+                    # 点击在上半部：A=最高点（上影端），B=实体顶部（收盘价）
+                    wick_a_y = top_y / dpr
+                    wick_b_y = body_top_y / dpr
+                    logging.info(f"Wick mode UP: A=wick_top({wick_a_y}), B=body_top({wick_b_y})")
+                else:
+                    # 点击在下半部：A=最低点（下影端），B=实体底部（收盘价）
+                    wick_a_y = bottom_y / dpr
+                    wick_b_y = body_bottom_y / dpr
+                    logging.info(f"Wick mode DOWN: A=wick_bottom({wick_a_y}), B=body_bottom({wick_b_y})")
+                
+                global_start_p = QPoint(pos.x(), int(wick_a_y))
+                global_end_p   = QPoint(pos.x(), int(wick_b_y))
             else:
                 global_start_p = QPoint(pos.x(), int(bottom_y_logical if dist_to_bottom < dist_to_top else top_y_logical))
                 global_end_p = QPoint(pos.x(), int(top_y_logical if dist_to_bottom < dist_to_top else bottom_y_logical))
