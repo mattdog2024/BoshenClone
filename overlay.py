@@ -667,10 +667,8 @@ class Overlay(QWidget):
             # Keep gap_tolerance small (same as Phase-1) to avoid jumping over
             # price-axis horizontal lines or chart bottom borders.
             lower_gap_tolerance = 20 if wick_mode else 8
-            # wick_mode: 下影线也可能偏移，扫描范围扩展到 ±wick_search_radius
-            lower_x_start = wick_x_start if wick_mode else x_start
-            lower_x_end   = wick_x_end   if wick_mode else x_end
-            for rescan_x in range(lower_x_start, lower_x_end):
+            # 下影线必须限制在实体 x 范围内，绝不扩展，防止扫到相邻 K 线
+            for rescan_x in range(x_start, x_end):
                 col_bottom_y2 = bottom_y
                 current_gap2 = 0
                 for y in range(bottom_y, min(height, bottom_y + 600)):
