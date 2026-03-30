@@ -244,20 +244,19 @@ class Overlay(QWidget):
             #
             # Fix: always bias the sampling window UPWARD so it stays inside the
             # chart area.  We take 500px above the click and only 100px below.
+            # 背景色检测：在图像中间区域多列多行采样，取出现最多的颜色作为背景色
+            # 不用单列采样，避免采样点落在K线上导致误判
             color_counts = {}
-            start_scan = max(0, click_y - 500)
-            end_scan   = min(height, click_y + 100)
+            img_w = image.width()
+            img_h = image.height()
+            # 采样区域：水平方向取图像中间 1/4~3/4，垂直方向取 toolbar 以下到底部
+            sample_x_list = range(img_w // 4, img_w * 3 // 4, max(1, img_w // 40))
+            sample_y_list = range(80, img_h - 50, max(1, img_h // 30))
+            for sy in sample_y_list:
+                for sx in sample_x_list:
+                    pixel = image.pixelColor(sx, sy).rgb()
+                    color_counts[pixel] = color_counts.get(pixel, 0) + 1
 
-            # Sanity check scan range
-            if start_scan >= end_scan:
-                 start_scan = 0
-                 end_scan = height
-            
-            # Step size 5
-            for y in range(start_scan, end_scan, 5):
-                pixel = image.pixelColor(x, y).rgb()
-                color_counts[pixel] = color_counts.get(pixel, 0) + 1
-            
             if not color_counts:
                 logging.error("No pixels scanned")
                 self.setVisible(True)
@@ -265,7 +264,7 @@ class Overlay(QWidget):
 
             bg_color_rgb = max(color_counts, key=color_counts.get)
             bg_color = QColor(bg_color_rgb)
-            logging.info(f"Detected BG Color: {bg_color.name()}")
+            logging.info(f"Detected BG Color: {bg_color.name()} (count={color_counts[bg_color_rgb]})")
 
             # --- SMART TOOLBAR DETECTION ---
             # Scan downward from the top of the screen to find where the chart
