@@ -322,489 +322,126 @@ class Overlay(QWidget):
 
             logging.info(f"Pixel at click ({x}, {click_y}) is candle? {is_candle_pixel(click_y)} (Color: {QColor(image.pixelColor(x, click_y).rgb()).name()})")
 
-            # 4. robust scan with gap tolerance and width scanning
-            # We scan a small window around x to catch wicks.
-            # For thin wicks (1-2px wide), we need to scan a wider band to guarantee
-            # we hit the wick column even if the user clicks slightly off-center.
+            # ================================================================
+            # 4. 新算法：连续像素段检测（不依赖颜色匹配，深色/浅色主题通用）
+            # 原理：对点击列附近 ±scan_radius 列逐列扫描，
+            #   将每列的非背景色像素分成连续段，
+            #   最长的段 = K线实体，整体范围顶底 = 完整K线（含影线）
+            # ================================================================
             scan_radius = 6
             x_start = max(0, x - scan_radius)
             x_end = min(image.width(), x + scan_radius + 1)
             
-            global_top_y = float('inf')
-            global_bottom_y = float('-inf')
+            # ================================================================
+            # 新算法：连续像素段检测
+            # 不依赖颜色匹配，深色/浅色主题通用
+            # ================================================================
+            
+            def find_segments_in_col(col_x, y_start, y_end, gap_tol=8):
+                """
+                在指定列的 y_start~y_end 范围内，找出所有连续非背景色像素段。
+                返回列表：[(seg_top, seg_bottom), ...]
+                """
+                segments = []
+                in_seg = False
+                seg_start = 0
+                gap_count = 0
+                last_valid = -1
+                for y in range(y_start, y_end):
+                    c = image.pixelColor(col_x, y)
+                    is_non_bg = color_distance(c, bg_color) > 30
+                    if is_non_bg:
+                        if not in_seg:
+                            in_seg = True
+                            seg_start = y
+                        last_valid = y
+                        gap_count = 0
+                    else:
+                        if in_seg:
+                            gap_count += 1
+                            if gap_count > gap_tol:
+                                segments.append((seg_start, last_valid))
+                                in_seg = False
+                                gap_count = 0
+                if in_seg:
+                    segments.append((seg_start, last_valid))
+                return segments
+
+            # 在 ±scan_radius 列范围内，对每列找连续段
+            # 并找到包含点击点的段（或最靠近点击点的段）
+            # 全局 top/bottom = 所有列中包含点击点的段的联合范围
+            # 实体 top/bottom = 各列中最长段的联合范围
+
+            all_full_top = None    # 完整K线范围（含影线）
+            all_full_bottom = None
+            all_body_top = None    # 实体范围（最长段）
+            all_body_bottom = None
             found_any_candle = False
-            
-            # First, determine TARGET COLOR from the click point (to avoid axis lines)
-            # Search nearby pixels for the first non-BG color
-            target_color = None
-            
-            # Search nearby pixels for the first non-BG color
-            # Use a small box search to find color near click
-            # Limit radius to 10 (21x21 box) to avoid finding far-away neighbors
-            search_radius = 10
-            for r in range(0, search_radius):
-                # Simple box search around click for target color
-                found = False
-                # We check the box of size (2r+1).
-                # To be efficient we *could* just check the perimeter, but for small r, full box is fine.
-                for dy in range(-r, r + 1):
-                    for dx in range(-r, r + 1):
-                        # Optimize: only check outer shell if r > 0? No, small enough to verify all.
-                        # Check bounds
-                        cx = x + dx
-                        cy = click_y + dy
-                        if cx >= 0 and cx < image.width() and cy >= 0 and cy < height:
-                            c = image.pixelColor(cx, cy)
-                            if color_distance(c, bg_color) > 30:
-                                target_color = c
-                                found = True
-                                break
-                    if found: break
-                if found: break
-            
-            if not target_color:
-                logging.warning("Could not find any candle color near click.")
-                target_color = QColor(Qt.black) # Fallback? likely fail
-            else:
-                logging.info(f"Target Candle Color: {target_color.name()}")
 
-                # Pre-check if target is black
-                tr, tg, tb = target_color.red(), target_color.green(), target_color.blue()
-                # Relaxed threshold for target black detection
-                target_is_black = (max(tr,tg,tb) - min(tr,tg,tb) < 30) and (max(tr,tg,tb) < 100)
+            # 工具栏底部 y 坐标（扫描不超过工具栏）
+            scan_top_limit = toolbar_bottom_y if toolbar_bottom_y > 0 else 0
 
-                def matches_target(c):
-                    rgb = c.red(), c.green(), c.blue()
-                    saturation = max(rgb) - min(rgb)
-                    brightness = max(rgb)
-                    bg_r, bg_g, bg_b = bg_color.red(), bg_color.green(), bg_color.blue()
-
-                    # Must be meaningfully different from background first.
-                    # If the pixel is very close to background color, reject it
-                    # regardless of brightness — this prevents the chart's bottom
-                    # axis bar (which is slightly darker gray) from being accepted.
-                    dist_from_bg = color_distance(c, bg_color)
-                    if dist_from_bg < 30:
-                        return False
-
-                    # Rule 1: WICK pixels — dark AND clearly different from background.
-                    # Wicks on light-theme charts are rendered as near-black lines.
-                    # Accept if brightness is low AND the pixel is far from background.
-                    if brightness < 120 and dist_from_bg > 50:
-                        return True
-
-                    # Rule 2: Grayscale mid-tone rejection (grid lines / text).
-                    # Chart grid lines are typically RGB=(192,192,192): saturation=0,
-                    # brightness=192.  The old threshold was 160, which MISSED these!
-                    # A pixel that is gray (saturation<15) and not very dark (brightness>120)
-                    # is almost certainly a grid line or axis label, NOT a candle.
-                    # Raise threshold to 220 to cover all common grid line shades.
-                    # (True wick pixels have brightness < 120, handled by Rule 1 above.)
-                    if saturation < 15 and brightness >= 120:
-                        return target_is_black
-
-                    # Rule 3: Dominant-channel match for colored candle bodies.
-                    tr, tg, tb = target_color.red(), target_color.green(), target_color.blue()
-                    cr, cg, cb = c.red(), c.green(), c.blue()
-
-                    t_dom = 'r' if tr > tg and tr > tb else ('g' if tg > tr and tg > tb else 'b')
-                    c_dom = 'r' if cr > cg and cr > cb else ('g' if cg > cr and cg > cb else 'b')
-
-                    if t_dom == c_dom:
-                        return True
-
-                    return False
-
-
-            # gap_tolerance: how many consecutive background pixels to tolerate
-            # before deciding the candle has ended.
-            #
-            # History of bugs caused by wrong values:
-            #   - Too small (e.g. 8):  long wicks get cut off mid-wick.
-            #   - Too large (e.g. 400): after the candle body ends, the scan keeps
-            #     going through 400px of pure background all the way to the screen
-            #     edge, and sets col_bottom_y = screen_bottom.  This makes the
-            #     measured range span the entire chart height → A and B lines are
-            #     placed at the wrong positions.
-            #
-            # Correct value: wicks are 1-2px wide, continuous, with NO background
-            # gaps inside them.  The only gap we need to tolerate is the transition
-            # from body to wick (a few anti-aliased pixels).  8px is sufficient.
-            # For the rare case of a very long wick that has a 1-pixel gap due to
-            # sub-pixel rendering, we use 12px as a safe margin.
-            gap_tolerance = 12  # pixels of background gap before scan stops
-            
             for scan_x in range(x_start, x_end):
-                # Helper for this column
-                def is_valid_pixel(y):
-                     if y < 0 or y >= height: return False
-                     c = image.pixelColor(scan_x, y)
-                     # Must be non-bg AND match target color
-                     is_non_bg = color_distance(c, bg_color) > 30
-                     if not is_non_bg: return False
-                     return matches_target(c)
+                segs = find_segments_in_col(
+                    scan_x,
+                    y_start=scan_top_limit,
+                    y_end=min(height, click_y + 800),
+                    gap_tol=12
+                )
+                if not segs:
+                    continue
 
-                # Find Top
-                col_top_y = click_y
-                current_gap = 0
-                for y in range(click_y, max(0, click_y - 800), -1):
-                    if is_valid_pixel(y):
-                        col_top_y = y
-                        current_gap = 0
-                    else:
-                        current_gap += 1
-                        if current_gap > gap_tolerance:
-                            break
+                # 找包含点击点的段（允许 ±30px 偏差）
+                target_seg = None
+                for seg in segs:
+                    if seg[0] - 30 <= click_y <= seg[1] + 30:
+                        target_seg = seg
+                        break
+                # 如果没有包含点击点的段，取距离最近的段
+                if target_seg is None:
+                    target_seg = min(segs, key=lambda s: min(abs(s[0]-click_y), abs(s[1]-click_y)))
 
-                # TOOLBAR BRIDGE SCAN (向上跨越工具栏)
-                # Problem: When a candle's upper wick extends behind the app toolbar
-                # (e.g. y=94~158), there is a ~65px gap of non-candle pixels that
-                # exceeds gap_tolerance=12.  The scan stops at the toolbar bottom,
-                # missing the wick tip above the toolbar.
-                #
-                # Fix: After Phase-1 top scan, if col_top_y is within the upper
-                # portion of the screen (< 250px from top), do a second upward pass
-                # with a much larger gap_tolerance (120px) to bridge the toolbar.
-                #
-                # CRITICAL: We must NOT use is_valid_pixel here because Rule 1 of
-                # matches_target accepts ANY dark pixel (brightness<120, dist>50),
-                # which includes the Windows title bar (RGB≈16,16,16).  The title
-                # bar is always near y=0 and would be accepted as a wick pixel,
-                # pulling top_y all the way to y=2.
-                #
-                # Safe bridge pixel check: the pixel must share the same dominant
-                # color channel as target_color.  This rejects black/blue title-bar
-                # pixels when the candle is green or red.
-                def is_bridge_pixel(y):
-                    """Like is_valid_pixel but also requires dominant-channel match
-                    with target_color to avoid accepting title-bar / toolbar pixels."""
-                    if not is_valid_pixel(y): return False
-                    c = image.pixelColor(scan_x, y)
-                    cr, cg, cb = c.red(), c.green(), c.blue()
-                    tr2, tg2, tb2 = target_color.red(), target_color.green(), target_color.blue()
-                    # Dominant channel of candidate pixel
-                    c_dom = 'r' if cr > cg and cr > cb else ('g' if cg > cr and cg > cb else 'b')
-                    t_dom = 'r' if tr2 > tg2 and tr2 > tb2 else ('g' if tg2 > tr2 and tg2 > tb2 else 'b')
-                    # For black-wick candles (target_is_black), accept any dark pixel
-                    # that is clearly non-background — same as is_valid_pixel.
-                    if target_is_black:
-                        return True
-                    # For colored candles, dominant channel must match.
-                    return c_dom == t_dom
+                # 全范围：该列所有段的联合（含影线）
+                col_full_top = min(s[0] for s in segs)
+                col_full_bottom = max(s[1] for s in segs)
 
-                # Only trigger bridge scan if Phase-1 actually found a candle
-                # top above the click point (col_top_y < click_y).  If Phase-1
-                # found nothing (col_top_y == click_y), the click was in empty
-                # chart space — bridging upward would only find toolbar icons.
-                # Threshold: toolbar bottom is at y≈100.  Only bridge if the
-                # candle top is within 10px of the toolbar (col_top_y < 110).
-                # Using 250 was too aggressive — it triggered for any candle
-                # in the upper quarter of the screen, causing toolbar icons
-                # (e.g. the green 'daily' button at y≈72) to be mistaken for
-                # wick pixels.
-                if col_top_y < click_y and col_top_y < bridge_threshold:
-                    bridge_top_y = col_top_y
-                    bridge_gap = 0
-                    bridge_gap_tolerance = 120  # large enough to span any toolbar
-                    for y in range(col_top_y, max(0, col_top_y - 300), -1):
-                        if is_bridge_pixel(y):
-                            bridge_top_y = y
-                            bridge_gap = 0
-                        else:
-                            bridge_gap += 1
-                            if bridge_gap > bridge_gap_tolerance:
-                                break
-                    if bridge_top_y < col_top_y:
-                        logging.debug(f"  col x={scan_x}: toolbar bridge: top {col_top_y} -> {bridge_top_y}")
-                        col_top_y = bridge_top_y
+                # 实体：该列最长段
+                longest_seg = max(segs, key=lambda s: s[1] - s[0])
 
-                # Find Bottom
-                col_bottom_y = click_y
-                current_gap = 0
-                last_valid_y = click_y  # track the last valid pixel seen
-                scan_bottom_end = min(height, click_y + 800)
-                for y in range(click_y, scan_bottom_end):
-                    if is_valid_pixel(y):
-                        col_bottom_y = y
-                        last_valid_y = y
-                        current_gap = 0
-                    else:
-                        current_gap += 1
-                        if current_gap > gap_tolerance:
-                            break
-                # Only accept this column's result if it actually found valid candle pixels.
-                # IMPORTANT: Do NOT use a fallback that scans with is_candle_pixel (which
-                # ignores color-matching) — that fallback was the root cause of Bottom=828
-                # because it accepted the chart's bottom axis bar as a candle pixel.
-                col_found = (col_top_y != click_y or is_valid_pixel(col_top_y)) and \
-                            (col_bottom_y != click_y or is_valid_pixel(col_bottom_y))
+                found_any_candle = True
+                if all_full_top is None or col_full_top < all_full_top:
+                    all_full_top = col_full_top
+                if all_full_bottom is None or col_full_bottom > all_full_bottom:
+                    all_full_bottom = col_full_bottom
+                if all_body_top is None or longest_seg[0] < all_body_top:
+                    all_body_top = longest_seg[0]
+                if all_body_bottom is None or longest_seg[1] > all_body_bottom:
+                    all_body_bottom = longest_seg[1]
 
-                if is_valid_pixel(col_top_y) or is_valid_pixel(col_bottom_y):
-                    found_any_candle = True
-                    if col_top_y < global_top_y: global_top_y = col_top_y
-                    if col_bottom_y > global_bottom_y: global_bottom_y = col_bottom_y
-                    logging.debug(f"  col x={scan_x}: top={col_top_y}, bottom={col_bottom_y}")
+                logging.debug(f"  col x={scan_x}: full={col_full_top}~{col_full_bottom}, body={longest_seg[0]}~{longest_seg[1]}")
 
             if not found_any_candle:
-                 logging.warning("No candle found in scan width.")
-                 self.setVisible(True)
-                 return
+                logging.warning("No candle found in scan width.")
+                self.setVisible(True)
+                return
 
-            top_y = global_top_y
-            bottom_y = global_bottom_y
+            top_y    = all_full_top
+            bottom_y = all_full_bottom
+            body_top_y    = all_body_top
+            body_bottom_y = all_body_bottom
 
-            # --- PHASE 2: WICK EXTENSION SCAN ---
-            # DESIGN PRINCIPLES (learned from many debugging sessions):
-            #
-            # UPPER WICK (上影线): May be horizontally offset from the body by ~50px.
-            #   Solution: scan a wide range (±wick_search_radius) UPWARD only.
-            #   Connectivity check: column must have a pixel near current top_y.
-            #   Toolbar bridge: if scan stalls near toolbar, allow one bridge.
-            #
-            # LOWER WICK (下影线): Always within the body's x-range (x_start~x_end).
-            #   Phase-1 already covers x_start~x_end but uses gap_tolerance=12.
-            #   If the wick has a small gap (e.g. 1px), Phase-1 may stop early.
-            #   Solution: re-scan x_start~x_end DOWNWARD with larger gap_tolerance=25.
-            #   NEVER scan outside x_start~x_end downward — adjacent candles of the
-            #   same color would be picked up and bottom_y would be wrong.
-            #
-            # Problem: The candle wick (影线) is only 1-2px wide and may be horizontally
-            # offset from the candle body by up to ~50px (especially on daily charts with
-            # wide bodies).  Phase 1 only scans click_x ± scan_radius (13 columns), which
-            # may miss the wick entirely.
-            #
-            # Strategy:
-            #   1. Find the horizontal center of the candle body found in Phase 1.
-            #   2. From that center, scan ±wick_search_radius columns.
-            #   3. For each column, extend top_y upward and bottom_y downward using the
-            #      same gap_tolerance, starting from the current top_y / bottom_y.
-            #
-            # This correctly handles:
-            #   - Long upper wicks (上影线) that are offset left of the body
-            #   - Long lower wicks (下影线) that are offset left of the body
-            #   - Thin wicks (1-2px wide) that Phase 1 missed
-            wick_search_radius = 40  # search ±40px from body center for wick columns
+            logging.info(f"Segment scan: full=({top_y},{bottom_y}), body=({body_top_y},{body_bottom_y})")
 
-            # Compute body center from Phase 1 results
-            body_center_x = x  # default to click x
-            # Find the horizontal span of valid pixels at the body's vertical midpoint
-            body_mid_y = (top_y + bottom_y) // 2
-            body_xs = []
-            for bx in range(x_start, x_end):
-                c = image.pixelColor(bx, body_mid_y)
-                if color_distance(c, bg_color) > 30 and matches_target(c):
-                    body_xs.append(bx)
-            if body_xs:
-                body_center_x = (min(body_xs) + max(body_xs)) // 2
-                logging.debug(f"Phase2: body center x={body_center_x} (from xs={min(body_xs)}~{max(body_xs)})")
-            else:
-                logging.debug(f"Phase2: body center x={body_center_x} (fallback to click x)")
-
-            wick_x_start = max(0, body_center_x - wick_search_radius)
-            wick_x_end = min(image.width(), body_center_x + wick_search_radius + 1)
-
-            def is_valid_pixel_at(sx, y):
-                """Check if pixel at (sx, y) is a valid candle pixel."""
-                if y < 0 or y >= height: return False
-                c = image.pixelColor(sx, y)
-                if color_distance(c, bg_color) <= 30: return False
-                return matches_target(c)
-
-            # ================================================================
-            # PHASE 2A: UPPER WICK SCAN (wide horizontal range, upward only)
-            # ================================================================
-            # Upper wicks can be offset left/right of the body by up to ~50px.
-            # We scan +-wick_search_radius columns, but ONLY upward.
-            # Downward scan is excluded here to avoid picking up adjacent candles.
-            for wick_x in range(wick_x_start, wick_x_end):
-                # Skip columns already covered by Phase 1
-                if x_start <= wick_x < x_end:
-                    continue
-                # Connectivity check: column must have a pixel VERY CLOSE to current top_y
-                # Use strict +-3px window to avoid picking up adjacent candles' wicks
-                # wick_mode: 放宽到 ±15px，确保能找到偏移的影线
-                _conn_window = 15 if wick_mode else 3
-                connected_top = False
-                for probe_y in range(max(0, top_y - _conn_window), min(height, top_y + _conn_window + 1)):
-                    # wick_mode: 上影线也可能是黑色，放宽颜色匹配
-                    _probe_ok = (color_distance(image.pixelColor(wick_x, probe_y), bg_color) > 30) \
-                                if wick_mode else is_valid_pixel_at(wick_x, probe_y)
-                    if _probe_ok:
-                        connected_top = True
-                        break
-                if not connected_top:
-                    continue  # not connected to target candle, skip entirely
-                # Scan upward with toolbar bridge support
-                col_top_y2 = top_y
-                current_gap2 = 0
-                bridged2 = False
-                for y in range(top_y, max(0, top_y - 600), -1):
-                    _scan_ok = (color_distance(image.pixelColor(wick_x, y), bg_color) > 30) \
-                               if wick_mode else is_valid_pixel_at(wick_x, y)
-                    if _scan_ok:
-                        col_top_y2 = y
-                        current_gap2 = 0
-                        bridged2 = False
-                    else:
-                        current_gap2 += 1
-                        if current_gap2 > gap_tolerance:
-                            if not bridged2 and y < bridge_threshold:
-                                bridged2 = True
-                                continue
-                            break
-                if col_top_y2 < top_y:
-                    logging.debug(f"  Phase2A upper wick x={wick_x}: top {top_y}->{col_top_y2}")
-                    top_y = col_top_y2
-
-            # ================================================================
-            # PHASE 2B: LOWER WICK RE-SCAN (body x-range only, larger gap)
-            # ================================================================
-            # Lower wicks are always within the body x-range (x_start~x_end).
-            # Phase-1 uses gap_tolerance=12 which may stop early if the wick
-            # has a small gap. Re-scan the same columns with gap_tolerance=25.
-            # CRITICAL: Do NOT scan outside x_start~x_end here. Adjacent candles
-            # of the same color would extend bottom_y incorrectly.
-            # Keep gap_tolerance small (same as Phase-1) to avoid jumping over
-            # price-axis horizontal lines or chart bottom borders.
-            lower_gap_tolerance = 20 if wick_mode else 8
-            # 下影线必须限制在实体 x 范围内，绝不扩展，防止扫到相邻 K 线
-            for rescan_x in range(x_start, x_end):
-                col_bottom_y2 = bottom_y
-                current_gap2 = 0
-                for y in range(bottom_y, min(height, bottom_y + 600)):
-                    # wick_mode: 下影线可能是黑色细线，不强制匹配目标颜色，只要不是背景色即接受
-                    _px_ok = (color_distance(image.pixelColor(rescan_x, y), bg_color) > 30) \
-                             if wick_mode else is_valid_pixel_at(rescan_x, y)
-                    if _px_ok:
-                        col_bottom_y2 = y
-                        current_gap2 = 0
-                    else:
-                        current_gap2 += 1
-                        if current_gap2 > lower_gap_tolerance:
-                            break
-                if col_bottom_y2 > bottom_y:
-                    logging.debug(f"  Phase2B lower wick x={rescan_x}: bottom {bottom_y}->{col_bottom_y2}")
-                    bottom_y = col_bottom_y2
-
-            logging.info(f"After Phase2 wick scan: Top={top_y}, Bottom={bottom_y}")
-            # --- END PHASE 2 ---
-
-            # --- SMART SNAP HEURISTIC ---
-            # Purpose: when the user accidentally clicks a price-axis label or grid line
-            # (a tiny object, H < 20px), snap to the nearest real candle.
-            #
-            # IMPORTANT: Smart Snap must NOT fire when the user clicked a valid wick.
-            # A wick is a thin (1-2px wide) but TALL vertical line.  The original scan
-            # (scan_radius=6 columns) already captured the full wick height in global_top_y
-            # / global_bottom_y.  So object_h already reflects the true candle height.
-            # We must only snap when object_h is genuinely tiny (< 20px) — i.e. the user
-            # clicked something that is NOT a candle at all.
-            object_h = abs(bottom_y - top_y)
-            should_try_snap = (object_h < 20)
-
-            if should_try_snap:
-                 logging.info(f"Tiny object (H={object_h}) — attempting Smart Snap to nearest candle...")
-                 print("Attempting Smart Snap to Candle...")
-
-                 def is_candidate_pixel(c):
-                     dist = color_distance(c, bg_color)
-                     if dist < 30: return False
-                     rgb = c.red(), c.green(), c.blue()
-                     sat = max(rgb) - min(rgb)
-                     val = max(rgb)
-                     if sat < 20 and val < 150:
-                         return False
-                     return True
-
-                 # Search ±200px vertically so we can find the candle body even when
-                 # the user clicked the wick tip far from the body.
-                 scan_range_v = 200
-                 gap_tol_v = 40
-
-                 v_scan_start = max(0, click_y - scan_range_v)
-                 v_scan_end = min(height - 1, click_y + scan_range_v)
-
-                 best_segment = None
-                 best_score = -1
-
-                 snap_scan_radius = 6
-                 snap_x_start = max(0, x - snap_scan_radius)
-                 snap_x_end = min(image.width(), x + snap_scan_radius + 1)
-
-                 for snap_x in range(snap_x_start, snap_x_end):
-                     in_segment = False
-                     seg_start = -1
-                     gap_count = 0
-
-                     for y in range(v_scan_start, v_scan_end):
-                         c = image.pixelColor(snap_x, y)
-                         valid = is_candidate_pixel(c)
-
-                         if valid:
-                             if not in_segment:
-                                 in_segment = True
-                                 seg_start = y
-                             gap_count = 0
-                         else:
-                             if in_segment:
-                                 gap_count += 1
-                                 if gap_count > gap_tol_v:
-                                     in_segment = False
-                                     seg_end = y - gap_count
-                                     seg_h = seg_end - seg_start
-                                     if seg_h > 20:
-                                         mid_y = (seg_start + seg_end) / 2
-                                         d = abs(mid_y - click_y)
-                                         score = seg_h - (d * 1.5)
-                                         if score > best_score:
-                                             best_score = score
-                                             best_segment = (seg_start, seg_end)
-
-                     if in_segment:
-                         seg_end = v_scan_end - 1
-                         seg_h = seg_end - seg_start
-                         if seg_h > 20:
-                             mid_y = (seg_start + seg_end) / 2
-                             d = abs(mid_y - click_y)
-                             score = seg_h - (d * 1.5)
-                             if score > best_score:
-                                 best_score = score
-                                 best_segment = (seg_start, seg_end)
-
-                 if best_segment:
-                     found_h = best_segment[1] - best_segment[0]
-                     if found_h > object_h:
-                         top_y = best_segment[0]
-                         bottom_y = best_segment[1]
-                         logging.info(f"Smart Snap: Switched to Candle H={found_h} ({top_y}, {bottom_y})")
-                         print(f"Smart Snap: Found Candle H={found_h}")
-                 else:
-                     logging.info("Smart Snap: No better object found. Keeping original.")
-            
-            
-            logging.info(f"Final Candle Limit: Top={top_y}, Bottom={bottom_y}")
-            print(f"Candle detected: Top={top_y}, Bottom={bottom_y}")
-            
-            # FINAL GUARD: if top_y >= bottom_y the whole scan collapsed to a point.
-            # This can still happen when the candle is very short OR when the bottom
-            # wick is cut off by the chart's bottom axis bar (a solid horizontal band
-            # of background-like color that interrupts the gap-tolerance scan).
-            # Strategy: walk downward from top_y using the broadest possible check
-            # (is_candle_pixel, which only requires "not background") all the way to
-            # the screen edge, and take the last hit as the true bottom.
+            # 安全检查
             if top_y >= bottom_y:
-                logging.warning("top_y >= bottom_y — running edge-extension fallback.")
-                extended_bottom = top_y
-                for y in range(top_y, height):
-                    if is_candle_pixel(y):
-                        extended_bottom = y
-                bottom_y = extended_bottom
-                if top_y >= bottom_y:
-                    logging.warning("Edge-extension failed — aborting draw to avoid zero-height line.")
-                    self.setVisible(True)
-                    return
+                logging.warning("top_y >= bottom_y after segment scan, aborting.")
+                self.setVisible(True)
+                return
+            if body_top_y >= body_bottom_y:
+                body_top_y = top_y
+                body_bottom_y = bottom_y
 
-            logging.info(f"Candle detected: Top={top_y}, Bottom={bottom_y}")
+            logging.info(f"Final Candle Limit: Top={top_y}, Bottom={bottom_y}")
             print(f"Candle detected: Top={top_y}, Bottom={bottom_y}")
 
             if top_y == bottom_y:
@@ -850,42 +487,21 @@ class Overlay(QWidget):
                 #   A = 影线端点（最高价或最低价）
                 #   B = K 线实体端点（收盘价）
                 #   根据点击位置判断方向：靠近上方→上影；靠近下方→下影
+                # 直接使用新算法已计算的 body_top_y/body_bottom_y
                 # ============================================================
-                
-                # 第一步：用严格颜色匹配重新扫描 x_start~x_end，找实体范围
-                body_top_y = bottom_y   # 初始化为最大值，向上找
-                body_bottom_y = top_y   # 初始化为最小值，向下找
-                for bx in range(x_start, x_end):
-                    for by in range(top_y, bottom_y + 1):
-                        c = image.pixelColor(bx, by)
-                        # 严格匹配：必须是目标颜色（实体颜色）
-                        if color_distance(c, bg_color) > 30 and matches_target(c):
-                            if by < body_top_y:    body_top_y = by
-                            if by > body_bottom_y: body_bottom_y = by
-                
-                # 安全回退：如果实体范围无效，回退到全范围
-                if body_top_y >= body_bottom_y:
-                    body_top_y = top_y
-                    body_bottom_y = bottom_y
-                
-                logging.info(f"Wick mode: body=({body_top_y},{body_bottom_y}), full=({top_y},{bottom_y})")
-                
-                # 第二步：根据点击位置判断方向
                 body_mid_y2 = (body_top_y + body_bottom_y) / 2
                 if click_y <= body_mid_y2:
-                    # 点击在上半部：A=最高点（上影端），B=实体顶部（收盘价）
                     wick_a_y = top_y / dpr
                     wick_b_y = body_top_y / dpr
                     logging.info(f"Wick mode UP: A=wick_top({wick_a_y}), B=body_top({wick_b_y})")
                 else:
-                    # 点击在下半部：A=最低点（下影端），B=实体底部（收盘价）
                     wick_a_y = bottom_y / dpr
                     wick_b_y = body_bottom_y / dpr
                     logging.info(f"Wick mode DOWN: A=wick_bottom({wick_a_y}), B=body_bottom({wick_b_y})")
-                
                 global_start_p = QPoint(pos.x(), int(wick_a_y))
                 global_end_p   = QPoint(pos.x(), int(wick_b_y))
             else:
+                # K线模式：A/B = 整根K线最高/最低，根据点击位置判断哪端是A
                 global_start_p = QPoint(pos.x(), int(bottom_y_logical if dist_to_bottom < dist_to_top else top_y_logical))
                 global_end_p = QPoint(pos.x(), int(top_y_logical if dist_to_bottom < dist_to_top else bottom_y_logical))
             
