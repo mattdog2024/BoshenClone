@@ -999,6 +999,34 @@ class boshen_strategy(CtaTemplate):
         self._is_history = False  # 历史回放结束，切换到实盘模式
         self.output('策略初始化完成，开始监控行情...（等待第一个tick输出实时价格分析）')
 
+        # ── 将历史日线K线批量推送到图表 ──────────────────────────
+        # 图表窗口已经在 onInit 中启动，现在把历史K线数据推进去
+        if self.widget is not None and self.am_daily.inited:
+            try:
+                # 遍历 am_daily 中的所有历史日线，构造 bar 对象并推送
+                for i in range(self.am_daily.count):
+                    # 构造一个简单的 K 线对象（仅包含图表所需的字段）
+                    class SimpleBar:
+                        def __init__(self, dt, o, h, l, c):
+                            self.datetime = dt
+                            self.open = o
+                            self.high = h
+                            self.low = l
+                            self.close = c
+                    
+                    bar = SimpleBar(
+                        dt=self.am_daily.datetime[i],
+                        o=self.am_daily.open[i],
+                        h=self.am_daily.high[i],
+                        l=self.am_daily.low[i],
+                        c=self.am_daily.close[i]
+                    )
+                    self._push_daily_kline_to_widget(bar)
+                
+                self.output(f'已将 {self.am_daily.count} 根历史日线推送到图表窗口')
+            except Exception as e:
+                self.output(f'历史K线推送失败: {e}')
+
     def onTick(self, tick):
         """收到行情Tick"""
         super().onTick(tick)
