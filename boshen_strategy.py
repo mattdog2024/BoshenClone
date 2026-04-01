@@ -908,7 +908,12 @@ class boshen_strategy(CtaTemplate):
 
         try:
             self.output(f'开始加载历史日线...')
-            self.loadDay(1, func=self.onDay)  # 加载1年日线（约250根，取最近60根）
+            # qt_gui=True: 当图表窗口被关闭过后，重新启动时需要此参数才能重新弹出图表
+            try:
+                self.loadDay(1, func=self.onDay, qt_gui=True)
+            except TypeError:
+                # 如果该版本不支持 qt_gui 参数，退化处理
+                self.loadDay(1, func=self.onDay)
         except Exception as e:
             self.output(f'历史日线加载失败: {e}')
 
