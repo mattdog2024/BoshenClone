@@ -831,6 +831,19 @@ class boshen_strategy(CtaTemplate):
     # 策略回调函数
     # ============================================================
 
+    def onInit(self):
+        """策略初始化（加载时调用，用于UI组件初始化）"""
+        super().onInit()
+        
+        # ── K线图可视化：启动图表窗口 ──────────────────────────────
+        # 必须在 onInit 中调用 getGui()，这是官方示例的标准做法
+        if _KLWIDGET_AVAILABLE and KLWidget is not None:
+            try:
+                self.getGui()
+                self.output('K线图表窗口已启动，将实时显示波神1-8线')
+            except Exception as e:
+                self.output(f'K线图表启动失败（不影响策略运行）: {e}')
+
     def onStart(self):
         """策略启动"""
         # 如果 vtSymbol 为空，自动从实例名称推断合约代码
@@ -985,22 +998,6 @@ class boshen_strategy(CtaTemplate):
 
         self._is_history = False  # 历史回放结束，切换到实盘模式
         self.output('策略初始化完成，开始监控行情...（等待第一个tick输出实时价格分析）')
-
-        # ── K线图可视化：启动图表窗口 ──────────────────────────────
-        # getGui() 会创建 KLWidget 窗口并将实例赋给 self.widget
-        # 必须在历史数据加载完成后调用，否则图表没有历史K线
-        if _KLWIDGET_AVAILABLE and KLWidget is not None:
-            try:
-                self.getGui()
-                self.output('K线图表窗口已启动，将实时显示波神1-8线')
-                # 通知图表刷新历史数据（与官方Demo_OptionBSPrice一致）
-                if self.widget is not None:
-                    try:
-                        self.widget.load_data_signal.emit()
-                    except Exception:
-                        pass  # 部分版本可能不支持此信号，忽略
-            except Exception as e:
-                self.output(f'K线图表启动失败（不影响策略运行）: {e}')
 
     def onTick(self, tick):
         """收到行情Tick"""
