@@ -1004,16 +1004,18 @@ class boshen_strategy(CtaTemplate):
         if self.widget is not None and self.am_daily.inited:
             try:
                 # 遍历 am_daily 中的所有历史日线，构造 bar 对象并推送
-                for i in range(self.am_daily.count):
-                    # 构造一个简单的 K 线对象（仅包含图表所需的字段）
-                    class SimpleBar:
-                        def __init__(self, dt, o, h, l, c):
-                            self.datetime = dt
-                            self.open = o
-                            self.high = h
-                            self.low = l
-                            self.close = c
-                    
+                # 注意：am_daily 是环形数组，实际有效数据用 len(am_daily.close) 获取
+                n = len(self.am_daily.close)
+                
+                class SimpleBar:
+                    def __init__(self, dt, o, h, l, c):
+                        self.datetime = dt
+                        self.open = o
+                        self.high = h
+                        self.low = l
+                        self.close = c
+                
+                for i in range(n):
                     bar = SimpleBar(
                         dt=self.am_daily.datetime[i],
                         o=self.am_daily.open[i],
@@ -1023,7 +1025,7 @@ class boshen_strategy(CtaTemplate):
                     )
                     self._push_daily_kline_to_widget(bar)
                 
-                self.output(f'已将 {self.am_daily.count} 根历史日线推送到图表窗口')
+                self.output(f'已将 {n} 根历史日线推送到图表窗口')
             except Exception as e:
                 self.output(f'历史K线推送失败: {e}')
 
