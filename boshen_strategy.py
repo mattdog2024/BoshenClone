@@ -1004,27 +1004,10 @@ class boshen_strategy(CtaTemplate):
         self._is_history = False  # 历史回放结束，切换到实盘模式
         self.output('策略初始化完成，开始监控行情...（等待第一个tick输出实时价格分析）')
 
-        # ── 将历史日线K线批量推送到图表 ──────────────────────────
-        # 图表窗口已经在 onInit 中启动，现在把历史K线数据推进去
-        if self.widget is not None and self.am_daily.inited:
-            try:
-                # 遍历 am_daily 中的所有历史日线，用无限易原生 KLineData 对象推送
-                # 注意：am_daily 是环形数组，实际有效数据用 len(am_daily.close) 获取
-                n = len(self.am_daily.close)
-                
-                for i in range(n):
-                    bar = KLineData()
-                    bar.datetime = self.am_daily.datetime[i]
-                    bar.open     = float(self.am_daily.open[i])
-                    bar.high     = float(self.am_daily.high[i])
-                    bar.low      = float(self.am_daily.low[i])
-                    bar.close    = float(self.am_daily.close[i])
-                    bar.volume   = float(self.am_daily.volume[i]) if hasattr(self.am_daily, 'volume') else 0.0
-                    self._push_daily_kline_to_widget(bar)
-                
-                self.output(f'已将 {n} 根历史日线推送到图表窗口')
-            except Exception as e:
-                self.output(f'历史K线推送失败: {e}')
+        # ── 历史日线K线已在 loadDay 回调的 onDay 中逐根推送到图表 ────────────
+        # 无需在这里重复推送，图表已包含完整历史K线
+        if self.widget is not None:
+            self.output('图表窗口已就绪，历史日线已在加载过程中逐根推送完毕')
 
     def onTick(self, tick):
         """收到行情Tick"""
@@ -1176,9 +1159,9 @@ class boshen_strategy(CtaTemplate):
         if not self._is_history:
             self._check_daily_signal(bar)
 
-        # ── K线图可视化：将日线 + 波神测量线位推送到图表 ─────────────
-        # 无论历史回放还是实盘，只要图表存在，就将当前日线和线位推送进去
-        if self.widget is not None and self.mp_daily['levels']:
+        # ── K线图可视化：将日线 + 波神测量线位推送到图表 ────────────────────
+        # 历史回放阶段也要推送K线（不依赖 levels 是否存在），这样图表才有K线显示
+        if self.widget is not None:
             self._push_daily_kline_to_widget(bar)
 
     def onWeek(self, bar):
