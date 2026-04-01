@@ -32,6 +32,12 @@
 import datetime
 from ctaBase import *
 from ctaTemplate import *
+try:
+    from ctaTemplate import KLWidget  # 无限易图表组件（客户端环境才有）
+    _KLWIDGET_AVAILABLE = True
+except ImportError:
+    KLWidget = None
+    _KLWIDGET_AVAILABLE = False
 
 # ============================================================
 # 参数映射表（显示在无限易界面左侧参数栏）
@@ -169,6 +175,22 @@ class boshen_strategy(CtaTemplate):
         self._debug_bar_count = 0
         self._debug_m5_count = 0
         self._debug_h1_count = 0
+
+        # ============================================================
+        # K线图可视化（波神测量线）
+        # 在无限易客户端中弹出专属图表窗口，实时显示1-8线
+        # ============================================================
+        if _KLWIDGET_AVAILABLE and KLWidget is not None:
+            self.widgetClass = KLWidget  # 绑定图表组件
+        self.widget = None              # 图表实例（getGui后自动赋值）
+        # 主图显示的波神测量线（1线~8线，以及向下测量的回调目标线）
+        self.mainSigs = [
+            'line1', 'line2', 'line3', 'line4',
+            'line5', 'line6', 'line7', 'line8',
+            'line9',          # 极线
+            'down_line1', 'down_line3', 'down_line5',  # 向下测量关键线位
+        ]
+        self.subSigs = []  # 副图暂不使用
 
     def _new_mp(self):
         """创建一个新的测量点数据结构"""
@@ -964,6 +986,22 @@ class boshen_strategy(CtaTemplate):
         self._is_history = False  # 历史回放结束，切换到实盘模式
         self.output('策略初始化完成，开始监控行情...（等待第一个tick输出实时价格分析）')
 
+        # ── K线图可视化：启动图表窗口 ──────────────────────────────
+        # getGui() 会创建 KLWidget 窗口并将实例赋给 self.widget
+        # 必须在历史数据加载完成后调用，否则图表没有历史K线
+        if _KLWIDGET_AVAILABLE and KLWidget is not None:
+            try:
+                self.getGui()
+                self.output('K线图表窗口已启动，将实时显示波神1-8线')
+                # 通知图表刷新历史数据（与官方Demo_OptionBSPrice一致）
+                if self.widget is not None:
+                    try:
+                        self.widget.load_data_signal.emit()
+                    except Exception:
+                        pass  # 部分版本可能不支持此信号，忽略
+            except Exception as e:
+                self.output(f'K线图表启动失败（不影响策略运行）: {e}')
+
     def onTick(self, tick):
         """收到行情Tick"""
         super().onTick(tick)
@@ -1114,9 +1152,58 @@ class boshen_strategy(CtaTemplate):
         if not self._is_history:
             self._check_daily_signal(bar)
 
+        # ── K线图可视化：将日线 + 波神测量线位推送到图表 ─────────────
+        # 无论历史回放还是实盘，只要图表存在，就将当前日线和线位推送进去
+        if self.widget is not None and self.mp_daily['levels']:
+            self._push_daily_kline_to_widget(bar)
+
     def onWeek(self, bar):
         """收到周线K线"""
         self.am_week.updateBar(bar)
+
+    # ============================================================
+    # K线图可视化辅助函数
+    # ============================================================
+
+    def _push_daily_kline_to_widget(self, bar):
+        """
+        将日线 K 线 + 波神测量线位推送到 KLWidget 图表。
+        主图显示：向上测量 1~8 线、极线（line9）、向下测量关键线位。
+        如果线位数据不存在，对应字段传 None（图表不会画线）。
+        """
+        try:
+            levels = self.mp_daily['levels']     # 列表，共 8 个元素
+            level9 = self.mp_daily['level9']     # 极线
+
+            # 安全取值：如果 levels 长度不足 8 个，用 None 补齐
+            def safe_level(lst, idx):
+                return lst[idx] if lst and len(lst) > idx else None
+
+            # 向下测量线位（回调目标）
+            d_levels = self.mp_daily_down.get('levels', [])
+
+            payload = {
+                'bar':       bar,
+                'sig':       0,
+                # 向上测量 1~8 线
+                'line1':     safe_level(levels, 0),
+                'line2':     safe_level(levels, 1),
+                'line3':     safe_level(levels, 2),
+                'line4':     safe_level(levels, 3),
+                'line5':     safe_level(levels, 4),
+                'line6':     safe_level(levels, 5),
+                'line7':     safe_level(levels, 6),
+                'line8':     safe_level(levels, 7),
+                'line9':     level9,
+                # 向下测量关键线位（1线、中间线、目标线）
+                'down_line1': safe_level(d_levels, 0),
+                'down_line3': safe_level(d_levels, 2),
+                'down_line5': safe_level(d_levels, 4),
+            }
+            self.widget.recv_kline(payload)
+        except Exception as e:
+            # 图表推送失败不影响策略主逻辑，静默处理
+            pass
 
     # ============================================================
     # 核心分析逻辑
