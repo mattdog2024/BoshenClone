@@ -607,6 +607,31 @@ class BoshenStrategy(BaseStrategy):
             self.highest_since_ab = float(np.max(highs[a_idx:]))
             self.lowest_since_ab = float(np.min(lows[a_idx:]))
 
+            # 用完整历史数据修正 B 点：
+            # 历史回放时 B 只知道当时的最高，现在全部加载完成后可以知道真正的最高点
+            if trend == 1 and self.highest_since_ab > self.mp_daily['end']:
+                self.mp_daily['end'] = self.highest_since_ab
+                self.mp_daily['levels'], self.mp_daily['level9'] = self.calculate_levels(
+                    self.mp_daily['start'], self.mp_daily['end'], trend
+                )
+                self.output(
+                    f'【日线】修正B点: {self.mp_daily["start"]:.2f} → {self.mp_daily["end"]:.2f}（历史最高点）\n'
+                    f'  线位: 1线={self.mp_daily["levels"][0]:.2f} | 3线={self.mp_daily["levels"][2]:.2f} | '
+                    f'5线={self.mp_daily["levels"][4]:.2f} | 8线={self.mp_daily["levels"][7]:.2f} | '
+                    f'9线={self.mp_daily["level9"]:.2f}'
+                )
+            elif trend == -1 and self.lowest_since_ab < self.mp_daily['end']:
+                self.mp_daily['end'] = self.lowest_since_ab
+                self.mp_daily['levels'], self.mp_daily['level9'] = self.calculate_levels(
+                    self.mp_daily['start'], self.mp_daily['end'], trend
+                )
+                self.output(
+                    f'【日线】修正B点: {self.mp_daily["start"]:.2f} → {self.mp_daily["end"]:.2f}（历史最低点）\n'
+                    f'  线位: 1线={self.mp_daily["levels"][0]:.2f} | 3线={self.mp_daily["levels"][2]:.2f} | '
+                    f'5线={self.mp_daily["levels"][4]:.2f} | 8线={self.mp_daily["levels"][7]:.2f} | '
+                    f'9线={self.mp_daily["level9"]:.2f}'
+                )
+
             # 初始化高点后最低价
             high_idx = a_idx
             for j in range(a_idx, n):
