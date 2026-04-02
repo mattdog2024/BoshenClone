@@ -97,6 +97,10 @@ class BoshenStrategy(BaseStrategy):
         # 图表信号价格（暂不下单，仅显示）
         self.signal_price = 0.0
 
+        # 水平横线容器（InfiniteLine 对象，绕过框架折线图机制）
+        # key = 线名，value = pg.InfiniteLine 对象
+        self._hlines: dict = {}
+
     # ============================================================
     # 图表指标属性（框架会自动读取这些属性来决定显示哪些线）
     # ============================================================
@@ -409,16 +413,18 @@ class BoshenStrategy(BaseStrategy):
         super().on_stop()
 
     def _apply_light_theme(self) -> None:
-        """将图表背景改为白色亮色主题
-        
-        注意：pg.setConfigOption 必须在 QApplication 启动前调用才有效。
-        框架已经先启动了 Qt，所以我们在 widget 初始化完成后
-        直接操作图表组件设置白色背景。
+        """将图表背景改为白色亮色主题，并初始化水平横线(InfiniteLine)
+
+        策略：
+        1. 等待 widget 初始化完成
+        2. 设置各图表组件背景为白色
+        3. 在 kline_plot_item 上为每条波神线创建 pg.InfiniteLine（水平横线）
+        4. 后续通过 _update_hlines() 实时更新线位
         """
         try:
             import time as _time
-            # 等待 widget 初始化完成（最多等 3 秒）
-            for _ in range(30):
+            # 等待 widget 初始化完成（最多等 5 秒）
+            for _ in range(50):
                 if self.widget and self.widget.kline_widget:
                     break
                 _time.sleep(0.1)
@@ -429,7 +435,6 @@ class BoshenStrategy(BaseStrategy):
             kw = self.widget.kline_widget
 
             # 1. 设置 PlotWidget 背景为白色
-            #    crosshair.parent() 就是创建时传入的 pg.PlotWidget
             plot_widget = kw.crosshair.parent()
             if hasattr(plot_widget, 'setBackground'):
                 plot_widget.setBackground('w')
@@ -438,13 +443,12 @@ class BoshenStrategy(BaseStrategy):
             if hasattr(kw, 'kline_layout'):
                 kw.kline_layout.setBackground((255, 255, 255, 255))
 
-            # 3. 设置每个 PlotItem 的 ViewBox 背景为白色
+            # 3. 设置每个 PlotItem 的 ViewBox 背景为白色，坐标轴改深色
             for plot_item in [kw.kline_plot_item, kw.vol_plot_item, kw.bottom_chart]:
                 if plot_item is not None:
                     vb = plot_item.getViewBox()
                     if vb is not None:
                         vb.setBackgroundColor((255, 255, 255, 255))
-                    # 设置坐标轴颜色为深色
                     axis = plot_item.getAxis('right')
                     if axis:
                         axis.setPen(color=(50, 50, 50, 255), width=0.8)
@@ -454,8 +458,71 @@ class BoshenStrategy(BaseStrategy):
                 kw.layout_title.setText(
                     kw.layout_title.text, bold=True, color='k'
                 )
+
+            # 5. 创建波神测量线（水平横线 InfiniteLine）
+            #    线名 -> (颜色, 线宽, 线型)
+            #    Qt.SolidLine=1, Qt.DashLine=2
+            line_styles = {
+                '1线':  ('#E53935', 1.5, 1),  # 红色实线
+                '2线':  ('#E53935', 1.0, 2),  # 红色虚线
+                '3线':  ('#E53935', 1.5, 1),
+                '4线':  ('#E53935', 1.0, 2),
+                '5线':  ('#E53935', 1.5, 1),
+                '6线':  ('#E53935', 1.0, 2),
+                '7线':  ('#E53935', 1.5, 1),
+                '8线':  ('#E53935', 2.0, 1),  # 8线加粗
+                '极线': ('#FF6F00', 2.0, 1),  # 橙色，极线
+                '空1线': ('#1565C0', 1.0, 2), # 蓝色虚线（向下测量）
+                '空3线': ('#1565C0', 1.5, 1),
+                '空5线': ('#1565C0', 1.5, 1),
+            }
+
+            from PyQt5.QtCore import Qt
+            from PyQt5.QtGui import QPen, QColor
+
+            for name, (color, width, style) in line_styles.items():
+                pen = QPen(QColor(color))
+                pen.setWidthF(width)
+                pen.setStyle(Qt.SolidLine if style == 1 else Qt.DashLine)
+
+                line = pg.InfiniteLine(
+                    pos=0,
+                    angle=0,          # 水平线
+                    movable=False,
+                    pen=pen,
+                    label=name,       # 线旁边显示名称
+                    labelOpts={
+                        'position': 0.98,   # 靠右显示
+                        'color': color,
+                        'fill': (255, 255, 255, 180),  # 白色半透明背景
+                        'movable': False,
+                    }
+                )
+                line.setVisible(False)  # 初始隐藏，有数据后才显示
+                kw.kline_plot_item.addItem(line)
+                self._hlines[name] = line
+
+            # 6. 用当前线位数据立即更新一次
+            self._update_hlines()
+
         except Exception as e:
             self.output(f'[light theme] 设置白色主题失败: {e}')
+
+    def _update_hlines(self) -> None:
+        """更新所有水平横线的位置（每次K线更新后调用）"""
+        if not self._hlines:
+            return
+        try:
+            data = self.main_indicator_data
+            for name, line in self._hlines.items():
+                val = data.get(name, 0.0)
+                if val and val > 0:
+                    line.setValue(val)
+                    line.setVisible(True)
+                else:
+                    line.setVisible(False)
+        except Exception:
+            pass
 
     # ============================================================
     # 日线 K 线回调
@@ -701,6 +768,8 @@ class BoshenStrategy(BaseStrategy):
             data = {"kline": kline, "signal_price": self.signal_price}
             data.update(indicator_values)
             self.widget.recv_kline(data)
+            # 同步更新水平横线位置
+            self._update_hlines()
         except Exception:
             pass
 
