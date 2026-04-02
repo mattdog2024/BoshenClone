@@ -1145,6 +1145,12 @@ class boshen_strategy(CtaTemplate):
         # 调试：打印日线数据的起止时间（只打印第1根和最后1根）
         if self.am_daily.count == 1:
             self.output(f'调试-日线第1根: {bar.datetime}, open={bar.open}, high={bar.high}, low={bar.low}, close={bar.close}')
+            # 详细打印 bar 对象的所有字段，用于诊断 KLWidget 黑屏问题
+            try:
+                bar_fields = {k: (v, type(v).__name__) for k, v in bar.__dict__.items() if not k.startswith('_')}
+                self.output(f'调试-bar字段详情: {bar_fields}')
+            except Exception as _e:
+                self.output(f'调试-bar字段读取失败: {_e}')
         if self.am_daily.count == self.am_daily.size:
             self.output(f'调试-日线第{self.am_daily.size}根(加载完成): {bar.datetime}, open={bar.open}, high={bar.high}, low={bar.low}, close={bar.close}')
         
