@@ -382,9 +382,6 @@ class BoshenStrategy(BaseStrategy):
             self.kline_generator_daily.tick_to_kline(tick)
 
     def on_start(self) -> None:
-        # 设置图表亮色主题（白色背景，黑色前景）
-        pg.setConfigOption('background', 'w')
-        pg.setConfigOption('foreground', 'k')
         # 创建日线 K 线生成器
         self.kline_generator_daily = KLineGenerator(
             callback=self.on_daily_bar,
@@ -402,10 +399,63 @@ class BoshenStrategy(BaseStrategy):
         # 历史日线加载完成后，做一次完整初始化
         self._post_history_init()
 
+        # 调用父类 on_start（会触发 widget 初始化 + load_data_signal）
         super().on_start()
+
+        # 在 widget 初始化完成后，设置白色背景
+        self._apply_light_theme()
 
     def on_stop(self) -> None:
         super().on_stop()
+
+    def _apply_light_theme(self) -> None:
+        """将图表背景改为白色亮色主题
+        
+        注意：pg.setConfigOption 必须在 QApplication 启动前调用才有效。
+        框架已经先启动了 Qt，所以我们在 widget 初始化完成后
+        直接操作图表组件设置白色背景。
+        """
+        try:
+            import time as _time
+            # 等待 widget 初始化完成（最多等 3 秒）
+            for _ in range(30):
+                if self.widget and self.widget.kline_widget:
+                    break
+                _time.sleep(0.1)
+
+            if not (self.widget and self.widget.kline_widget):
+                return
+
+            kw = self.widget.kline_widget
+
+            # 1. 设置 PlotWidget 背景为白色
+            #    crosshair.parent() 就是创建时传入的 pg.PlotWidget
+            plot_widget = kw.crosshair.parent()
+            if hasattr(plot_widget, 'setBackground'):
+                plot_widget.setBackground('w')
+
+            # 2. 设置 GraphicsLayout 背景为白色
+            if hasattr(kw, 'kline_layout'):
+                kw.kline_layout.setBackground((255, 255, 255, 255))
+
+            # 3. 设置每个 PlotItem 的 ViewBox 背景为白色
+            for plot_item in [kw.kline_plot_item, kw.vol_plot_item, kw.bottom_chart]:
+                if plot_item is not None:
+                    vb = plot_item.getViewBox()
+                    if vb is not None:
+                        vb.setBackgroundColor((255, 255, 255, 255))
+                    # 设置坐标轴颜色为深色
+                    axis = plot_item.getAxis('right')
+                    if axis:
+                        axis.setPen(color=(50, 50, 50, 255), width=0.8)
+
+            # 4. 设置标题颜色为深色
+            if hasattr(kw, 'layout_title'):
+                kw.layout_title.setText(
+                    kw.layout_title.text, bold=True, color='k'
+                )
+        except Exception as e:
+            self.output(f'[light theme] 设置白色主题失败: {e}')
 
     # ============================================================
     # 日线 K 线回调
