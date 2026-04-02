@@ -1,8 +1,11 @@
 name: 打包 Windows EXE
 
-# 只允许手动触发，不再每次推送都自动打包
+# 触发条件：每次推送到 main 分支，或者手动点击触发
 on:
-  workflow_dispatch:  # 只在 GitHub 网页上手动点击才触发
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # 允许在 GitHub 网页上手动触发
 
 jobs:
   build:
