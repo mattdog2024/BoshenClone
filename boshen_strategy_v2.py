@@ -281,18 +281,40 @@ class BoshenStrategy(BaseStrategy):
         return '未知区域', 0, False, False
 
     def _find_ab_from_arrays(self, highs, lows, lookback, direction):
-        """从数组中找 A/B 点"""
+        """从数组中找 A/B 点
+
+        向上趋势：A = 最近 lookback 根K线的最低点，B = A点之后到现在的最高点
+        向下趋势：A = 最近 lookback 根K线的最高点，B = A点之后到现在的最低点
+        """
         n = min(len(highs), lookback)
         if n < 5:
             return None, None, None, None
         h = highs[-n:]
         l = lows[-n:]
         if direction == 1:
+            # A = 最低点
             idx = int(np.argmin(l))
-            return float(l[idx]), float(h[idx]), float(h[idx]), float(l[idx])
+            a_price = float(l[idx])
+            k_low = a_price
+            # B = A点之后（idx+1到末尾）的最高点；如果A是最后一根则用A那根的high
+            if idx + 1 < len(h):
+                b_price = float(np.max(h[idx:]))  # 包含A那根K线，取A之后的最高
+            else:
+                b_price = float(h[idx])
+            k_high = b_price
+            return a_price, b_price, k_high, k_low
         else:
+            # A = 最高点
             idx = int(np.argmax(h))
-            return float(h[idx]), float(l[idx]), float(h[idx]), float(l[idx])
+            a_price = float(h[idx])
+            k_high = a_price
+            # B = A点之后（idx+1到末尾）的最低点；如果A是最后一根则用A那根的low
+            if idx + 1 < len(l):
+                b_price = float(np.min(l[idx:]))  # 包含A那根K线，取A之后的最低
+            else:
+                b_price = float(l[idx])
+            k_low = b_price
+            return a_price, b_price, k_high, k_low
 
     def _check_pattern(self, highs, lows, direction):
         """检查形态是否成立（需要至少3根K线）"""
