@@ -1140,17 +1140,18 @@ class boshen_strategy(CtaTemplate):
 
     def onDay(self, bar):
         """收到日线K线"""
+        # ── K线图可视化：必须在 updateBar 之前推送！──────────────────────
+        # ArrayManager.updateBar() 在内部缓冲区未填满时返回 False，
+        # 如果先 updateBar 再推送，前 59 根历史日线都会被丢弃，图表里只有 1 根K线
+        if self.widget is not None:
+            self._push_daily_kline_to_widget(bar)
+
         if not self.am_daily.updateBar(bar):
             return
+
         # 调试：打印日线数据的起止时间（只打印第1根和最后1根）
         if self.am_daily.count == 1:
             self.output(f'调试-日线第1根: {bar.datetime}, open={bar.open}, high={bar.high}, low={bar.low}, close={bar.close}')
-            # 详细打印 bar 对象的所有字段，用于诊断 KLWidget 黑屏问题
-            try:
-                bar_fields = {k: (v, type(v).__name__) for k, v in bar.__dict__.items() if not k.startswith('_')}
-                self.output(f'调试-bar字段详情: {bar_fields}')
-            except Exception as _e:
-                self.output(f'调试-bar字段读取失败: {_e}')
         if self.am_daily.count == self.am_daily.size:
             self.output(f'调试-日线第{self.am_daily.size}根(加载完成): {bar.datetime}, open={bar.open}, high={bar.high}, low={bar.low}, close={bar.close}')
         
@@ -1164,11 +1165,6 @@ class boshen_strategy(CtaTemplate):
         # 只有在实盘阶段，才每根日线检查信号（历史回放阶段在onStart里统一初始化）
         if not self._is_history:
             self._check_daily_signal(bar)
-
-        # ── K线图可视化：将日线 + 波神测量线位推送到图表 ────────────────────
-        # 历史回放阶段也要推送K线（不依赖 levels 是否存在），这样图表才有K线显示
-        if self.widget is not None:
-            self._push_daily_kline_to_widget(bar)
 
     def onWeek(self, bar):
         """收到周线K线"""
