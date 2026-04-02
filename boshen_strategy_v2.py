@@ -12,8 +12,9 @@
 import numpy as np
 from pydantic import Field
 
-from pythongo.base import BaseParams, BaseState, BaseStrategy
+from pythongo.base import BaseParams, BaseState
 from pythongo.classdef import KLineData, TickData
+from pythongo.ui import BaseStrategy
 from pythongo.utils import KLineGenerator
 
 
