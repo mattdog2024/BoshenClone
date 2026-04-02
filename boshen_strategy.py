@@ -1177,20 +1177,57 @@ class boshen_strategy(CtaTemplate):
         将日线 K 线 + 波神测量线位推送到 KLWidget 图表。
         主图显示：向上测量 1~8 线、极线（line9）、向下测量关键线位。
         如果线位数据不存在，对应字段传 None（图表不会画线）。
+        
+        重要：KLWidget 要求 bar 对象必须是标准 KLineData 实例，
+        loadDay 返回的 bar 字段格式可能不同，需手动构造标准对象。
         """
         try:
-            levels = self.mp_daily['levels']     # 列表，共 8 个元素
-            level9 = self.mp_daily['level9']     # 极线
+            # ── 构造标准 KLineData 对象，确保字段格式正确 ──────────────
+            # KLWidget 内部通过 bar.open/high/low/close 等字段绘制蜡烛图
+            # loadDay 返回的 bar 对象某些字段可能是字符串或格式不同
+            kbar = KLineData()
+            kbar.vtSymbol = getattr(bar, 'vtSymbol', self.vtSymbol)
+            kbar.symbol   = getattr(bar, 'symbol',   self.vtSymbol)
+            kbar.exchange = getattr(bar, 'exchange',  self.exchange)
+            kbar.open     = float(getattr(bar, 'open',  0) or 0)
+            kbar.high     = float(getattr(bar, 'high',  0) or 0)
+            kbar.low      = float(getattr(bar, 'low',   0) or 0)
+            kbar.close    = float(getattr(bar, 'close', 0) or 0)
+            kbar.volume   = float(getattr(bar, 'volume', 0) or 0)
+            # datetime 字段：KLWidget 需要 datetime 对象
+            import datetime as _dt
+            raw_dt = getattr(bar, 'datetime', None)
+            if isinstance(raw_dt, str):
+                try:
+                    kbar.datetime = _dt.datetime.strptime(raw_dt, '%Y-%m-%d %H:%M:%S')
+                except Exception:
+                    try:
+                        kbar.datetime = _dt.datetime.strptime(raw_dt, '%Y%m%d %H:%M:%S')
+                    except Exception:
+                        kbar.datetime = _dt.datetime.now()
+            elif isinstance(raw_dt, _dt.datetime):
+                kbar.datetime = raw_dt
+            else:
+                # 用 date + time 字段拼接
+                raw_date = str(getattr(bar, 'date', '') or '')
+                raw_time = str(getattr(bar, 'time', '00:00:00') or '00:00:00')
+                try:
+                    kbar.datetime = _dt.datetime.strptime(f'{raw_date} {raw_time}', '%Y%m%d %H:%M:%S')
+                except Exception:
+                    kbar.datetime = _dt.datetime.now()
+            kbar.date = kbar.datetime.strftime('%Y%m%d')
+            kbar.time = kbar.datetime.strftime('%H:%M:%S')
 
-            # 安全取值：如果 levels 长度不足 8 个，用 None 补齐
+            # ── 安全取值辅助函数 ──────────────────────────────────────
             def safe_level(lst, idx):
                 return lst[idx] if lst and len(lst) > idx else None
 
-            # 向下测量线位（回调目标）
+            levels  = self.mp_daily['levels']      # 列表，共 8 个元素
+            level9  = self.mp_daily['level9']      # 极线
             d_levels = self.mp_daily_down.get('levels', [])
 
             payload = {
-                'bar':       bar,
+                'bar':       kbar,
                 'sig':       0,
                 # 向上测量 1~8 线
                 'line1':     safe_level(levels, 0),
