@@ -406,8 +406,14 @@ class BoshenStrategy(BaseStrategy):
         # 调用父类 on_start（会触发 widget 初始化 + load_data_signal）
         super().on_start()
 
-        # 在 widget 初始化完成后，设置白色背景
-        self._apply_light_theme()
+        # 将 GUI 操作调度到主线程执行（Qt 要求：所有 GUI 操作必须在主线程）
+        # 策略的 on_start 在策略线程里，直接操作 Qt GUI 会导致崩溃
+        # QTimer.singleShot(500, ...) 表示：500ms 后在主线程执行 _apply_light_theme
+        try:
+            from PyQt5.QtCore import QTimer
+            QTimer.singleShot(500, self._apply_light_theme)
+        except Exception:
+            pass
 
     def on_stop(self) -> None:
         super().on_stop()
@@ -422,14 +428,9 @@ class BoshenStrategy(BaseStrategy):
         4. 后续通过 _update_hlines() 实时更新线位
         """
         try:
-            import time as _time
-            # 等待 widget 初始化完成（最多等 5 秒）
-            for _ in range(50):
-                if self.widget and self.widget.kline_widget:
-                    break
-                _time.sleep(0.1)
-
+            # 现在是主线程执行，直接检查 widget 是否就绪
             if not (self.widget and self.widget.kline_widget):
+                self.output('[light theme] widget 未就绪，跳过')
                 return
 
             kw = self.widget.kline_widget
