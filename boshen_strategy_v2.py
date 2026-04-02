@@ -440,8 +440,14 @@ class BoshenStrategy(BaseStrategy):
                 plot_widget.setBackground('w')
 
             # 2. 设置 GraphicsLayout 背景为白色
+            #    GraphicsLayout 继承自 QGraphicsWidget，没有 setBackground，用 QPalette 设置
             if hasattr(kw, 'kline_layout'):
-                kw.kline_layout.setBackground((255, 255, 255, 255))
+                from PyQt5.QtGui import QPalette, QColor as _QColor
+                from PyQt5.QtCore import Qt as _Qt
+                palette = kw.kline_layout.palette()
+                palette.setColor(QPalette.Window, _QColor(255, 255, 255))
+                kw.kline_layout.setPalette(palette)
+                kw.kline_layout.setAutoFillBackground(True)
 
             # 3. 设置每个 PlotItem 的 ViewBox 背景为白色，坐标轴改深色
             for plot_item in [kw.kline_plot_item, kw.vol_plot_item, kw.bottom_chart]:
