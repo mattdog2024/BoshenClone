@@ -10,6 +10,7 @@
 """
 
 import numpy as np
+import pyqtgraph as pg
 from pydantic import Field
 
 from pythongo.base import BaseParams, BaseState
@@ -95,6 +96,35 @@ class BoshenStrategy(BaseStrategy):
 
         # 图表信号价格（暂不下单，仅显示）
         self.signal_price = 0.0
+
+    # ============================================================
+    # 图表指标属性（框架会自动读取这些属性来决定显示哪些线）
+    # ============================================================
+
+    @property
+    def main_indicator_data(self) -> dict[str, float]:
+        """主图指标数据：波神1~8线 + 极线（9线）+ 向下测量线"""
+        def safe_level(lst, idx):
+            return lst[idx] if lst and len(lst) > idx else 0.0
+
+        levels = self.mp_daily.get('levels', [])
+        level9 = self.mp_daily.get('level9') or 0.0
+        d_levels = self.mp_daily_down.get('levels', [])
+
+        return {
+            '1线': safe_level(levels, 0),
+            '2线': safe_level(levels, 1),
+            '3线': safe_level(levels, 2),
+            '4线': safe_level(levels, 3),
+            '5线': safe_level(levels, 4),
+            '6线': safe_level(levels, 5),
+            '7线': safe_level(levels, 6),
+            '8线': safe_level(levels, 7),
+            '极线': level9,
+            '空1线': safe_level(d_levels, 0),
+            '空3线': safe_level(d_levels, 2),
+            '空5线': safe_level(d_levels, 4),
+        }
 
     # ============================================================
     # 数据结构工厂
@@ -352,6 +382,9 @@ class BoshenStrategy(BaseStrategy):
             self.kline_generator_daily.tick_to_kline(tick)
 
     def on_start(self) -> None:
+        # 设置图表亮色主题（白色背景，黑色前景）
+        pg.setConfigOption('background', 'w')
+        pg.setConfigOption('foreground', 'k')
         # 创建日线 K 线生成器
         self.kline_generator_daily = KLineGenerator(
             callback=self.on_daily_bar,
@@ -605,33 +638,19 @@ class BoshenStrategy(BaseStrategy):
     # ============================================================
 
     def _push_kline_to_widget(self, kline: KLineData) -> None:
-        """将日线 K 线 + 波神测量线位推送到图表"""
+        """将日线 K 线 + 波神测量线位推送到图表
+        
+        键名必须与 main_indicator_data 属性返回的字典键名完全一致，
+        框架才能正确将数据关联到对应的指标线上。
+        """
+        if not self.widget:
+            return
         try:
-            def safe_level(lst, idx):
-                return lst[idx] if lst and len(lst) > idx else None
-
-            levels = self.mp_daily['levels']
-            level9 = self.mp_daily['level9']
-            d_levels = self.mp_daily_down.get('levels', [])
-
-            self.widget.recv_kline({
-                "kline": kline,
-                "signal_price": self.signal_price,
-                # 向上测量 1~8 线 + 极线
-                "line1": safe_level(levels, 0),
-                "line2": safe_level(levels, 1),
-                "line3": safe_level(levels, 2),
-                "line4": safe_level(levels, 3),
-                "line5": safe_level(levels, 4),
-                "line6": safe_level(levels, 5),
-                "line7": safe_level(levels, 6),
-                "line8": safe_level(levels, 7),
-                "line9": level9,
-                # 向下测量关键线位
-                "down_line1": safe_level(d_levels, 0),
-                "down_line3": safe_level(d_levels, 2),
-                "down_line5": safe_level(d_levels, 4),
-            })
+            # 直接使用 main_indicator_data 的当前值，保证键名一致
+            indicator_values = self.main_indicator_data
+            data = {"kline": kline, "signal_price": self.signal_price}
+            data.update(indicator_values)
+            self.widget.recv_kline(data)
         except Exception:
             pass
 
