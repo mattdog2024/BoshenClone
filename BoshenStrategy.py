@@ -1504,6 +1504,34 @@ class BoshenStrategy(BaseStrategy):
             lines.append(f"当前价格回落到了 {cur_zone}，当前点位 {current_price:.2f}")
             lines.append(f"目前正在{action_type}，但尚未形成向下的 K 线形态，无法确认{action_type}是否正式开始。")
             lines.append("继续等待，形态未成立前不做任何判断。")
+            # 即使日线形态未确认，也输出60分钟分析供参考
+            lines.append("")
+            lines.append("【60分钟分析（参考）】")
+            m60 = self.mp_60min_down
+            if m60 and m60.get('start') is not None:
+                base_h = m60['start']
+                lines.append(f"60分钟向下测量（高点={base_h:.2f}）")
+                if m60.get('shadow_levels'):
+                    sl = m60['shadow_levels']
+                    sl9 = m60.get('shadow_level9')
+                    sl_str = ' | '.join(f'{i+1}线={sl[i]:.2f}' for i in [0,1,2,5,7] if i < len(sl))
+                    if sl9: sl_str += f' | 9线={sl9:.2f}'
+                    lines.append(f"  影线测量: {sl_str}")
+                if m60.get('levels'):
+                    bl = m60['levels']
+                    bl9 = m60.get('level9')
+                    bl_str = ' | '.join(f'{i+1}线={bl[i]:.2f}' for i in [0,1,2,5,7] if i < len(bl))
+                    if bl9: bl_str += f' | 9线={bl9:.2f}'
+                    lines.append(f"  单体测量: {bl_str}")
+                active_60, active_60_9, phase_60 = self._get_down_active_levels(m60)
+                if active_60:
+                    zone_60, m60_line_num, _, _ = self.get_line_zone(
+                        {'levels': active_60, 'level9': active_60_9, 'direction': -1},
+                        current_price
+                    )
+                    lines.append(f"60分钟当前位置: {zone_60}（{phase_60}）")
+            else:
+                lines.append("60分钟向下测量尚未初始化，等待实盘数据...")
 
         else:
             cur_zone, cur_zone_num, _, _ = self.get_line_zone(self.mp_daily, current_price)
