@@ -27,7 +27,7 @@ class Params(BaseParams):
     exchange: str = Field(default="SHFE", title="交易所代码")
     instrument_id: str = Field(default="rb2605", title="合约代码")
     lookback_daily: int = Field(default=40, title="日线回看周期(根)", ge=5)
-    tolerance_pct: float = Field(default=0.8, title="线位误差百分比(0.8=0.8%)", ge=0.1)
+    tolerance_pct: float = Field(default=0.2, title="线位误差百分比(0.2=0.2%)", ge=0.05)
     scalp_mode_enabled: bool = Field(default=True, title="是否启用横盘波段模式")
 
 
@@ -589,6 +589,13 @@ class BoshenStrategy(BaseStrategy):
         k_low = float(l_recent[max_idx])
         k_open = float(o_recent[max_idx])
         k_close = float(c_recent[max_idx])
+
+        # 调试：输出找到的K线详情
+        self.output(
+            f'[DEBUG] 60分钟最高K线: high={k_high:.2f}, low={k_low:.2f}, '
+            f'open={k_open:.2f}, close={k_close:.2f}, '
+            f'实体={abs(k_open-k_close):.2f}, 上影线={k_high-max(k_open,k_close):.2f}'
+        )
 
         # 直接用找到的K线数据初始化，不再重复搜索
         self.mp_60min_down = self._new_mp_down()
