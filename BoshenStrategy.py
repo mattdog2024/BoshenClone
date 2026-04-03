@@ -624,7 +624,7 @@ class BoshenStrategy(BaseStrategy):
             'k_high': k_high, 'k_low': k_low, 'k_open': k_open, 'k_close': k_close,
             'shadow_levels': shadow_levels, 'shadow_level9': shadow_level9,
             'levels': body_levels, 'level9': body_level9,
-            'phase': 'shadow' if is_shadow else 'body', 'bar_idx': max_idx,
+            'phase': 'shadow' if is_shadow else 'body', 'bar_idx': best_idx,
         })
 
         if is_shadow:
