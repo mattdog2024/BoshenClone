@@ -989,24 +989,39 @@ class BoshenStrategy(BaseStrategy):
 
         elif is_pullback or is_rebound:
             action_type = "回调" if is_pullback else "反弹"
-            if is_pullback and recent_high > 0:
-                lines.append(f"本波段最高走到了 {pullback_from}区域，最高点位 {recent_high:.2f}")
-            elif is_rebound and recent_low > 0:
-                lines.append(f"本波段最低走到了 {pullback_from}区域，最低点位 {recent_low:.2f}")
-            lines.append(f"然后从{pullback_from}开始向下{action_type}，{action_type}形态已得到确认。")
             cur_zone, _, _, _ = self.get_line_zone(self.mp_daily, current_price)
-            lines.append(f"当前价格回落到了 {cur_zone}，当前点位 {current_price:.2f}")
-            down_a = self.mp_daily_down.get('start', 0.0) or 0.0
-            down_b = 0.0
-            if self.mp_daily_down.get('start'):
-                down_b = self.mp_daily_down.get('shadow_end', 0.0) if self.mp_daily_down.get('use_shadow') \
-                    else self.mp_daily_down.get('body_end', 0.0)
-            if down_a > 0 and down_b > 0:
-                lines.append(f"日线{action_type}测量：A点是 {down_a:.2f}，B点是 {down_b:.2f}")
+            if is_pullback and recent_high > 0:
+                lines.append(f"本波段最高走到了 {pullback_from}，最高点位 {recent_high:.2f}")
+            elif is_rebound and recent_low > 0:
+                lines.append(f"本波段最低走到了 {pullback_from}，最低点位 {recent_low:.2f}")
+            lines.append(f"然后从{pullback_from}开始向下{action_type}，{action_type}形态已确认。")
+            lines.append(f"当前价格在 {cur_zone}，点位 {current_price:.2f}")
+
+            # 根据日线到达的线位，输出正确操作指引
+            if is_pullback and trend == 1:
+                # 日线上涨到达3线后回调：这是调整，不是反转！
+                # 正确做法：切挆60分钟找回调做空机会，不要等日线向上形态！
+                pullback_from_num = {'3线': 3, '5线': 5, '6线': 6, '7线': 7, '8线': 8}.get(pullback_from, 0)
+                if pullback_from_num >= 7:
+                    lines.append("▶ 日线到达7-8线反转区！这是趋势性反转，需等日线形态确认后再做空。")
+                elif pullback_from_num >= 5:
+                    lines.append("▶ 日线到达5-6线关键抗拓区！多单全部离场，可切挆60分钟找轻仓做空机会。")
+                elif pullback_from_num >= 3:
+                    lines.append("▶ 日线到达3线，这是调整开始，不是反转！日线大方向仍是向上。")
+                    lines.append("  ✅ 多单落袋为安，禁止新开多单")
+                    lines.append("  ✅ 切挆60分钟图，寻找回调做空机会（轻仓短空，顺着调整方向）")
+                    lines.append("  ⚠️ 空单目标：60分钟2-3线就要考虑出场，不要贪心")
+                    lines.append("  ⚠️ 调整结束后再回到日线方向找多单机会")
+
+            # 显示向下测量线位作为回调目标参考
             if pullback_data and pullback_data.get('closest_zone'):
-                lines.append(f"{action_type}得出的结论是：大概在 {pullback_data['closest_zone']} 位置。")
+                lines.append(f"回调目标参考位：{pullback_data['closest_zone']}")
             else:
-                lines.append(f"{action_type}得出的结论是：等待进一步确认目标位。")
+                d_levels, d_level9, d_label = self._get_down_active_levels(self.mp_daily_down)
+                if d_levels and len(d_levels) >= 8:
+                    lines.append(f"日线向下测量参考（{d_label}）：第7线={d_levels[6]:.0f} | 第8线={d_levels[7]:.0f}")
+                    if d_level9:
+                        lines.append(f"  极线={d_level9:.0f}（最大回调目标）")
 
         elif waiting_pattern:
             action_type = "回调" if trend == 1 else "反弹"
