@@ -1281,7 +1281,9 @@ class BoshenStrategy(BaseStrategy):
                     lines.append("向上形态尚未成立，等待新K线突破反弹高点后才能确认上涨。")
                     lines.append("如果有K线跌破最低点，则下跌形态再次成立，需重新向下测量。")
 
-            # 不管回调有没有结束，只要日线处于回调阶段，就要显示60分钟分析
+            # 60分钟分析：根据60分钟当前在几线，决定找多还是找空
+            # 核心规则：大时区看方向，小时区看变化
+            # 7-8线=反转高发区→找向上形态做多；5-6线=关键区→观望；1-4线=调整区→找向下形态做空
             lines.append("")
             lines.append("【60分钟分析】")
             m60 = self.mp_60min_down
@@ -1300,23 +1302,57 @@ class BoshenStrategy(BaseStrategy):
                     bl_str = ' | '.join(f'{i+1}线={bl[i]:.2f}' for i in [0,1,2,5,7] if i < len(bl))
                     if bl9: bl_str += f' | 9线={bl9:.2f}'
                     lines.append(f"  单体测量: {bl_str}")
+                # 判断60分钟当前在几线
                 active_60, active_60_9, phase_60 = self._get_down_active_levels(m60)
+                m60_line_num = 0
                 if active_60:
-                    zone_60, _, _, _ = self.get_line_zone(
+                    zone_60, line_lo, line_hi, line_idx = self.get_line_zone(
                         {'levels': active_60, 'level9': active_60_9, 'direction': -1},
                         current_price
                     )
+                    m60_line_num = line_idx if line_idx else 0
                     lines.append(f"60分钟当前位置: {zone_60}（{phase_60}）")
+                # 根据60分钟在几线，决定操作方向
                 pattern_60 = self._check_60min_pattern()
-                # 回调结束后反弹：找多单形态
-                if pattern_60:
-                    lines.append(f"60分钟形态: ❗ {pattern_60}")
-                    if '看多' in pattern_60 or '阳包阴' in pattern_60 or '止跌' in pattern_60 or '锤子' in pattern_60:
-                        lines.append("→ ✅ 60分钟向上形态已确认！现在可以切挆15分钟找精确入场点做多")
-                    elif '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
-                        lines.append("→ ⚠️ 60分钟出现向下形态，谨慎！如果日线回调未结束则继续观望")
+                if m60_line_num >= 7:
+                    # 7-8线：反转高发区！找向上形态做多（这是日线回调结束的信号）
+                    lines.append("▶ 60分钟已到达7-8线反转区！停止做空，等待向上形态做多！")
+                    lines.append("  ✅ 60分钟下跌大概率要反转，这是日线回调结束的先兆信号")
+                    lines.append("  ✅ 等待60分钟出现向上形态（阳包阴/锤子线/止跌信号）")
+                    lines.append("  ✅ 形态确认后切15分钟精确入场做多，目标：日线5线以上")
+                    if pattern_60:
+                        lines.append(f"  60分钟形态: ❗ {pattern_60}")
+                        if '看多' in pattern_60 or '阳包阴' in pattern_60 or '止跌' in pattern_60 or '锤子' in pattern_60:
+                            lines.append("  → ✅✅ 60分钟向上形态已确认！立即切15分钟找精确入场点做多！")
+                        elif '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
+                            lines.append("  → ⚠️ 60分钟出现向下形态，但已在8线区域，谨慎做空，继续观望")
+                    else:
+                        lines.append("  60分钟形态：尚未出现向上形态，继续等待（阳包阴/锤子线/止跌信号）...")
+                elif m60_line_num >= 5:
+                    # 5-6线：关键区，观望
+                    lines.append("▶ 60分钟在5-6线关键区，多空分歧，先观望！")
+                    lines.append("  ⚠️ 不要贸然做空，也不要做多，等待60分钟方向明确")
+                    if pattern_60:
+                        lines.append(f"  60分钟形态: ❗ {pattern_60}")
+                        if '看多' in pattern_60 or '阳包阴' in pattern_60 or '止跌' in pattern_60:
+                            lines.append("  → 60分钟出现向上形态，可考虑轻仓做多，止损设在6线以下")
+                        elif '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
+                            lines.append("  → 60分钟向下形态确认，可轻仓做空，目标60分钟8线")
+                    else:
+                        lines.append("  60分钟形态：尚未出现明确形态，继续等待...")
                 else:
-                    lines.append("【60分钟形态】: 尚未出现向上形态，继续等待（阳包阴/锤子线/止跌信号）...")
+                    # 1-4线：调整区，找向下形态做空（轻仓，顺着回调方向）
+                    lines.append("▶ 60分钟在调整区（1-4线），可轻仓顺着回调方向做空")
+                    lines.append("  ✅ 等待60分钟出现向下形态（阴包阳/长上影线/止涨信号）")
+                    lines.append("  ⚠️ 空单目标：60分钟6-8线就要考虑出场，不要贪心")
+                    if pattern_60:
+                        lines.append(f"  60分钟形态: ❗ {pattern_60}")
+                        if '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
+                            lines.append("  → ✅ 60分钟向下形态已确认！可切15分钟找精确入场点做空")
+                        elif '看多' in pattern_60 or '阳包阴' in pattern_60 or '止跌' in pattern_60:
+                            lines.append("  → ⚠️ 60分钟出现向上形态，暂停做空，等待确认")
+                    else:
+                        lines.append("  60分钟形态：尚未出现向下形态，继续等待（阴包阳/长上影线/止涨信号）...")
                 if m60.get('levels') and self.mp_daily_down.get('levels'):
                     lines.append("")
                     lines.append("【共振目标区】（日线影线+日线单体+60分钟单体重合）")
@@ -1362,7 +1398,9 @@ class BoshenStrategy(BaseStrategy):
                     if d_level9:
                         lines.append(f"  极线={d_level9:.0f}（最大回调目标）")
 
-            # 添加60分钟分析输出
+            # 60分钟分析：根据60分钟当前在几线，决定找多还是找空
+            # 核心规则：大时区看方向，小时区看变化
+            # 7-8线=反转高发区→找向上形态做多；5-6线=关键区→观望；1-4线=调整区→找向下形态做空
             lines.append("")
             lines.append("【60分钟分析】")
             m60 = self.mp_60min_down
@@ -1381,22 +1419,57 @@ class BoshenStrategy(BaseStrategy):
                     bl_str = ' | '.join(f'{i+1}线={bl[i]:.2f}' for i in [0,1,2,5,7] if i < len(bl))
                     if bl9: bl_str += f' | 9线={bl9:.2f}'
                     lines.append(f"  单体测量: {bl_str}")
-                # 60分钟当前在几线
+                # 判断60分钟当前在几线
                 active_60, active_60_9, phase_60 = self._get_down_active_levels(m60)
+                m60_line_num = 0
                 if active_60:
-                    zone_60, _, _, _ = self.get_line_zone(
+                    zone_60, line_lo, line_hi, line_idx = self.get_line_zone(
                         {'levels': active_60, 'level9': active_60_9, 'direction': -1},
                         current_price
                     )
+                    m60_line_num = line_idx if line_idx else 0
                     lines.append(f"60分钟当前位置: {zone_60}（{phase_60}）")
-                # 60分钟K线形态
+                # 根据60分钟在几线，决定操作方向
                 pattern_60 = self._check_60min_pattern()
-                if pattern_60:
-                    lines.append(f"60分钟形态: ❗ {pattern_60}")
-                    if '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
-                        lines.append("→ 60分钟向下形态已确认！可切接15分钟找精确入场点做空")
+                if m60_line_num >= 7:
+                    # 7-8线：反转高发区！找向上形态做多（这是日线回调结束的信号）
+                    lines.append("▶ 60分钟已到达7-8线反转区！停止做空，等待向上形态做多！")
+                    lines.append("  ✅ 60分钟下跌大概率要反转，这是日线回调结束的先兆信号")
+                    lines.append("  ✅ 等待60分钟出现向上形态（阳包阴/锤子线/止跌信号）")
+                    lines.append("  ✅ 形态确认后切15分钟精确入场做多，目标：日线5线以上")
+                    if pattern_60:
+                        lines.append(f"  60分钟形态: ❗ {pattern_60}")
+                        if '看多' in pattern_60 or '阳包阴' in pattern_60 or '止跌' in pattern_60 or '锤子' in pattern_60:
+                            lines.append("  → ✅✅ 60分钟向上形态已确认！立即切15分钟找精确入场点做多！")
+                        elif '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
+                            lines.append("  → ⚠️ 60分钟出现向下形态，但已在8线区域，谨慎做空，继续观望")
+                    else:
+                        lines.append("  60分钟形态：尚未出现向上形态，继续等待（阳包阴/锤子线/止跌信号）...")
+                elif m60_line_num >= 5:
+                    # 5-6线：关键区，观望
+                    lines.append("▶ 60分钟在5-6线关键区，多空分歧，先观望！")
+                    lines.append("  ⚠️ 不要贸然做空，也不要做多，等待60分钟方向明确")
+                    if pattern_60:
+                        lines.append(f"  60分钟形态: ❗ {pattern_60}")
+                        if '看多' in pattern_60 or '阳包阴' in pattern_60 or '止跌' in pattern_60:
+                            lines.append("  → 60分钟出现向上形态，可考虑轻仓做多，止损设在6线以下")
+                        elif '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
+                            lines.append("  → 60分钟向下形态确认，可轻仓做空，目标60分钟8线")
+                    else:
+                        lines.append("  60分钟形态：尚未出现明确形态，继续等待...")
                 else:
-                    lines.append("【60分钟形态】: 尚未出现向下形态，继续等待...")
+                    # 1-4线：调整区，找向下形态做空（轻仓，顺着回调方向）
+                    lines.append("▶ 60分钟在调整区（1-4线），可轻仓顺着回调方向做空")
+                    lines.append("  ✅ 等待60分钟出现向下形态（阴包阳/长上影线/止涨信号）")
+                    lines.append("  ⚠️ 空单目标：60分钟6-8线就要考虑出场，不要贪心")
+                    if pattern_60:
+                        lines.append(f"  60分钟形态: ❗ {pattern_60}")
+                        if '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
+                            lines.append("  → ✅ 60分钟向下形态已确认！可切15分钟找精确入场点做空")
+                        elif '看多' in pattern_60 or '阳包阴' in pattern_60 or '止跌' in pattern_60:
+                            lines.append("  → ⚠️ 60分钟出现向上形态，暂停做空，等待确认")
+                    else:
+                        lines.append("  60分钟形态：尚未出现向下形态，继续等待（阴包阳/长上影线/止涨信号）...")
                 # 日线+60分钟共振区
                 if m60.get('levels') and self.mp_daily_down.get('levels'):
                     lines.append("")
