@@ -67,9 +67,22 @@ class BoshenStrategy(BaseStrategy):
         # 日线 K 线生成器
         self.kline_generator_daily: KLineGenerator = None
 
+        # 60分钟 K 线生成器
+        self.kline_generator_60min: KLineGenerator = None
+
         # 波神测量点（日线）
         self.mp_daily = self._new_mp()
         self.mp_daily_down = self._new_mp_down()
+
+        # 波神测量点（60分钟向下测量）
+        self.mp_60min_down = self._new_mp_down()
+
+        # 60分钟数据存储（用于形态判断）
+        self._60min_highs = []
+        self._60min_lows = []
+        self._60min_opens = []
+        self._60min_closes = []
+        self._60min_bar_count = 0
 
         # 状态变量
         self.daily_direction = 0
@@ -408,9 +421,23 @@ class BoshenStrategy(BaseStrategy):
             style="D1"
         )
 
+        # 创建60分钟 K 线生成器
+        self.kline_generator_60min = KLineGenerator(
+            callback=self.on_60min_bar,
+            exchange=self.params_map.exchange,
+            instrument_id=self.params_map.instrument_id,
+            style="H1"  # 60分钟
+        )
+
         # 加载历史日线数据（这会同步调用 on_daily_bar 多次）
         self._is_history = True
         self.kline_generator_daily.push_history_data()
+
+        # 加载历史60分钟数据
+        try:
+            self.kline_generator_60min.push_history_data()
+        except Exception as e:
+            self.output(f'60分钟历史数据加载失败（不影响日线功能）: {e}')
         self._is_history = False
 
         # 历史日线加载完成后，做一次完整初始化
@@ -515,6 +542,194 @@ class BoshenStrategy(BaseStrategy):
         self._push_kline_to_widget(kline)
 
     # ============================================================
+    # 60分钟 K 线回调
+    # ============================================================
+
+    def on_60min_bar(self, kline: KLineData) -> None:
+        """60分钟K线完成回调（历史+实盘每小时触发）"""
+        # 存储60分钟数据
+        self._60min_highs.append(float(kline.high))
+        self._60min_lows.append(float(kline.low))
+        self._60min_opens.append(float(kline.open))
+        self._60min_closes.append(float(kline.close))
+        self._60min_bar_count += 1
+
+        # 历史阶段只存数据，不分析
+        if self._is_history:
+            return
+
+        # 实盘阶段：更新60分钟向下测量
+        self._update_60min_analysis()
+
+    def _init_60min_down_measurement(self):
+        """初始化60分钟向下测量
+        
+        从60分钟数据中找到日线高点（highest_since_ab）对应的60分钟K线
+        以该K线作为基准，向下测量8条线
+        """
+        n = len(self._60min_highs)
+        if n < 3:
+            return
+
+        h = np.array(self._60min_highs)
+        l = np.array(self._60min_lows)
+        o = np.array(self._60min_opens)
+        c = np.array(self._60min_closes)
+
+        # 找60分钟最高点（对应日线highest_since_ab）
+        # 在最近60根60分钟K线里找最高点
+        lookback = min(n, 60)
+        h_recent = h[-lookback:]
+        l_recent = l[-lookback:]
+        o_recent = o[-lookback:]
+        c_recent = c[-lookback:]
+
+        max_idx = int(np.argmax(h_recent))
+        k_high = float(h_recent[max_idx])
+        k_low = float(l_recent[max_idx])
+        k_open = float(o_recent[max_idx])
+        k_close = float(c_recent[max_idx])
+
+        # 初始化60分钟向下测量
+        self.mp_60min_down = self._new_mp_down()
+        result = self._init_down_measurement(
+            self.mp_60min_down, h_recent, l_recent, o_recent, c_recent, '60分钟',
+            start_idx=max_idx
+        )
+        return result
+
+    def _update_60min_analysis(self):
+        """实盘阶段更新60分钟分析（每根60分钟K线完成后调用）"""
+        if not self._60min_highs:
+            return
+        # 如果60分钟向下测量还没初始化，初始化一次
+        if self.mp_60min_down['start'] is None:
+            self._init_60min_down_measurement()
+
+    def get_60min_analysis(self, current_price):
+        """获取60分钟当前分析结果
+        
+        返回：
+        - line_zone: 当前在60分钟的几线（如'3线区域'）
+        - line_num: 线号（0=1线以下，1-8=具体线，9=极线）
+        - pattern: 当前K线形态（'阳包阴'/'锤子线'/'止跌信号'/None）
+        - shadow_levels: 影线测量线位
+        - body_levels: 单体测量线位
+        """
+        result = {
+            'line_zone': '未知',
+            'line_num': 0,
+            'pattern': None,
+            'shadow_levels': [],
+            'body_levels': [],
+            'shadow_level9': None,
+            'body_level9': None,
+            'base_high': 0.0,
+        }
+
+        n = len(self._60min_highs)
+        if n < 3:
+            return result
+
+        # 如果60分钟向下测量还没初始化，先初始化
+        if self.mp_60min_down['start'] is None:
+            self._init_60min_down_measurement()
+
+        if self.mp_60min_down['start'] is None:
+            return result
+
+        result['base_high'] = self.mp_60min_down['start']
+
+        # 获取当前有效线位
+        active_levels, active_level9, phase_label = self._get_down_active_levels(self.mp_60min_down)
+        if active_levels:
+            result['line_zone'], result['line_num'], _, _ = self.get_line_zone(
+                {'levels': active_levels, 'level9': active_level9, 'direction': -1},
+                current_price
+            )
+
+        # 影线和单体线位
+        result['shadow_levels'] = self.mp_60min_down.get('shadow_levels', [])
+        result['shadow_level9'] = self.mp_60min_down.get('shadow_level9')
+        result['body_levels'] = self.mp_60min_down.get('levels', [])
+        result['body_level9'] = self.mp_60min_down.get('level9')
+
+        # 60分钟K线形态判断（最近3根K线）
+        result['pattern'] = self._check_60min_pattern()
+
+        return result
+
+    def _check_60min_pattern(self):
+        """检查60分钟最近K线形态
+        
+        做多形态（价格在支撑区域时）：
+        - 阳包阴：当前阳线实体包住前一根阴线
+        - 锤子线：下影线>实体2倍的阳线
+        - 止跌信号：连续2根阴线后出现阳线且收盘突破前阴线高点
+        
+        做空形态（价格在压力区域时）：
+        - 阴包阳：当前阴线实体包住前一根阳线
+        - 长上影线：上影线>实体2倍的阴线
+        - 止涨信号：连续2根阳线后出现阴线且收盘跌破前阳线低点
+        """
+        n = len(self._60min_closes)
+        if n < 3:
+            return None
+
+        # 取最近3根K线
+        c = self._60min_closes
+        o = self._60min_opens
+        h = self._60min_highs
+        l = self._60min_lows
+
+        # 当前K线
+        cur_c, cur_o, cur_h, cur_l = c[-1], o[-1], h[-1], l[-1]
+        # 前一根K线
+        pre_c, pre_o, pre_h, pre_l = c[-2], o[-2], h[-2], l[-2]
+        # 前两根K线
+        pre2_c, pre2_o = c[-3], o[-3]
+
+        cur_body = abs(cur_c - cur_o)
+        pre_body = abs(pre_c - pre_o)
+        cur_is_bull = cur_c > cur_o
+        pre_is_bull = pre_c > pre_o
+        pre2_is_bull = pre2_c > pre2_o
+
+        # === 做空形态（日线回调时关注）===
+        # 阴包阳：当前阴线实体包住前一根阳线
+        if (not cur_is_bull and pre_is_bull and
+                cur_o >= pre_c and cur_c <= pre_o and cur_body > pre_body * 0.8):
+            return '阴包阳（看空形态确认）'
+
+        # 长上影线阴线（射击之星）
+        upper_shadow = cur_h - max(cur_c, cur_o)
+        if not cur_is_bull and cur_body > 0 and upper_shadow > cur_body * 2:
+            return '长上影线阴线（看空形态）'
+
+        # 止涨信号：连续2根阳线后出现阴线且收盘跌破前阳线低点
+        if (not cur_is_bull and pre_is_bull and pre2_is_bull and
+                cur_c < pre_l):
+            return '止涨信号（连阳后阴线跌破前低）'
+
+        # === 做多形态（回调结束时关注）===
+        # 阳包阴：当前阳线实体包住前一根阴线
+        if (cur_is_bull and not pre_is_bull and
+                cur_o <= pre_c and cur_c >= pre_o and cur_body > pre_body * 0.8):
+            return '阳包阴（看多形态确认）'
+
+        # 锤子线：下影线>实体2倍的阳线
+        lower_shadow = min(cur_c, cur_o) - cur_l
+        if cur_is_bull and cur_body > 0 and lower_shadow > cur_body * 2:
+            return '锤子线（看多形态）'
+
+        # 止跌信号：连续2根阴线后出现阳线且收盘突破前阴线高点
+        if (cur_is_bull and not pre_is_bull and not pre2_is_bull and
+                cur_c > pre_h):
+            return '止跌信号（连阴后阳线突破前高）'
+
+        return None
+
+    # ============================================================
     # 历史数据加载完成后的初始化
     # ============================================================
 
@@ -595,6 +810,12 @@ class BoshenStrategy(BaseStrategy):
                 f'5线={self.mp_daily["levels"][4]:.2f} | 8线={self.mp_daily["levels"][7]:.2f}\n'
                 f'  只有价格走到八线才会解锁重新识别'
             )
+
+        # 初始化60分钟向下测量（如果有历史60分钟数据）
+        if len(self._60min_highs) >= 3:
+            self._init_60min_down_measurement()
+        else:
+            self.output('60分钟历史数据不足，将在实盘中动态初始化')
 
         self.output('策略初始化完成，等待第一个 tick 输出实时价格分析...')
 
@@ -1022,6 +1243,51 @@ class BoshenStrategy(BaseStrategy):
                     lines.append(f"日线向下测量参考（{d_label}）：第7线={d_levels[6]:.0f} | 第8线={d_levels[7]:.0f}")
                     if d_level9:
                         lines.append(f"  极线={d_level9:.0f}（最大回调目标）")
+
+            # 添加60分钟分析输出
+            lines.append("")
+            lines.append("【60分钟分析】")
+            m60 = self.mp_60min_down
+            if m60 and m60.get('start') is not None:
+                base_h = m60['start']
+                lines.append(f"60分钟向下测量（高点={base_h:.2f}）")
+                if m60.get('shadow_levels'):
+                    sl = m60['shadow_levels']
+                    sl9 = m60.get('shadow_level9')
+                    sl_str = ' | '.join(f'{i+1}线={sl[i]:.2f}' for i in [0,1,2,5,7] if i < len(sl))
+                    if sl9: sl_str += f' | 9线={sl9:.2f}'
+                    lines.append(f"  影线测量: {sl_str}")
+                if m60.get('levels'):
+                    bl = m60['levels']
+                    bl9 = m60.get('level9')
+                    bl_str = ' | '.join(f'{i+1}线={bl[i]:.2f}' for i in [0,1,2,5,7] if i < len(bl))
+                    if bl9: bl_str += f' | 9线={bl9:.2f}'
+                    lines.append(f"  单体测量: {bl_str}")
+                # 60分钟当前在几线
+                active_60, active_60_9, phase_60 = self._get_down_active_levels(m60)
+                if active_60:
+                    zone_60, _, _, _ = self.get_line_zone(
+                        {'levels': active_60, 'level9': active_60_9, 'direction': -1},
+                        current_price
+                    )
+                    lines.append(f"60分钟当前位置: {zone_60}（{phase_60}）")
+                # 60分钟K线形态
+                pattern_60 = self._check_60min_pattern()
+                if pattern_60:
+                    lines.append(f"60分钟形态: ❗ {pattern_60}")
+                    if '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
+                        lines.append("→ 60分钟向下形态已确认！可切接15分钟找精确入场点做空")
+                else:
+                    lines.append("【60分钟形态】: 尚未出现向下形态，继续等待...")
+                # 日线+60分钟共振区
+                if m60.get('levels') and self.mp_daily_down.get('levels'):
+                    lines.append("")
+                    lines.append("【共振目标区】（日线影线+日线单体+60分钟单体重合）")
+                    resonance = self._calc_3group_resonance(current_price)
+                    for zone in resonance[:3]:
+                        lines.append(f"  {zone}")
+            else:
+                lines.append("60分钟向下测量尚未初始化，等待实盘数据...")
 
         elif waiting_pattern:
             action_type = "回调" if trend == 1 else "反弹"
