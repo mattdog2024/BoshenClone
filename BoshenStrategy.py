@@ -1205,8 +1205,63 @@ class BoshenStrategy(BaseStrategy):
                 if rebound_high_price > 0:
                     rh_zone, _, _, _ = self.get_line_zone(self.mp_daily, rebound_high_price)
                     lines.append(f"目前反弹高点在 {rh_zone}（{rebound_high_price:.2f}）。")
-                lines.append("向上形态尚未成立，等待新K线突破反弹高点后才能确认上涨。")
-                lines.append("如果有K线跌破最低点，则下跌形态再次成立，需重新向下测量。")
+                # 根据知识库：日线到3线后回调结束反弹阶段，不是等日线向上形态！
+                # 应该切挆60分钟找新的做空机会（回调反弹到高点处做空）
+                if is_pullback and trend == 1:
+                    pullback_from_num = {'3线': 3, '5线': 5, '6线': 6, '7线': 7, '8线': 8}.get(pullback_from, 0)
+                    if pullback_from_num >= 3:
+                        lines.append("▶ 日线回调反弹中，这是新的做空机会！")
+                        lines.append("  ✅ 切挆60分钟图，在反弹高点附近等昆60分钟向下形态")
+                        lines.append("  ✅ 形态成立后再切挆15分钟找精确入场点做空")
+                        lines.append("  ⚠️ 空单目标：60分钟2-3线就要考虑出场，不要贪心")
+                    else:
+                        lines.append("向上形态尚未成立，等待新K线突破反弹高点后才能确认上涨。")
+                        lines.append("如果有K线跌破最低点，则下跌形态再次成立，需重新向下测量。")
+                else:
+                    lines.append("向上形态尚未成立，等待新K线突破反弹高点后才能确认上涨。")
+                    lines.append("如果有K线跌破最低点，则下跌形态再次成立，需重新向下测量。")
+
+            # 不管回调有没有结束，只要日线处于回调阶段，就要显示60分钟分析
+            lines.append("")
+            lines.append("【60分钟分析】")
+            m60 = self.mp_60min_down
+            if m60 and m60.get('start') is not None:
+                base_h = m60['start']
+                lines.append(f"60分钟向下测量（高点={base_h:.2f}）")
+                if m60.get('shadow_levels'):
+                    sl = m60['shadow_levels']
+                    sl9 = m60.get('shadow_level9')
+                    sl_str = ' | '.join(f'{i+1}线={sl[i]:.2f}' for i in [0,1,2,5,7] if i < len(sl))
+                    if sl9: sl_str += f' | 9线={sl9:.2f}'
+                    lines.append(f"  影线测量: {sl_str}")
+                if m60.get('levels'):
+                    bl = m60['levels']
+                    bl9 = m60.get('level9')
+                    bl_str = ' | '.join(f'{i+1}线={bl[i]:.2f}' for i in [0,1,2,5,7] if i < len(bl))
+                    if bl9: bl_str += f' | 9线={bl9:.2f}'
+                    lines.append(f"  单体测量: {bl_str}")
+                active_60, active_60_9, phase_60 = self._get_down_active_levels(m60)
+                if active_60:
+                    zone_60, _, _, _ = self.get_line_zone(
+                        {'levels': active_60, 'level9': active_60_9, 'direction': -1},
+                        current_price
+                    )
+                    lines.append(f"60分钟当前位置: {zone_60}（{phase_60}）")
+                pattern_60 = self._check_60min_pattern()
+                if pattern_60:
+                    lines.append(f"60分钟形态: ❗ {pattern_60}")
+                    if '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
+                        lines.append("→ 60分钟向下形态已确认！可切挆15分钟找精确入场点做空")
+                else:
+                    lines.append("【60分钟形态】: 尚未出现向下形态，继续等待...")
+                if m60.get('levels') and self.mp_daily_down.get('levels'):
+                    lines.append("")
+                    lines.append("【共振目标区】（日线影线+日线单体+60分钟单体重合）")
+                    resonance = self._calc_3group_resonance(current_price)
+                    for zone in resonance[:3]:
+                        lines.append(f"  {zone}")
+            else:
+                lines.append("60分钟向下测量尚未初始化，等待实盘数据...")
 
         elif is_pullback or is_rebound:
             action_type = "回调" if is_pullback else "反弹"
