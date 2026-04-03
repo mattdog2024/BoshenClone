@@ -53,9 +53,10 @@ class BoshenStrategy(BaseStrategy):
     - 图表实时显示1~8线 + 极线 + 向下测量线
     """
 
-    # 波神八条线比例（与 BoshenClone/algorithms.py 完全一致）
-    BOSHEN_RATIOS = [1.382, 1.618, 2.0, 2.382, 2.618, 3.0, 3.382, 3.618]
-    RATIO_9 = 4.236  # 极线比例
+    # 波神八条线比例（来自 BoshenClone/config.json，与博易大师插件完全一致）
+    # 1线=1.784, 2线=2.351, 3线=3.027, 4线=3.459, 5线=3.865, 6线=4.622, 7线=5.135, 8线=5.865
+    BOSHEN_RATIOS = [1.784, 2.351, 3.027, 3.459, 3.865, 4.622, 5.135, 5.865]
+    RATIO_9 = 6.676  # 极线比例（来自 config.json）
 
     def __init__(self) -> None:
         super().__init__()
@@ -281,10 +282,12 @@ class BoshenStrategy(BaseStrategy):
         return '未知区域', 0, False, False
 
     def _find_ab_from_arrays(self, highs, lows, lookback, direction):
-        """从数组中找 A/B 点
+        """从数组中找 A/B 点（单体测量法）
         
-        向上：A = 全段最低点的low，B = A点之后的最高点的high
-        向下：A = 全段最高点的high，B = A点之后的最低点的low
+        波神单体测量法：A和B来自同一根K线
+        向上：A = 最低点K线的low，B = 同一根K线的high
+        向下：A = 最高点K线的high，B = 同一根K线的low
+        振幅 = |B - A|，线位 = A + 振幅 × 比例
         """
         n = min(len(highs), lookback)
         if n < 5:
@@ -292,18 +295,16 @@ class BoshenStrategy(BaseStrategy):
         h = highs[-n:]
         l = lows[-n:]
         if direction == 1:
-            # 找绝对最低点作为A
+            # 找绝对最低点K线
             a_idx = int(np.argmin(l))
-            a_price = float(l[a_idx])
-            # B = A点之后（含A点）的最高点
-            b_price = float(np.max(h[a_idx:]))
+            a_price = float(l[a_idx])   # A = 该K线的low
+            b_price = float(h[a_idx])   # B = 同一根K线的high（单体测量法）
             return a_price, b_price, float(h[a_idx]), float(l[a_idx])
         else:
-            # 找绝对最高点作为A
+            # 找绝对最高点K线
             a_idx = int(np.argmax(h))
-            a_price = float(h[a_idx])
-            # B = A点之后（含A点）的最低点
-            b_price = float(np.min(l[a_idx:]))
+            a_price = float(h[a_idx])   # A = 该K线的high
+            b_price = float(l[a_idx])   # B = 同一根K线的low（单体测量法）
             return a_price, b_price, float(h[a_idx]), float(l[a_idx])
 
     def _check_pattern(self, highs, lows, direction):
@@ -598,25 +599,33 @@ class BoshenStrategy(BaseStrategy):
         self.output('策略初始化完成，等待第一个 tick 输出实时价格分析...')
 
     def _init_daily_measurement(self, highs, lows, opens, closes):
-        """初始化日线 A/B 点
+        """初始化日线 A/B 点（单体测量法）
         
-        A = 最近N根K线的绝对最低点(low)
-        B = A点之后的绝对最高点(high)
+        波神单体测量法：A和B来自同一根K线
+        A = 最低点K线的low，B = 同一根K线的high
+        振幅 = B - A，线位 = A + 振幅 × 比例
         """
         n = len(closes)
         lookback = min(n, 40)  # 最近40根日线找基准
         recent_lows = lows[-lookback:]
         recent_highs = highs[-lookback:]
-        # A点 = 绝对最低点
+        # A点 = 绝对最低点K线的low
         min_idx = int(np.argmin(recent_lows))
         a_price = float(recent_lows[min_idx])
-        # B点 = A点之后（含A点）的绝对最高点
-        b_price = float(np.max(recent_highs[min_idx:]))
+        # B点 = 同一根K线的high（单体测量法！不是A点之后的最高点）
+        b_price = float(recent_highs[min_idx])
+        amplitude = b_price - a_price
         self.mp_daily['start'] = a_price
         self.mp_daily['end'] = b_price
         self.mp_daily['direction'] = 1
         self.mp_daily['levels'], self.mp_daily['level9'] = self.calculate_levels(a_price, b_price, 1)
-        self.output(f'【日线】初始化基准K线: A点(绝对最低)={a_price:.2f}, B点(A后最高)={b_price:.2f}, 方向=向上')
+        self.output(
+            f'【日线】初始化基准K线(单体测量法): '
+            f'A点(low)={a_price:.2f}, B点(high)={b_price:.2f}, 振幅={amplitude:.2f}, 方向=向上\n'
+            f'  1线={self.mp_daily["levels"][0]:.2f} | 2线={self.mp_daily["levels"][1]:.2f} | '
+            f'3线={self.mp_daily["levels"][2]:.2f} | 5线={self.mp_daily["levels"][4]:.2f} | '
+            f'8线={self.mp_daily["levels"][7]:.2f}'
+        )
 
     # ============================================================
     # 日线信号检查
