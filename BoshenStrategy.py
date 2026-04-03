@@ -240,10 +240,20 @@ class BoshenStrategy(BaseStrategy):
         return True
 
     def _get_down_active_levels(self, mp_down):
-        """获取当前有效的向下测量线位"""
+        """获取当前有效的向下测量线位
+        
+        如果影线振幅 < 单体振幅的50%，强制用单体测量
+        （避免影线太短导致线位过密、价格轻易超过极线的问题）
+        """
         if mp_down['start'] is None:
             return [], None, 'none'
         if mp_down['phase'] == 'shadow' and mp_down['shadow_levels']:
+            # 检查影线振幅是否合理
+            shadow_amp = abs(mp_down['start'] - mp_down['shadow_end']) if mp_down.get('shadow_end') else 0
+            body_amp = abs(mp_down['start'] - mp_down['body_end']) if mp_down.get('body_end') else 0
+            # 影线振幅太小（小于单体振幅的50%），改用单体测量
+            if shadow_amp > 0 and body_amp > 0 and shadow_amp < body_amp * 0.5:
+                return mp_down['levels'], mp_down['level9'], '单体(影线过短降级)'
             return mp_down['shadow_levels'], mp_down['shadow_level9'], '影线'
         return mp_down['levels'], mp_down['level9'], '单体'
 
