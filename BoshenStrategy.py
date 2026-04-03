@@ -1012,28 +1012,54 @@ class BoshenStrategy(BaseStrategy):
 
         else:
             cur_zone, cur_zone_num, _, _ = self.get_line_zone(self.mp_daily, current_price)
-            lines.append(f"当前走到了 {cur_zone}，点位 {current_price:.2f}")
+            b_point = self.mp_daily.get('end', 0.0) or 0.0
+
             if mp_levels:
                 if trend == 1:
-                    next_targets = [(ln, mp_levels[ln-1]) for ln in [3, 5, 6, 8] if mp_levels[ln-1] > current_price]
-                    if mp_level9 and mp_level9 > current_price:
-                        next_targets.append((9, mp_level9))
-                    if next_targets:
-                        ln, lv = next_targets[0]
-                        lname = '极线(9线)' if ln == 9 else f'{ln}线'
-                        lines.append(f"日线大方向向上，上方最近目标线位：{lname} = {lv:.2f}")
+                    # 判断是否处于B点回落阶段（价格在B点以下且尚未突破任何测量线）
+                    if current_price < mp_levels[0] and b_point > 0:
+                        # B点回落阶段
+                        b_zone, _, _, _ = self.get_line_zone(self.mp_daily, b_point)
+                        lines.append(f"价格从 B点({b_point:.2f}) 回落，当前在 {cur_zone}，点位 {current_price:.2f}")
+                        lines.append(f"说明：日线大方向向上，但价格还未突破第1线({mp_levels[0]:.2f})，还在测量起始区间内。")
+                        # 显示向下测量线位作为参考
+                        mp_down = self.mp_daily_down
+                        if mp_down and mp_down.get('start'):
+                            d_levels, d_level9, d_label = self._get_down_active_levels(mp_down)
+                            if d_levels:
+                                lines.append(f"向下测量参考线位（{d_label}）：")
+                                for ln_idx, ln_num in enumerate([0, 2, 4, 7]):
+                                    if ln_num < len(d_levels):
+                                        lines.append(f"  {ln_num+1}线 = {d_levels[ln_num]:.2f}")
+                        lines.append(f"等待价格突破 1线({mp_levels[0]:.2f}) 后，才能确认日线上涨开始。")
                     else:
-                        lines.append("已超过所有线位，待重新测量。")
+                        # 已突破至少一条线
+                        lines.append(f"当前走到了 {cur_zone}，点位 {current_price:.2f}")
+                        next_targets = [(ln, mp_levels[ln-1]) for ln in [3, 5, 6, 8] if mp_levels[ln-1] > current_price]
+                        if mp_level9 and mp_level9 > current_price:
+                            next_targets.append((9, mp_level9))
+                        if next_targets:
+                            ln, lv = next_targets[0]
+                            lname = '极线(9线)' if ln == 9 else f'{ln}线'
+                            lines.append(f"日线大方向向上，上方最近目标线位：{lname} = {lv:.2f}")
+                        else:
+                            lines.append("已超过所有线位，待重新测量。")
                 else:
-                    next_targets = [(ln, mp_levels[ln-1]) for ln in [3, 5, 6, 8] if mp_levels[ln-1] < current_price]
-                    if mp_level9 and mp_level9 < current_price:
-                        next_targets.append((9, mp_level9))
-                    if next_targets:
-                        ln, lv = next_targets[0]
-                        lname = '极线(9线)' if ln == 9 else f'{ln}线'
-                        lines.append(f"日线大方向向下，下方最近目标线位：{lname} = {lv:.2f}")
+                    if current_price > mp_levels[0] and b_point > 0:
+                        lines.append(f"价格从 B点({b_point:.2f}) 反弹，当前在 {cur_zone}，点位 {current_price:.2f}")
+                        lines.append(f"说明：日线大方向向下，但价格还未突破第1线({mp_levels[0]:.2f})，还在测量起始区间内。")
+                        lines.append(f"等待价格突破 1线({mp_levels[0]:.2f}) 后，才能确认日线下跌开始。")
                     else:
-                        lines.append("已超过所有线位，待重新测量。")
+                        lines.append(f"当前走到了 {cur_zone}，点位 {current_price:.2f}")
+                        next_targets = [(ln, mp_levels[ln-1]) for ln in [3, 5, 6, 8] if mp_levels[ln-1] < current_price]
+                        if mp_level9 and mp_level9 < current_price:
+                            next_targets.append((9, mp_level9))
+                        if next_targets:
+                            ln, lv = next_targets[0]
+                            lname = '极线(9线)' if ln == 9 else f'{ln}线'
+                            lines.append(f"日线大方向向下，下方最近目标线位：{lname} = {lv:.2f}")
+                        else:
+                            lines.append("已超过所有线位，待重新测量。")
 
         lines.append("--------------------------------")
         summary_text = "\n".join(lines)
