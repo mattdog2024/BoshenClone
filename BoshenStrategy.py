@@ -729,6 +729,40 @@ class BoshenStrategy(BaseStrategy):
 
         return None
 
+    def _calc_3group_resonance(self, current_price):
+        """计算日线影线+日线单体+60分钟单体三组共振区域"""
+        tol = 8.0  # 允许偏差点数
+        results = []
+        d_down = self.mp_daily_down
+        m60 = self.mp_60min_down
+        if not d_down or not m60:
+            return results
+        d_shadow = d_down.get('shadow_levels', [])
+        d_body = d_down.get('levels', [])
+        m60_body = m60.get('levels', [])
+        # 三组共振：日线影线 + 日线单体 + 60分钟单体
+        for i, ds in enumerate(d_shadow):
+            if ds >= current_price:
+                continue
+            for j, db in enumerate(d_body):
+                if db >= current_price or abs(ds - db) > tol * 2:
+                    continue
+                for k, mb in enumerate(m60_body):
+                    if mb >= current_price or abs(ds - mb) > tol * 2:
+                        continue
+                    center = (ds + db + mb) / 3
+                    stars = '★★★' if abs(ds - db) < tol and abs(db - mb) < tol else '★★'
+                    results.append(f"{stars} {center:.0f}区 (日线影线{i+1}线={ds:.0f} + 日线单体{j+1}线={db:.0f} + 60分钟单体{k+1}线={mb:.0f})")
+        # 去重并按价格降序排序
+        seen = set()
+        unique = []
+        for r in sorted(results, key=lambda x: float(x.split('区')[0].split()[-1]), reverse=True):
+            center = round(float(r.split('区')[0].split()[-1]) / 5) * 5
+            if center not in seen:
+                seen.add(center)
+                unique.append(r)
+        return unique[:5]
+
     # ============================================================
     # 历史数据加载完成后的初始化
     # ============================================================
