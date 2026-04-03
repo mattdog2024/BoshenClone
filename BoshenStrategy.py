@@ -1,25 +1,20 @@
 """
-波神凯线策略 V3 - 多周期自动交易版
+波神凯线策略 V2 - 新框架版本
 基于 pythongo BaseStrategy (Python 3.11+)
 
-交易逻辑：
-  日线(D1)  → 确认大方向（向上/向下）+ 计算1~8线线位
-  60分钟(H1) → 找回调/反弹的入场区域（跌到/涨到关键线位）
-  15分钟(M15)→ 确认60分钟回调结束（出现反转K线形态）
-  5分钟(M5)  → 精准入场（KDJ金叉/死叉 + 价格在支撑/压力位）
-
-仓位管理：
-  - 单笔风险 2% 账户资金
-  - 止损：跌破入场线位下一条线
-  - 分批止盈：60分钟3线平50%，5-6线平30%，8线平20%
-  - 动态止损：每突破一条线，止损上移到前一条线
+迁移说明：
+- 旧框架：CtaTemplate + ArrayManager + BarManager + loadDay/loadBar
+- 新框架：BaseStrategy + KLineGenerator(style="D1") + producer 数组
+- 图表推送：widget.recv_kline({"kline": kline, ...})
+- 所有波神核心算法（calculate_levels / get_line_zone / _print_action_summary 等）保持不变
 """
 
 import numpy as np
+import pyqtgraph as pg
 from pydantic import Field
 
 from pythongo.base import BaseParams, BaseState
-from pythongo.classdef import KLineData, OrderData, TickData, TradeData
+from pythongo.classdef import KLineData, TickData
 from pythongo.ui import BaseStrategy
 from pythongo.utils import KLineGenerator
 
@@ -32,27 +27,18 @@ class Params(BaseParams):
     exchange: str = Field(default="SHFE", title="交易所代码")
     instrument_id: str = Field(default="rb2605", title="合约代码")
     lookback_daily: int = Field(default=40, title="日线回看周期(根)", ge=5)
-    risk_pct: float = Field(default=2.0, title="单笔风险百分比(%)", ge=0.5, le=10.0)
-    pay_up: float = Field(default=1.0, title="超价(点数)", ge=0.0)
-    auto_trade: bool = Field(default=False, title="是否启用自动交易(True=开启)")
-    min_volume: int = Field(default=1, title="最小下单手数", ge=1)
+    tolerance_pct: float = Field(default=0.8, title="线位误差百分比(0.8=0.8%)", ge=0.1)
+    scalp_mode_enabled: bool = Field(default=True, title="是否启用横盘波段模式")
 
 
 class State(BaseState):
-    daily_direction: int = Field(default=0, title="日线方向(1=上 -1=下 0=未知)")
+    daily_direction: int = Field(default=0, title="日线方向(1=上 -1=下)")
     daily_line_desc: str = Field(default="未知", title="日线线位描述")
-    signal_stage: str = Field(default="等待日线确认", title="当前信号阶段")
-    h1_zone: str = Field(default="", title="60分钟当前线位")
-    m15_pattern: str = Field(default="", title="15分钟形态")
-    m5_kdj_k: float = Field(default=0, title="5分钟KDJ-K")
-    m5_kdj_j: float = Field(default=0, title="5分钟KDJ-J")
+    signal_stage: str = Field(default="等待日线确认", title="信号阶段")
     line1: float = Field(default=0, title="1线")
     line3: float = Field(default=0, title="3线")
     line5: float = Field(default=0, title="5线")
     line8: float = Field(default=0, title="8线")
-    entry_price: float = Field(default=0, title="入场价格")
-    stop_loss: float = Field(default=0, title="止损价格")
-    position_vol: int = Field(default=0, title="当前持仓手数")
 
 
 # ============================================================
@@ -61,20 +47,15 @@ class State(BaseState):
 
 class BoshenStrategy(BaseStrategy):
     """
-    波神凯线策略 V3（多周期自动交易版）
-    日线→60分钟→15分钟→5分钟 四级过滤信号系统
+    波神凯线策略 V2（新框架）
+    - 日线级别波神八条线测量
+    - 自动识别趋势/横盘/回调/反弹
+    - 图表实时显示1~8线 + 极线 + 向下测量线
     """
 
-    # 波神八条线比例
+    # 波神八条线比例（与 BoshenClone/algorithms.py 完全一致）
     BOSHEN_RATIOS = [1.382, 1.618, 2.0, 2.382, 2.618, 3.0, 3.382, 3.618]
-    RATIO_9 = 4.236  # 极线
-
-    # 信号阶段常量
-    STAGE_WAIT_DAILY = "等待日线确认"
-    STAGE_WAIT_H1 = "等待60分钟入场区"
-    STAGE_WAIT_M15 = "等待15分钟形态确认"
-    STAGE_WAIT_M5 = "等待5分钟精准入场"
-    STAGE_IN_POSITION = "已持仓"
+    RATIO_9 = 4.236  # 极线比例
 
     def __init__(self) -> None:
         super().__init__()
@@ -82,71 +63,51 @@ class BoshenStrategy(BaseStrategy):
         self.params_map = Params()
         self.state_map = State()
 
-        # K线生成器（四个周期）
-        self.kg_daily: KLineGenerator = None   # 日线
-        self.kg_h1: KLineGenerator = None      # 60分钟
-        self.kg_m15: KLineGenerator = None     # 15分钟
-        self.kg_m5: KLineGenerator = None      # 5分钟
+        # 日线 K 线生成器
+        self.kline_generator_daily: KLineGenerator = None
 
-        # 波神测量点（日线向上）
+        # 波神测量点（日线）
         self.mp_daily = self._new_mp()
-        # 波神测量点（日线向下）
         self.mp_daily_down = self._new_mp_down()
-        # 60分钟测量点
-        self.mp_h1 = self._new_mp()
 
-        # 日线状态
-        self.daily_direction = 0          # 1=向上 -1=向下
+        # 状态变量
+        self.daily_direction = 0
         self.daily_line_desc = '未知'
+        self.signal_stage = '等待日线确认'
+        self.market_mode = '趋势'
+
+        # A/B 点建立后的历史极值
         self.highest_since_ab = 0.0
         self.lowest_since_ab = 999999.0
         self.lowest_since_high = 999999.0
         self.highest_since_low = 0.0
 
-        # 多周期信号状态机
-        self.signal_stage = self.STAGE_WAIT_DAILY
-        self.h1_entry_zone = ''           # 60分钟入场区域（如"2-3线区间"）
-        self.h1_entry_direction = 0       # 60分钟期望入场方向（1=做多 -1=做空）
-        self.m15_pattern_ok = False       # 15分钟形态是否确认
-        self.m15_pattern_name = ''        # 形态名称
+        # A/B 点锁定标志：找到后锁定，只有走完8线才解锁
+        self._ab_locked = False
+        self._ab_cycle_done = False  # 是否走完了8线
 
-        # 5分钟KDJ状态
-        self.m5_k_prev = 50.0
-        self.m5_d_prev = 50.0
-        self.m5_j_prev = 50.0
-        self.m5_k = 50.0
-        self.m5_d = 50.0
-        self.m5_j = 50.0
+        # 影线测量状态
+        self.daily_shadow_phase = False
+        self.daily_shadow_level9 = None
 
-        # 持仓管理
-        self.order_id: int | None = None
-        self.entry_price = 0.0
-        self.stop_loss_price = 0.0
-        self.take_profit_1 = 0.0         # 第一批止盈（50%）
-        self.take_profit_2 = 0.0         # 第二批止盈（30%）
-        self.take_profit_3 = 0.0         # 第三批止盈（20%）
-        self.tp1_done = False
-        self.tp2_done = False
-        self.total_volume = 0             # 开仓总手数
-
-        # 当前tick
-        self._last_tick: TickData = None
-        self.signal_price = 0.0
-
-        # 历史回放标志
+        # 历史回放标志（push_history_data 期间为 True）
         self._is_history = True
+        self._initial_summary_done = False
         self._last_summary_text = ''
 
-        # 水平横线容器（monkey-patch方式添加，主线程安全）
-        self._hlines: dict = {}
+        # 当前 tick
+        self._last_tick: TickData = None
+
+        # 图表信号价格（暂不下单，仅显示）
+        self.signal_price = 0.0
 
     # ============================================================
-    # 图表指标属性
+    # 图表指标属性（框架会自动读取这些属性来决定显示哪些线）
     # ============================================================
 
     @property
     def main_indicator_data(self) -> dict[str, float]:
-        """主图指标：日线1~8线 + 极线"""
+        """主图指标数据：波神1~8线 + 极线（9线）+ 向下测量线"""
         def safe_level(lst, idx):
             return lst[idx] if lst and len(lst) > idx else 0.0
 
@@ -195,980 +156,887 @@ class BoshenStrategy(BaseStrategy):
     # ============================================================
 
     def calculate_levels(self, start, end, direction):
-        """计算波神八条线价格"""
+        """计算波神八条线价格（与 BoshenClone/algorithms.py 完全一致）"""
         diff = end - start
         levels = [start + diff * r for r in self.BOSHEN_RATIOS]
         level9 = start + diff * self.RATIO_9
         return levels, level9
 
-    def _find_ab_from_arrays(self, highs, lows, lookback, trend):
-        """
-        在最近 lookback 根K线里找A/B点：
-        - 向上(trend=1)：A=最低点，B=A点之后到现在的最高点
-        - 向下(trend=-1)：A=最高点，B=A点之后到现在的最低点
-        """
-        n = len(highs)
-        if n < 3:
-            return None, None, None, None
-
-        window_lows = lows[-lookback:]
-        window_highs = highs[-lookback:]
-        offset = n - lookback if n >= lookback else 0
-
-        if trend == 1:
-            # 向上：找最低点作为A
-            a_idx_in_window = int(np.argmin(window_lows))
-            a_idx = a_idx_in_window + offset
-            a_price = float(lows[a_idx])
-            # B = A点之后的最高点
-            if a_idx < n - 1:
-                b_price = float(np.max(highs[a_idx:]))
-            else:
-                b_price = float(highs[a_idx])
-            k_high = float(highs[a_idx])
-            k_low = float(lows[a_idx])
+    def _detect_shadow_bar(self, k_high, k_low, k_open, k_close, direction):
+        """判断是否为影线测量法对象"""
+        body = abs(k_open - k_close)
+        if direction == -1:
+            upper_shadow = k_high - max(k_open, k_close)
+            is_shadow = upper_shadow > body and body > 0
+            shadow_start = k_high
+            shadow_end = max(k_open, k_close) if is_shadow else k_low
+            body_start, body_end = k_high, k_low
         else:
-            # 向下：找最高点作为A
-            a_idx_in_window = int(np.argmax(window_highs))
-            a_idx = a_idx_in_window + offset
-            a_price = float(highs[a_idx])
-            # B = A点之后的最低点
-            if a_idx < n - 1:
-                b_price = float(np.min(lows[a_idx:]))
-            else:
-                b_price = float(lows[a_idx])
-            k_high = float(highs[a_idx])
-            k_low = float(lows[a_idx])
+            lower_shadow = min(k_open, k_close) - k_low
+            is_shadow = lower_shadow > body and body > 0
+            shadow_start = k_low
+            shadow_end = min(k_open, k_close) if is_shadow else k_high
+            body_start, body_end = k_low, k_high
+        return is_shadow, shadow_start, shadow_end, body_start, body_end
 
-        if abs(b_price - a_price) < 1.0:
-            return None, None, None, None
+    def _init_down_measurement(self, mp_down, highs, lows, opens, closes, label, start_idx=None):
+        """初始化向下测量（从最高点向下）"""
+        n = len(closes)
+        if n < 5:
+            return False
 
-        return a_price, b_price, k_high, k_low
+        search_highs = highs[start_idx:] if (start_idx is not None and 0 <= start_idx < n) else highs
+        search_offset = start_idx if (start_idx is not None and 0 <= start_idx < n) else 0
 
-    def get_line_zone(self, mp, price):
-        """判断价格在哪条线区间"""
-        levels = mp.get('levels', [])
-        level9 = mp.get('level9')
-        start = mp.get('start', 0.0) or 0.0
-        direction = mp.get('direction', 1)
+        max_idx = int(np.argmax(search_highs)) + search_offset
+        k_high = float(highs[max_idx])
+        k_low = float(lows[max_idx])
+        k_close = float(closes[max_idx])
+        k_open = float(opens[max_idx]) if opens is not None else k_close
 
-        if not levels or not start:
-            return '未知区域', 0, False, False
+        is_shadow, shadow_start, shadow_end, body_start, body_end = \
+            self._detect_shadow_bar(k_high, k_low, k_open, k_close, -1)
 
-        tol = price * 0.008  # 0.8% 容差
+        shadow_levels, shadow_level9 = self.calculate_levels(shadow_start, shadow_end, -1)
+        body_levels, body_level9 = self.calculate_levels(body_start, body_end, -1)
 
-        # 检查是否在线位附近
-        all_levels = list(enumerate(levels, 1))
+        mp_down.update({
+            'start': body_start, 'end': body_end,
+            'use_shadow': is_shadow, 'shadow_end': shadow_end, 'body_end': body_end,
+            'k_high': k_high, 'k_low': k_low, 'k_open': k_open, 'k_close': k_close,
+            'shadow_levels': shadow_levels, 'shadow_level9': shadow_level9,
+            'levels': body_levels, 'level9': body_level9,
+            'phase': 'shadow' if is_shadow else 'body', 'bar_idx': max_idx,
+        })
+
+        if is_shadow:
+            self.output(
+                f'【{label}向下测量】影线测量法: high={k_high:.2f}, 实体顶={max(k_open,k_close):.2f}\n'
+                f'  影线线位: 1线={shadow_levels[0]:.2f} | 3线={shadow_levels[2]:.2f} | '
+                f'8线={shadow_levels[7]:.2f} | 9线={shadow_level9:.2f}\n'
+                f'  单体线位: 1线={body_levels[0]:.2f} | 3线={body_levels[2]:.2f} | '
+                f'8线={body_levels[7]:.2f} | 9线={body_level9:.2f}'
+            )
+        else:
+            self.output(
+                f'【{label}向下测量】单体测量法: high={k_high:.2f}, low={k_low:.2f}\n'
+                f'  线位: 1线={body_levels[0]:.2f} | 3线={body_levels[2]:.2f} | '
+                f'8线={body_levels[7]:.2f} | 9线={body_level9:.2f}'
+            )
+        return True
+
+    def _get_down_active_levels(self, mp_down):
+        """获取当前有效的向下测量线位"""
+        if mp_down['start'] is None:
+            return [], None, 'none'
+        if mp_down['phase'] == 'shadow' and mp_down['shadow_levels']:
+            return mp_down['shadow_levels'], mp_down['shadow_level9'], '影线'
+        return mp_down['levels'], mp_down['level9'], '单体'
+
+    def get_line_zone(self, mp, current_price):
+        """区域化线位判断，返回 (zone_desc, zone_num, is_key, is_near_extreme)"""
+        if not mp['levels']:
+            return '未初始化', 0, False, False
+
+        levels = mp['levels']
+        level9 = mp['level9']
+        direction = mp['direction']
+        tol = current_price * (self.params_map.tolerance_pct / 100.0)
+
+        if level9 and abs(current_price - level9) <= tol * 1.5:
+            return '极线(9线)区域', 9, True, True
         if level9:
-            all_levels.append((9, level9))
+            if direction == 1 and current_price > level9:
+                return '超过极线！需重新测量', 9.5, True, True
+            if direction == -1 and current_price < level9:
+                return '超过极线！需重新测量', 9.5, True, True
 
-        for line_num, lv in all_levels:
-            if abs(price - lv) <= tol:
-                is_key = line_num in [3, 5, 6, 8]
-                is_extreme = line_num in [7, 8, 9]
-                return f'{line_num}线区域', line_num, is_key, is_extreme
-
-        # 判断在哪个区间
-        if direction == 1:
-            if price < start:
-                return 'A点以下', 0, False, False
-            if price < levels[0]:
-                return 'A~1线区间', 0, False, False
-            for i in range(len(levels) - 1):
-                if levels[i] <= price < levels[i + 1]:
-                    return f'{i+1}~{i+2}线区间', i + 1, False, False
-            if level9 and price < level9:
-                return f'8~极线区间', 8, True, True
-            return '极线以上', 9, False, True
-        else:
-            if price > start:
-                return 'A点以上', 0, False, False
-            if price > levels[0]:
-                return 'A~1线区间', 0, False, False
-            for i in range(len(levels) - 1):
-                if levels[i + 1] < price <= levels[i]:
-                    return f'{i+1}~{i+2}线区间', i + 1, False, False
-            if level9 and price > level9:
-                return f'8~极线区间', 8, True, True
-            return '极线以下', 9, False, True
-
-    def _check_reversal_pattern(self, highs, lows, opens, closes, direction):
-        """
-        检查最近3根K线是否出现反转形态：
-        direction=1  → 检查向上反转（锤子线、阳包阴）
-        direction=-1 → 检查向下反转（射击之星、阴包阳）
-        """
-        if len(closes) < 3:
-            return False, ''
-
-        c0, c1, c2 = float(closes[-3]), float(closes[-2]), float(closes[-1])
-        o0, o1, o2 = float(opens[-3]), float(opens[-2]), float(opens[-1])
-        h1, h2 = float(highs[-2]), float(highs[-1])
-        l1, l2 = float(lows[-2]), float(lows[-1])
+        for i, level in enumerate(levels):
+            if abs(current_price - level) <= tol:
+                line_num = i + 1
+                is_key = line_num in [1, 3, 5, 6, 7, 8]
+                return f'{line_num}线区域', line_num, is_key, False
 
         if direction == 1:
-            # 阳包阴：最新K线为阳线，且实体包含前一根阴线实体
-            engulfing = (c2 > o2 and c1 < o1 and c2 > o1 and o2 < c1)
-            if engulfing:
-                return True, '阳包阴'
-            # 锤子线：下影线 >= 实体2倍，上影线很短
-            body2 = abs(c2 - o2)
-            lower_shadow2 = min(o2, c2) - l2
-            upper_shadow2 = h2 - max(o2, c2)
-            hammer = (body2 > 0 and lower_shadow2 >= body2 * 2 and upper_shadow2 <= body2 * 0.5)
-            if hammer:
-                return True, '锤子线'
-            # 连续两根阳线
-            two_bull = (c1 > o1 and c2 > o2 and c2 > c1)
-            if two_bull:
-                return True, '连续阳线'
+            if current_price < levels[0]:
+                return '1线以下', 0, False, False
+            for i in range(len(levels) - 1):
+                if levels[i] < current_price < levels[i + 1]:
+                    n = i + 1
+                    is_key = n in [2, 4, 6]
+                    return f'{n}线半区域', n + 0.5, is_key, False
+            if current_price > levels[7]:
+                return '8线半区域（接近极线）', 8.5, True, True
         else:
-            # 阴包阳：最新K线为阴线，且实体包含前一根阳线实体
-            engulfing = (c2 < o2 and c1 > o1 and c2 < o1 and o2 > c1)
-            if engulfing:
-                return True, '阴包阳'
-            # 射击之星：上影线 >= 实体2倍，下影线很短
-            body2 = abs(c2 - o2)
-            upper_shadow2 = h2 - max(o2, c2)
-            lower_shadow2 = min(o2, c2) - l2
-            shooting_star = (body2 > 0 and upper_shadow2 >= body2 * 2 and lower_shadow2 <= body2 * 0.5)
-            if shooting_star:
-                return True, '射击之星'
-            # 连续两根阴线
-            two_bear = (c1 < o1 and c2 < o2 and c2 < c1)
-            if two_bear:
-                return True, '连续阴线'
+            if current_price > levels[0]:
+                return '1线以上', 0, False, False
+            for i in range(len(levels) - 1):
+                if levels[i + 1] < current_price < levels[i]:
+                    n = i + 1
+                    is_key = n in [2, 4, 6]
+                    return f'{n}线半区域', n + 0.5, is_key, False
+            if current_price < levels[7]:
+                return '8线半区域（接近极线）', 8.5, True, True
 
-        return False, ''
+        return '未知区域', 0, False, False
 
-    # ============================================================
-    # 仓位计算
-    # ============================================================
-
-    def _calc_volume(self, entry_price, stop_price):
+    def _find_ab_from_arrays(self, highs, lows, lookback, direction):
+        """从数组中找 A/B 点
+        
+        向上：A = 全段最低点的low，B = A点之后的最高点的high
+        向下：A = 全段最高点的high，B = A点之后的最低点的low
         """
-        按账户资金风险百分比计算下单手数
-        螺纹钢：1手 = 10吨，最小变动0.5元/吨
+        n = min(len(highs), lookback)
+        if n < 5:
+            return None, None, None, None
+        h = highs[-n:]
+        l = lows[-n:]
+        if direction == 1:
+            # 找绝对最低点作为A
+            a_idx = int(np.argmin(l))
+            a_price = float(l[a_idx])
+            # B = A点之后（含A点）的最高点
+            b_price = float(np.max(h[a_idx:]))
+            return a_price, b_price, float(h[a_idx]), float(l[a_idx])
+        else:
+            # 找绝对最高点作为A
+            a_idx = int(np.argmax(h))
+            a_price = float(h[a_idx])
+            # B = A点之后（含A点）的最低点
+            b_price = float(np.min(l[a_idx:]))
+            return a_price, b_price, float(h[a_idx]), float(l[a_idx])
+
+    def _check_pattern(self, highs, lows, direction):
+        """检查形态是否成立（需要至少3根K线）"""
+        if len(highs) < 3:
+            return False
+        if direction == -1:
+            left_idx = -2 if highs[-2] > highs[-3] else -3
+            return lows[-1] < lows[left_idx] and highs[-1] <= highs[left_idx] * 1.001
+        else:
+            left_idx = -2 if lows[-2] < lows[-3] else -3
+            return highs[-1] > highs[left_idx] and lows[-1] >= lows[left_idx] * 0.999
+
+    def _check_pattern_realtime(self, highs, lows, direction, realtime_price):
+        """实时形态检测（用 tick 价格）"""
+        if len(highs) < 3:
+            return False
+        if direction == -1:
+            left_idx = -1 if highs[-1] > highs[-2] else -2
+            left_low = lows[left_idx]
+            realtime_low = min(self.lowest_since_high, realtime_price) if self.lowest_since_high < 999999.0 else realtime_price
+            return realtime_low < left_low
+        else:
+            lookback = min(10, len(lows) - 1)
+            recent_lows = lows[-lookback:]
+            min_offset = int(np.argmin(recent_lows))
+            left_idx = -(lookback - min_offset)
+            left_high = highs[left_idx]
+            realtime_high = max(self.highest_since_low, realtime_price) if self.highest_since_low > 0 else realtime_price
+            if left_idx == -1:
+                return realtime_high > left_high and realtime_high > lows[left_idx]
+            return realtime_high > left_high
+
+    def detect_sideways(self, closes_daily, highs_h1, lows_h1):
+        """检测横盘震荡"""
+        if len(closes_daily) < 5 or len(highs_h1) < 20:
+            return False, 0, 0
+        daily_closes = closes_daily[-5:]
+        daily_range_pct = (max(daily_closes) - min(daily_closes)) / min(daily_closes) * 100
+        h1_highs = highs_h1[-20:]
+        h1_lows = lows_h1[-20:]
+        range_high = float(max(h1_highs))
+        range_low = float(min(h1_lows))
+        h1_range_pct = (range_high - range_low) / range_low * 100
+        daily_up = all(daily_closes[i] <= daily_closes[i+1] for i in range(len(daily_closes)-1))
+        daily_dn = all(daily_closes[i] >= daily_closes[i+1] for i in range(len(daily_closes)-1))
+        if daily_up or daily_dn:
+            return False, range_high, range_low
+        is_sideways = daily_range_pct < 0.8 and h1_range_pct < 1.5
+        return is_sideways, range_high, range_low
+
+    # ============================================================
+    # 新框架生命周期
+    # ============================================================
+
+    def on_tick(self, tick: TickData) -> None:
+        super().on_tick(tick)
+        self._last_tick = tick
+
+        # 第一个有效 tick 到来时输出初始分析
+        if not self._initial_summary_done and tick.last_price > 0:
+            self._initial_summary_done = True
+            self._output_daily_summary(tick.last_price)
+
+        # 实时更新极值 + 监控新高/新低触发重新测量
+        if not self._is_history and self.mp_daily['start'] is not None:
+            price = tick.last_price
+            trend = self.mp_daily['direction']
+            if trend == 1:
+                if price < self.lowest_since_high:
+                    self.lowest_since_high = price
+                    self.highest_since_low = price
+                if price > self.highest_since_ab + 0.5:
+                    old_high = self.highest_since_ab
+                    self.highest_since_ab = price
+                    self.lowest_since_high = price
+                    self.output(f'实时高点更新: {old_high:.2f} → {price:.2f}，重新初始化向下测量...')
+                    self.mp_daily_down = self._new_mp_down()
+                    self._output_daily_summary(price)
+            elif trend == -1:
+                if price > self.highest_since_low:
+                    self.highest_since_low = price
+                if price < self.lowest_since_ab - 0.5:
+                    old_low = self.lowest_since_ab
+                    self.lowest_since_ab = price
+                    self.output(f'实时低点更新: {old_low:.2f} → {price:.2f}，重新初始化向下测量...')
+                    self.mp_daily_down = self._new_mp_down()
+                    self._output_daily_summary(price)
+
+        # 转发给日线生成器（日线不需要 tick 驱动，但保留接口）
+        if self.kline_generator_daily is not None:
+            self.kline_generator_daily.tick_to_kline(tick)
+
+    def on_start(self) -> None:
+        # 创建日线 K 线生成器
+        self.kline_generator_daily = KLineGenerator(
+            callback=self.on_daily_bar,
+            real_time_callback=self.on_daily_bar_realtime,
+            exchange=self.params_map.exchange,
+            instrument_id=self.params_map.instrument_id,
+            style="D1"
+        )
+
+        # 加载历史日线数据（这会同步调用 on_daily_bar 多次）
+        self._is_history = True
+        self.kline_generator_daily.push_history_data()
+        self._is_history = False
+
+        # 历史日线加载完成后，做一次完整初始化
+        self._post_history_init()
+
+        # 调用父类 on_start（会触发 widget 初始化 + load_data_signal）
+        super().on_start()
+
+        # 在 widget 初始化完成后，设置白色背景
+        self._apply_light_theme()
+
+    def on_stop(self) -> None:
+        super().on_stop()
+
+    def _apply_light_theme(self) -> None:
+        """将图表背景改为白色亮色主题
+        
+        注意：pg.setConfigOption 必须在 QApplication 启动前调用才有效。
+        框架已经先启动了 Qt，所以我们在 widget 初始化完成后
+        直接操作图表组件设置白色背景。
         """
         try:
-            investor = self.get_investor_data().investor_id
-            account = self.get_account_fund_data(investor)
-            total_equity = account.balance  # 账户权益
-        except Exception:
-            total_equity = 100000.0  # 默认10万（测试用）
+            import time as _time
+            # 等待 widget 初始化完成（最多等 3 秒）
+            for _ in range(30):
+                if self.widget and self.widget.kline_widget:
+                    break
+                _time.sleep(0.1)
 
-        risk_amount = total_equity * (self.params_map.risk_pct / 100.0)
-        risk_per_lot = abs(entry_price - stop_price) * 10  # 螺纹钢每手10吨
+            if not (self.widget and self.widget.kline_widget):
+                return
 
-        if risk_per_lot <= 0:
-            return self.params_map.min_volume
+            kw = self.widget.kline_widget
 
-        volume = int(risk_amount / risk_per_lot)
-        volume = max(volume, self.params_map.min_volume)
+            # 1. 设置 PlotWidget 背景为白色
+            #    crosshair.parent() 就是创建时传入的 pg.PlotWidget
+            plot_widget = kw.crosshair.parent()
+            if hasattr(plot_widget, 'setBackground'):
+                plot_widget.setBackground('w')
 
-        self.output(
-            f'[仓位计算] 账户权益={total_equity:.0f} 风险金额={risk_amount:.0f} '
-            f'每手风险={risk_per_lot:.0f} 计算手数={volume}'
-        )
-        return volume
+            # 2. 设置 GraphicsLayout 背景为白色
+            if hasattr(kw, 'kline_layout'):
+                kw.kline_layout.setBackground((255, 255, 255, 255))
 
-    def _calc_stop_loss(self, entry_price, direction, levels):
-        """
-        计算止损价：跌破入场线位的下一条线
-        direction=1(做多)：止损在入场线位下方一条线
-        direction=-1(做空)：止损在入场线位上方一条线
-        """
-        if not levels:
-            return entry_price * (0.98 if direction == 1 else 1.02)
+            # 3. 设置每个 PlotItem 的 ViewBox 背景为白色
+            for plot_item in [kw.kline_plot_item, kw.vol_plot_item, kw.bottom_chart]:
+                if plot_item is not None:
+                    vb = plot_item.getViewBox()
+                    if vb is not None:
+                        vb.setBackgroundColor((255, 255, 255, 255))
+                    # 设置坐标轴颜色为深色
+                    axis = plot_item.getAxis('right')
+                    if axis:
+                        axis.setPen(color=(50, 50, 50, 255), width=0.8)
 
-        if direction == 1:
-            # 找入场价格下方最近的线位作为止损
-            below_levels = [lv for lv in levels if lv < entry_price]
-            if below_levels:
-                return max(below_levels) - 3  # 多3点缓冲
-            return entry_price * 0.98
-        else:
-            # 找入场价格上方最近的线位作为止损
-            above_levels = [lv for lv in levels if lv > entry_price]
-            if above_levels:
-                return min(above_levels) + 3  # 多3点缓冲
-            return entry_price * 1.02
-
-    def _calc_take_profits(self, entry_price, direction, levels):
-        """
-        计算分批止盈价位：
-        tp1 = 第一个关键线位（3线附近）→ 平50%
-        tp2 = 第二个关键线位（5-6线）→ 平30%
-        tp3 = 第三个关键线位（8线）→ 平20%
-        """
-        if not levels or len(levels) < 8:
-            if direction == 1:
-                return entry_price * 1.02, entry_price * 1.04, entry_price * 1.06
-            else:
-                return entry_price * 0.98, entry_price * 0.96, entry_price * 0.94
-
-        if direction == 1:
-            targets = [lv for lv in [levels[2], levels[4], levels[7]] if lv > entry_price]
-        else:
-            targets = [lv for lv in [levels[2], levels[4], levels[7]] if lv < entry_price]
-
-        while len(targets) < 3:
-            if direction == 1:
-                targets.append(targets[-1] * 1.01 if targets else entry_price * 1.02)
-            else:
-                targets.append(targets[-1] * 0.99 if targets else entry_price * 0.98)
-
-        return targets[0], targets[1], targets[2]
+            # 4. 设置标题颜色为深色
+            if hasattr(kw, 'layout_title'):
+                kw.layout_title.setText(
+                    kw.layout_title.text, bold=True, color='k'
+                )
+        except Exception as e:
+            self.output(f'[light theme] 设置白色主题失败: {e}')
 
     # ============================================================
-    # 日线回调
+    # 日线 K 线回调
     # ============================================================
 
-    def _on_daily_bar(self, kline: KLineData) -> None:
-        """日线K线确认后回调"""
-        producer = self.kg_daily.producer
-        n = len(producer.close)
-        if n < 10:
+    def on_daily_bar(self, kline: KLineData) -> None:
+        """日线 K 线完成回调（历史 + 实盘每日收盘后触发）"""
+        producer = self.kline_generator_daily.producer
+        highs = np.array(producer.high, dtype=float)
+        lows = np.array(producer.low, dtype=float)
+        opens = np.array(producer.open, dtype=float)
+        closes = np.array(producer.close, dtype=float)
+        n = len(closes)
+
+        if n < 5:
+            # 数据不足，直接推图表
+            self._push_kline_to_widget(kline)
+            return
+
+        # 更新极值（实盘阶段）
+        if not self._is_history and self.mp_daily['start'] is not None:
+            if kline.high > self.highest_since_ab:
+                self.highest_since_ab = kline.high
+            if kline.low < self.lowest_since_ab:
+                self.lowest_since_ab = kline.low
+
+        # 执行日线信号检查
+        self._check_daily_signal(kline, highs, lows, opens, closes)
+
+        # 推送到图表
+        self._push_kline_to_widget(kline)
+
+        # 实盘阶段输出分析
+        if not self._is_history:
+            tick_price = self._last_tick.last_price if self._last_tick and self._last_tick.last_price > 0 else None
+            self._output_daily_summary(tick_price or kline.close)
+
+    def on_daily_bar_realtime(self, kline: KLineData) -> None:
+        """日线实时 K 线回调（盘中每个 tick 触发，用于实时更新图表）"""
+        self._push_kline_to_widget(kline)
+
+    # ============================================================
+    # 历史数据加载完成后的初始化
+    # ============================================================
+
+    def _post_history_init(self):
+        """历史日线加载完成后，统一初始化 A/B 点和向下测量"""
+        producer = self.kline_generator_daily.producer
+        if producer is None or len(producer.close) < 5:
             return
 
         highs = np.array(producer.high, dtype=float)
         lows = np.array(producer.low, dtype=float)
         opens = np.array(producer.open, dtype=float)
         closes = np.array(producer.close, dtype=float)
-        current_price = float(closes[-1])
+        n = len(closes)
 
-        # 确定趋势方向
-        lookback = min(n, self.params_map.lookback_daily)
-        trend = self.daily_direction if self.daily_direction != 0 else 1
+        # 如果 mp_daily 还没初始化，手动初始化一次
+        if self.mp_daily['start'] is None:
+            self._init_daily_measurement(highs, lows, opens, closes)
 
-        # 检查是否超过八线（需要重新测量）
-        if self.mp_daily.get('levels') and len(self.mp_daily['levels']) >= 8:
-            eight_line = self.mp_daily['levels'][7]
-            if (trend == 1 and current_price > eight_line) or \
-               (trend == -1 and current_price < eight_line):
-                # 超八线，重新判断方向
-                l_tmp = lows[-lookback:]
-                h_tmp = highs[-lookback:]
-                low_idx = int(np.argmin(l_tmp))
-                a_up = float(l_tmp[low_idx])
-                b_up = float(h_tmp[low_idx])
-                if b_up > a_up:
-                    test_levels, _ = self.calculate_levels(a_up, b_up, 1)
-                    three_line = test_levels[2] if len(test_levels) > 2 else b_up
-                    trend = -1 if current_price > three_line else 1
-                self.output(f'【日线】超过八线({eight_line:.2f})，重新判断方向: {"向下" if trend == -1 else "向上"}')
+        # 初始化极值
+        if self.mp_daily['start'] is not None:
+            a_price = self.mp_daily['start']
+            trend = self.mp_daily['direction']
 
-        # 更新A/B点
-        a_price, b_price, k_high, k_low = self._find_ab_from_arrays(highs, lows, lookback, trend)
-        if a_price is not None:
-            if (self.mp_daily.get('start') != a_price or
-                    self.mp_daily.get('end') != b_price or
-                    self.mp_daily.get('direction') != trend):
-                self.mp_daily['start'] = a_price
-                self.mp_daily['end'] = b_price
-                self.mp_daily['direction'] = trend
-                self.mp_daily['k_high'] = k_high
-                self.mp_daily['k_low'] = k_low
-                self.mp_daily['levels'], self.mp_daily['level9'] = \
-                    self.calculate_levels(a_price, b_price, trend)
-                dir_str = '向上' if trend == 1 else '向下'
-                self.output(
-                    f'【日线】基准更新: A={a_price:.2f}, B={b_price:.2f}, 方向={dir_str}\n'
-                    f'  1线={self.mp_daily["levels"][0]:.2f} | '
-                    f'3线={self.mp_daily["levels"][2]:.2f} | '
-                    f'5线={self.mp_daily["levels"][4]:.2f} | '
-                    f'8线={self.mp_daily["levels"][7]:.2f}'
+            # 找 A 点在数组中的位置
+            a_idx = 0
+            for i in range(n):
+                if trend == 1 and abs(lows[i] - a_price) < 1.0:
+                    a_idx = i
+                    break
+                elif trend == -1 and abs(highs[i] - a_price) < 1.0:
+                    a_idx = i
+                    break
+
+            self.highest_since_ab = float(np.max(highs[a_idx:]))
+            self.lowest_since_ab = float(np.min(lows[a_idx:]))
+
+            # 初始化高点后最低价
+            high_idx = a_idx
+            for j in range(a_idx, n):
+                if highs[j] >= self.highest_since_ab - 0.5:
+                    high_idx = j
+                    break
+            self.lowest_since_high = float(np.min(lows[high_idx:]))
+
+            # 初始化低点后最高价
+            pullback_low_idx = high_idx
+            pullback_low_val = self.lowest_since_high
+            for j in range(high_idx, n):
+                if lows[j] <= pullback_low_val + 0.5:
+                    pullback_low_idx = j
+                    break
+            after_low_highs = highs[pullback_low_idx + 1:]
+            self.highest_since_low = float(np.max(after_low_highs)) if len(after_low_highs) > 0 else 0.0
+
+            self.output(
+                f'初始化极值: A点索引={a_idx}, 最高={self.highest_since_ab:.2f}, '
+                f'最低={self.lowest_since_ab:.2f}, 高点后最低={self.lowest_since_high:.2f}, '
+                f'低点后最高={self.highest_since_low:.2f}'
+            )
+
+            # 初始化向下测量
+            if n >= 5:
+                self._init_down_measurement(
+                    self.mp_daily_down, highs, lows, opens, closes, '日线',
+                    start_idx=a_idx
                 )
 
-        if not self.mp_daily.get('levels'):
+        # 历史数据加载完成后，锁定A/B点
+        if self.mp_daily['start'] is not None:
+            self._ab_locked = True
+            self._ab_cycle_done = False
+            self.output(
+                f'【日线】历史数据加载完成，A/B点已锁定！\n'
+                f'  A点={self.mp_daily["start"]:.2f}, B点={self.mp_daily["end"]:.2f}, '
+                f'方向={"向上" if self.mp_daily["direction"]==1 else "向下"}\n'
+                f'  1线={self.mp_daily["levels"][0]:.2f} | 3线={self.mp_daily["levels"][2]:.2f} | '
+                f'5线={self.mp_daily["levels"][4]:.2f} | 8线={self.mp_daily["levels"][7]:.2f}\n'
+                f'  只有价格走到八线才会解锁重新识别'
+            )
+
+        self.output('策略初始化完成，等待第一个 tick 输出实时价格分析...')
+
+    def _init_daily_measurement(self, highs, lows, opens, closes):
+        """初始化日线 A/B 点
+        
+        A = 最近N根K线的绝对最低点(low)
+        B = A点之后的绝对最高点(high)
+        """
+        n = len(closes)
+        lookback = min(n, 40)  # 最近40根日线找基准
+        recent_lows = lows[-lookback:]
+        recent_highs = highs[-lookback:]
+        # A点 = 绝对最低点
+        min_idx = int(np.argmin(recent_lows))
+        a_price = float(recent_lows[min_idx])
+        # B点 = A点之后（含A点）的绝对最高点
+        b_price = float(np.max(recent_highs[min_idx:]))
+        self.mp_daily['start'] = a_price
+        self.mp_daily['end'] = b_price
+        self.mp_daily['direction'] = 1
+        self.mp_daily['levels'], self.mp_daily['level9'] = self.calculate_levels(a_price, b_price, 1)
+        self.output(f'【日线】初始化基准K线: A点(绝对最低)={a_price:.2f}, B点(A后最高)={b_price:.2f}, 方向=向上')
+
+    # ============================================================
+    # 日线信号检查
+    # ============================================================
+
+    def _check_daily_signal(self, kline, highs, lows, opens, closes):
+        """日线分析核心逻辑"""
+        current_price = kline.close
+        n = len(closes)
+        if n < 10:
             return
 
-        # 更新极值追踪
-        if current_price > self.highest_since_ab:
-            self.highest_since_ab = current_price
-        if current_price < self.lowest_since_ab:
-            self.lowest_since_ab = current_price
+        # 首次初始化
+        if self.mp_daily['start'] is None:
+            self._init_daily_measurement(highs, lows, opens, closes)
+            if not self.mp_daily['levels']:
+                return
+            zone_desc, _, _, _ = self.get_line_zone(self.mp_daily, current_price)
+            self.daily_line_desc = zone_desc
+            return
 
-        # 判断线位区域
+        trend = self.mp_daily['direction']
+
+        # ── A/B 点锁定机制 ──────────────────────────────────────────
+        # 已锁定时：只检查是否走完8线（解锁条件）
+        if self._ab_locked and self.mp_daily['levels']:
+            eight_line = self.mp_daily['levels'][7]
+            cycle_done = (
+                (trend == 1 and current_price >= eight_line * 0.998) or
+                (trend == -1 and current_price <= eight_line * 1.002)
+            )
+            if cycle_done and not self._ab_cycle_done:
+                self._ab_cycle_done = True
+                self._ab_locked = False  # 解锁，允许重新识别
+                self.output(
+                    f'【日线】走完完整8线循环！8线={eight_line:.2f}，'
+                    f'当前价={current_price:.2f}，解锁A/B点，准备重新识别...'
+                )
+                # 重新识别A/B点
+                self._ab_cycle_done = False
+                self._init_daily_measurement(highs, lows, opens, closes)
+                self._ab_locked = True  # 重新锁定
+            # 锁定期间不更新A/B点，直接跳到线位判断
+            pass
+        else:
+            # 未锁定：在历史回放期间每根K线更新，历史结束后锁定
+            if not self._is_history:
+                # 实盘阶段且未锁定：重新识别并锁定
+                lookback = min(n, self.params_map.lookback_daily)
+                a_price, b_price, k_high, k_low = self._find_ab_from_arrays(highs, lows, lookback, trend)
+                if a_price is not None and (self.mp_daily['start'] != a_price or self.mp_daily['end'] != b_price):
+                    self.mp_daily['start'] = a_price
+                    self.mp_daily['end'] = b_price
+                    self.mp_daily['direction'] = trend
+                    self.mp_daily['k_high'] = k_high
+                    self.mp_daily['k_low'] = k_low
+                    self.mp_daily['levels'], self.mp_daily['level9'] = self.calculate_levels(a_price, b_price, trend)
+                    dir_str = '向上' if trend == 1 else '向下'
+                    self.output(
+                        f'【日线】识别A/B点: A={a_price:.2f}, B={b_price:.2f}, 方向={dir_str}\n'
+                        f'  线位: 1线={self.mp_daily["levels"][0]:.2f} | 3线={self.mp_daily["levels"][2]:.2f} | '
+                        f'5线={self.mp_daily["levels"][4]:.2f} | 8线={self.mp_daily["levels"][7]:.2f} | '
+                        f'9线={self.mp_daily["level9"]:.2f}'
+                    )
+                self._ab_locked = True
+                self.output(f'【日线】A/B点已锁定: A={self.mp_daily["start"]:.2f}, B={self.mp_daily["end"]:.2f}，走完8线才会解锁')
+            else:
+                # 历史回放期间：每根K线更新（找最终的A/B点）
+                lookback = min(n, self.params_map.lookback_daily)
+                a_price, b_price, k_high, k_low = self._find_ab_from_arrays(highs, lows, lookback, trend)
+                if a_price is not None and (self.mp_daily['start'] != a_price or self.mp_daily['end'] != b_price):
+                    self.mp_daily['start'] = a_price
+                    self.mp_daily['end'] = b_price
+                    self.mp_daily['direction'] = trend
+                    self.mp_daily['k_high'] = k_high
+                    self.mp_daily['k_low'] = k_low
+                    self.mp_daily['levels'], self.mp_daily['level9'] = self.calculate_levels(a_price, b_price, trend)
+
+        if not self.mp_daily['levels']:
+            return
+
         zone_desc, zone_num, is_key, is_extreme = self.get_line_zone(self.mp_daily, current_price)
         self.daily_line_desc = zone_desc
-        self.daily_direction = trend
 
-        # 更新State
+        # 更新 State（用于状态栏显示）
         levels = self.mp_daily['levels']
         self.state_map.daily_direction = trend
         self.state_map.daily_line_desc = zone_desc
+        self.state_map.signal_stage = self.signal_stage
         self.state_map.line1 = levels[0]
         self.state_map.line3 = levels[2]
         self.state_map.line5 = levels[4]
         self.state_map.line8 = levels[7]
 
-        # 检查反转形态（在关键线位）
-        if is_key or is_extreme:
-            pattern_ok, pattern_name = self._check_reversal_pattern(
-                highs, lows, opens, closes, -trend
-            )
-            if pattern_ok:
-                # 关键线位出现反转形态 → 方向反转
-                self.daily_direction = -trend
-                action = '上涨' if self.daily_direction == 1 else '下跌'
-                self.signal_stage = f'日线{action}确认，等待60分钟机会'
-                if not self._is_history:
-                    self.output(f'【日线信号】{zone_desc}出现{pattern_name}，方向反转为{action}')
-            else:
-                action = '上涨' if trend == 1 else '下跌'
-                self.signal_stage = f'日线{action}，等待60分钟机会'
+        # 形态检测
+        pattern_ok = self._check_pattern(highs, lows, -trend) if (is_key or is_extreme) else False
+        if (is_key or is_extreme) and pattern_ok:
+            self.daily_direction = -trend
+            action = '上涨' if self.daily_direction == 1 else '下跌'
+            self.signal_stage = f'日线{action}确认，等待60分钟'
         else:
+            self.daily_direction = trend
             action = '上涨' if trend == 1 else '下跌'
             self.signal_stage = f'日线{action}，等待60分钟机会'
 
-        self.state_map.signal_stage = self.signal_stage
-
-        if not self._is_history and self.trading:
-            self.update_status_bar()
-
-    def _on_daily_realtime(self, kline: KLineData) -> None:
-        """日线实时推送"""
-        self._push_kline_to_widget(kline)
-
-    # ============================================================
-    # 60分钟回调
-    # ============================================================
-
-    def _on_h1_bar(self, kline: KLineData) -> None:
-        """60分钟K线确认后回调"""
-        if self._is_history:
-            return
-        if not self.mp_daily.get('levels'):
-            return
-
-        producer = self.kg_h1.producer
-        n = len(producer.close)
-        if n < 10:
-            return
-
-        current_price = float(producer.close[-1])
-        daily_dir = self.daily_direction
-        levels = self.mp_daily['levels']
-
-        # 判断当前60分钟价格在日线线位的哪个区域
-        zone_desc, zone_num, is_key, is_extreme = self.get_line_zone(self.mp_daily, current_price)
-        self.state_map.h1_zone = zone_desc
-
-        # 判断是否进入入场区域
-        # 向上趋势：等待60分钟回调到2-3线区域（做多机会）
-        # 向下趋势：等待60分钟反弹到2-3线区域（做空机会）
-        entry_zone_hit = False
-        entry_direction = 0
-
-        if daily_dir == 1:
-            # 日线向上，等待60分钟回调到1-3线区域
-            if zone_num in [1, 2, 3] or (zone_num == 0 and current_price > levels[0] * 0.99):
-                entry_zone_hit = True
-                entry_direction = 1
-        elif daily_dir == -1:
-            # 日线向下，等待60分钟反弹到1-3线区域
-            if zone_num in [1, 2, 3] or (zone_num == 0 and current_price < levels[0] * 1.01):
-                entry_zone_hit = True
-                entry_direction = -1
-
-        if entry_zone_hit and self.signal_stage != self.STAGE_IN_POSITION:
-            self.h1_entry_zone = zone_desc
-            self.h1_entry_direction = entry_direction
-            self.m15_pattern_ok = False  # 重置15分钟形态确认
-            self.signal_stage = self.STAGE_WAIT_M15
-            self.state_map.signal_stage = self.signal_stage
-            dir_str = '做多' if entry_direction == 1 else '做空'
-            self.output(
-                f'【60分钟】进入入场区域 {zone_desc}，期望方向={dir_str}，'
-                f'等待15分钟形态确认'
-            )
-
-    def _on_h1_realtime(self, kline: KLineData) -> None:
-        """60分钟实时推送"""
-        pass  # 60分钟实时不做额外处理
-
-    # ============================================================
-    # 15分钟回调
-    # ============================================================
-
-    def _on_m15_bar(self, kline: KLineData) -> None:
-        """15分钟K线确认后回调"""
-        if self._is_history:
-            return
-        if self.signal_stage not in [self.STAGE_WAIT_M15, self.STAGE_WAIT_M5]:
-            return
-
-        producer = self.kg_m15.producer
-        n = len(producer.close)
-        if n < 5:
-            return
-
-        highs = np.array(producer.high, dtype=float)
-        lows = np.array(producer.low, dtype=float)
-        opens = np.array(producer.open, dtype=float)
-        closes = np.array(producer.close, dtype=float)
-
-        # 检查15分钟是否出现反转形态（确认60分钟回调结束）
-        pattern_ok, pattern_name = self._check_reversal_pattern(
-            highs, lows, opens, closes, self.h1_entry_direction
-        )
-
-        if pattern_ok:
-            self.m15_pattern_ok = True
-            self.m15_pattern_name = pattern_name
-            self.signal_stage = self.STAGE_WAIT_M5
-            self.state_map.signal_stage = self.signal_stage
-            self.state_map.m15_pattern = pattern_name
-            dir_str = '做多' if self.h1_entry_direction == 1 else '做空'
-            self.output(
-                f'【15分钟】出现{pattern_name}，回调结束确认！'
-                f'方向={dir_str}，等待5分钟精准入场'
-            )
-        else:
-            self.state_map.m15_pattern = '等待形态'
-
-    def _on_m15_realtime(self, kline: KLineData) -> None:
-        """15分钟实时推送"""
-        pass
-
-    # ============================================================
-    # 5分钟回调（精准入场）
-    # ============================================================
-
-    def _on_m5_bar(self, kline: KLineData) -> None:
-        """5分钟K线确认后回调 - 精准入场逻辑"""
         if self._is_history:
             return
 
-        producer = self.kg_m5.producer
-        n = len(producer.close)
-        if n < 15:
-            return
-
-        # 计算5分钟KDJ
-        try:
-            k_arr, d_arr, j_arr = producer.kdj(
-                fastk_period=9, slowk_period=3, slowd_period=3, array=True
-            )
-            self.m5_k_prev = float(k_arr[-2])
-            self.m5_d_prev = float(d_arr[-2])
-            self.m5_j_prev = float(j_arr[-2])
-            self.m5_k = float(k_arr[-1])
-            self.m5_d = float(d_arr[-1])
-            self.m5_j = float(j_arr[-1])
-            self.state_map.m5_kdj_k = round(self.m5_k, 2)
-            self.state_map.m5_kdj_j = round(self.m5_j, 2)
-        except Exception:
-            return
-
-        # 止损管理（已持仓时）
-        if self.signal_stage == self.STAGE_IN_POSITION:
-            self._manage_position(kline)
-            return
-
-        # 入场信号检测
-        if self.signal_stage != self.STAGE_WAIT_M5:
-            return
-        if not self.m15_pattern_ok:
-            return
-
-        current_price = float(producer.close[-1])
-        entry_dir = self.h1_entry_direction
-
-        # KDJ信号：
-        # 做多：KDJ在超卖区（J<20）出现金叉（K上穿D）
-        # 做空：KDJ在超买区（J>80）出现死叉（K下穿D）
-        kdj_long_signal = (
-            self.m5_j_prev < 30 and
-            self.m5_k_prev <= self.m5_d_prev and
-            self.m5_k > self.m5_d
-        )
-        kdj_short_signal = (
-            self.m5_j_prev > 70 and
-            self.m5_k_prev >= self.m5_d_prev and
-            self.m5_k < self.m5_d
-        )
-
-        entry_signal = (entry_dir == 1 and kdj_long_signal) or \
-                       (entry_dir == -1 and kdj_short_signal)
-
-        if not entry_signal:
-            return
-
-        # 确认价格在合理位置（日线线位支撑/压力区域）
-        levels = self.mp_daily.get('levels', [])
-        if not levels:
-            return
-
-        zone_desc, zone_num, _, _ = self.get_line_zone(self.mp_daily, current_price)
-
-        # 做多：价格在1-3线区间内
-        # 做空：价格在1-3线区间内
-        if zone_num > 4:
-            self.output(f'【5分钟】KDJ信号出现但价格已超过4线({zone_desc})，信号作废')
-            self.signal_stage = self.STAGE_WAIT_H1
-            return
-
-        # 计算止损
-        stop_price = self._calc_stop_loss(current_price, entry_dir, levels)
-
-        # 计算手数
-        volume = self._calc_volume(current_price, stop_price)
-
-        # 计算分批止盈
-        tp1, tp2, tp3 = self._calc_take_profits(current_price, entry_dir, levels)
-
-        # 记录入场信息
-        self.entry_price = current_price
-        self.stop_loss_price = stop_price
-        self.take_profit_1 = tp1
-        self.take_profit_2 = tp2
-        self.take_profit_3 = tp3
-        self.total_volume = volume
-        self.tp1_done = False
-        self.tp2_done = False
-
-        dir_str = '做多(买开)' if entry_dir == 1 else '做空(卖开)'
-        kdj_str = f'K={self.m5_k:.1f} D={self.m5_d:.1f} J={self.m5_j:.1f}'
-        self.output(
-            f'【5分钟入场信号】{dir_str}\n'
-            f'  入场价={current_price:.2f} 止损={stop_price:.2f} 手数={volume}\n'
-            f'  止盈1={tp1:.2f}(50%) 止盈2={tp2:.2f}(30%) 止盈3={tp3:.2f}(20%)\n'
-            f'  KDJ: {kdj_str} | 线位: {zone_desc}'
-        )
-
-        self.signal_price = current_price if entry_dir == 1 else -current_price
-        self.state_map.entry_price = current_price
-        self.state_map.stop_loss = stop_price
-        self.state_map.position_vol = volume
-
-        # 执行下单
-        if self.params_map.auto_trade and self.trading:
-            order_dir = 'buy' if entry_dir == 1 else 'sell'
-            entry_price_with_slippage = (
-                current_price + self.params_map.pay_up if entry_dir == 1
-                else current_price - self.params_map.pay_up
-            )
-            if self.order_id is not None:
-                self.cancel_order(self.order_id)
-            self.order_id = self.send_order(
-                exchange=self.params_map.exchange,
-                instrument_id=self.params_map.instrument_id,
-                volume=volume,
-                price=entry_price_with_slippage,
-                order_direction=order_dir
-            )
-            self.output(f'【下单】{dir_str} {volume}手 @ {entry_price_with_slippage:.2f}')
-        else:
-            self.output(f'【信号提示】{dir_str}信号（auto_trade=False，未自动下单）')
-
-        self.signal_stage = self.STAGE_IN_POSITION
-        self.state_map.signal_stage = self.signal_stage
-
+        # 实盘时更新状态栏
         if self.trading:
             self.update_status_bar()
-
-    def _on_m5_realtime(self, kline: KLineData) -> None:
-        """5分钟实时推送"""
-        pass
-
-    # ============================================================
-    # 持仓管理（止盈/止损/动态移仓）
-    # ============================================================
-
-    def _manage_position(self, kline: KLineData) -> None:
-        """管理已持仓的止盈止损"""
-        if not self.mp_daily.get('levels'):
-            return
-
-        current_price = float(kline.close)
-        entry_dir = self.h1_entry_direction
-        levels = self.mp_daily['levels']
-
-        # 获取当前持仓
-        position = self.get_position(self.params_map.instrument_id)
-        net_pos = position.net_position
-
-        if net_pos == 0:
-            # 持仓已清空，重置状态
-            self.output('【持仓】仓位已全部平仓，重置信号状态')
-            self._reset_signal_state()
-            return
-
-        # 止损检查
-        stop_hit = (
-            (entry_dir == 1 and current_price <= self.stop_loss_price) or
-            (entry_dir == -1 and current_price >= self.stop_loss_price)
-        )
-        if stop_hit:
-            self.output(
-                f'【止损】触发止损! 当前价={current_price:.2f} '
-                f'止损价={self.stop_loss_price:.2f}'
-            )
-            if self.params_map.auto_trade and self.trading:
-                close_dir = 'sell' if entry_dir == 1 else 'buy'
-                close_price = (
-                    current_price - self.params_map.pay_up if entry_dir == 1
-                    else current_price + self.params_map.pay_up
-                )
-                if self.order_id is not None:
-                    self.cancel_order(self.order_id)
-                self.order_id = self.auto_close_position(
-                    exchange=self.params_map.exchange,
-                    instrument_id=self.params_map.instrument_id,
-                    volume=abs(net_pos),
-                    price=close_price,
-                    order_direction=close_dir
-                )
-            self._reset_signal_state()
-            return
-
-        # 分批止盈检查
-        # 第一批止盈（50%）
-        if not self.tp1_done:
-            tp1_hit = (
-                (entry_dir == 1 and current_price >= self.take_profit_1) or
-                (entry_dir == -1 and current_price <= self.take_profit_1)
-            )
-            if tp1_hit:
-                vol_to_close = max(1, int(abs(net_pos) * 0.5))
-                self.output(
-                    f'【止盈1】触发第一批止盈(50%) 价格={current_price:.2f} '
-                    f'目标={self.take_profit_1:.2f} 平{vol_to_close}手'
-                )
-                if self.params_map.auto_trade and self.trading:
-                    close_dir = 'sell' if entry_dir == 1 else 'buy'
-                    close_price = (
-                        current_price - self.params_map.pay_up if entry_dir == 1
-                        else current_price + self.params_map.pay_up
-                    )
-                    if self.order_id is not None:
-                        self.cancel_order(self.order_id)
-                    self.order_id = self.auto_close_position(
-                        exchange=self.params_map.exchange,
-                        instrument_id=self.params_map.instrument_id,
-                        volume=vol_to_close,
-                        price=close_price,
-                        order_direction=close_dir
-                    )
-                self.tp1_done = True
-                # 止损上移到入场价（保本止损）
-                self.stop_loss_price = self.entry_price
-                self.output(f'【动态止损】止损上移到入场价 {self.entry_price:.2f}（保本）')
-
-        # 第二批止盈（30%）
-        elif not self.tp2_done:
-            tp2_hit = (
-                (entry_dir == 1 and current_price >= self.take_profit_2) or
-                (entry_dir == -1 and current_price <= self.take_profit_2)
-            )
-            if tp2_hit:
-                vol_to_close = max(1, int(abs(net_pos) * 0.6))  # 剩余50%中的60%≈30%
-                self.output(
-                    f'【止盈2】触发第二批止盈(30%) 价格={current_price:.2f} '
-                    f'目标={self.take_profit_2:.2f} 平{vol_to_close}手'
-                )
-                if self.params_map.auto_trade and self.trading:
-                    close_dir = 'sell' if entry_dir == 1 else 'buy'
-                    close_price = (
-                        current_price - self.params_map.pay_up if entry_dir == 1
-                        else current_price + self.params_map.pay_up
-                    )
-                    if self.order_id is not None:
-                        self.cancel_order(self.order_id)
-                    self.order_id = self.auto_close_position(
-                        exchange=self.params_map.exchange,
-                        instrument_id=self.params_map.instrument_id,
-                        volume=vol_to_close,
-                        price=close_price,
-                        order_direction=close_dir
-                    )
-                self.tp2_done = True
-                # 止损上移到第一批止盈位
-                self.stop_loss_price = self.take_profit_1
-                self.output(f'【动态止损】止损上移到 {self.take_profit_1:.2f}（第一止盈位）')
-
-        # 第三批止盈（剩余20%）
-        else:
-            tp3_hit = (
-                (entry_dir == 1 and current_price >= self.take_profit_3) or
-                (entry_dir == -1 and current_price <= self.take_profit_3)
-            )
-            if tp3_hit:
-                self.output(
-                    f'【止盈3】触发最终止盈(20%) 价格={current_price:.2f} '
-                    f'目标={self.take_profit_3:.2f} 平{abs(net_pos)}手'
-                )
-                if self.params_map.auto_trade and self.trading:
-                    close_dir = 'sell' if entry_dir == 1 else 'buy'
-                    close_price = (
-                        current_price - self.params_map.pay_up if entry_dir == 1
-                        else current_price + self.params_map.pay_up
-                    )
-                    if self.order_id is not None:
-                        self.cancel_order(self.order_id)
-                    self.order_id = self.auto_close_position(
-                        exchange=self.params_map.exchange,
-                        instrument_id=self.params_map.instrument_id,
-                        volume=abs(net_pos),
-                        price=close_price,
-                        order_direction=close_dir
-                    )
-                self._reset_signal_state()
-
-        # 动态止损：价格每突破一条线，止损上移
-        if entry_dir == 1:
-            for lv in sorted(levels):
-                if current_price > lv and lv > self.stop_loss_price:
-                    # 找lv下方的线作为新止损
-                    below = [l for l in levels if l < lv]
-                    if below:
-                        new_stop = max(below)
-                        if new_stop > self.stop_loss_price:
-                            self.stop_loss_price = new_stop
-                            self.state_map.stop_loss = new_stop
-                            if not self._is_history:
-                                self.output(f'【动态止损】止损上移到 {new_stop:.2f}')
-
-    def _reset_signal_state(self):
-        """重置信号状态，等待下一次机会"""
-        self.signal_stage = self.STAGE_WAIT_H1
-        self.h1_entry_zone = ''
-        self.h1_entry_direction = 0
-        self.m15_pattern_ok = False
-        self.m15_pattern_name = ''
-        self.entry_price = 0.0
-        self.stop_loss_price = 0.0
-        self.tp1_done = False
-        self.tp2_done = False
-        self.total_volume = 0
-        self.signal_price = 0.0
-        self.state_map.signal_stage = self.signal_stage
-        self.state_map.entry_price = 0.0
-        self.state_map.stop_loss = 0.0
-        self.state_map.position_vol = 0
 
     # ============================================================
     # 图表推送
     # ============================================================
 
     def _push_kline_to_widget(self, kline: KLineData) -> None:
-        """将日线K线 + 波神测量线位推送到图表"""
+        """将日线 K 线 + 波神测量线位推送到图表
+        
+        键名必须与 main_indicator_data 属性返回的字典键名完全一致，
+        框架才能正确将数据关联到对应的指标线上。
+        """
         if not self.widget:
             return
         try:
+            # 直接使用 main_indicator_data 的当前值，保证键名一致
+            indicator_values = self.main_indicator_data
             data = {"kline": kline, "signal_price": self.signal_price}
-            data.update(self.main_indicator_data)
+            data.update(indicator_values)
             self.widget.recv_kline(data)
-            # 更新水平横线
-            self._update_hlines()
-        except Exception as e:
-            self.output(f'[图表] 推送失败: {e}')
-
-    def _init_hlines(self) -> None:
-        """初始化水平横线（在主线程通过monkey-patch调用）"""
-        try:
-            import pyqtgraph as pg
-            kw = self.widget.kline_widget
-            crosshair = kw.crosshair
-            kline_plot = crosshair.parent()
-
-            line_configs = [
-                ('1线', (220, 50, 50), 1.0, False),
-                ('2线', (220, 50, 50), 0.8, True),
-                ('3线', (220, 50, 50), 1.5, False),
-                ('4线', (220, 50, 50), 0.8, True),
-                ('5线', (220, 50, 50), 1.5, False),
-                ('6线', (220, 50, 50), 0.8, True),
-                ('7线', (220, 50, 50), 1.0, False),
-                ('8线', (220, 50, 50), 2.0, False),
-                ('极线', (255, 140, 0), 1.5, False),
-                ('空1线', (50, 100, 220), 1.0, True),
-                ('空3线', (50, 100, 220), 1.5, False),
-                ('空5线', (50, 100, 220), 1.5, False),
-            ]
-
-            for name, color, width, dashed in line_configs:
-                pen = pg.mkPen(color=color, width=width,
-                               style=pg.QtCore.Qt.PenStyle.DashLine if dashed
-                               else pg.QtCore.Qt.PenStyle.SolidLine)
-                line = pg.InfiniteLine(angle=0, movable=False, pen=pen)
-                line.setValue(0)
-                kline_plot.addItem(line)
-                self._hlines[name] = line
-
-            self.output('[hlines] 水平横线初始化完成')
-        except Exception as e:
-            self.output(f'[hlines] 初始化失败: {e}')
-
-    def _update_hlines(self) -> None:
-        """更新水平横线位置"""
-        if not self._hlines:
-            return
-        try:
-            data = self.main_indicator_data
-            for name, line in self._hlines.items():
-                val = data.get(name, 0.0)
-                if val and val > 0:
-                    line.setValue(val)
-        except Exception as e:
-            self.output(f'[hlines] 更新失败: {e}')
+        except Exception:
+            pass
 
     # ============================================================
-    # 历史数据初始化后处理
+    # 日线分析输出（叙述式）
     # ============================================================
 
-    def _post_history_init(self) -> None:
-        """历史数据加载完成后的初始化"""
-        producer = self.kg_daily.producer
-        n = len(producer.close)
-        if n < 10:
+    def _output_daily_summary(self, realtime_price=None):
+        """输出日线状态摘要"""
+        if not self.mp_daily['levels']:
             return
 
-        highs = np.array(producer.high, dtype=float)
-        lows = np.array(producer.low, dtype=float)
-        closes = np.array(producer.close, dtype=float)
+        levels = self.mp_daily['levels']
+        level9 = self.mp_daily['level9']
+        start = self.mp_daily['start']
+        end = self.mp_daily['end']
+        trend = self.mp_daily['direction']
 
-        # 找A点（最低点）索引
-        lookback = min(n, self.params_map.lookback_daily)
-        window_lows = lows[-lookback:]
-        offset = n - lookback if n >= lookback else 0
-        a_idx_in_window = int(np.argmin(window_lows))
-        a_idx = a_idx_in_window + offset
-
-        # 修正B点：A点之后的真正最高点
-        if a_idx < n - 1:
-            highest_after_a = float(np.max(highs[a_idx:]))
+        producer = self.kline_generator_daily.producer if self.kline_generator_daily else None
+        if realtime_price and realtime_price > 0:
+            current_price = realtime_price
+        elif producer and len(producer.close) > 0:
+            current_price = float(producer.close[-1])
         else:
-            highest_after_a = float(highs[a_idx])
+            return
 
-        current_b = self.mp_daily.get('end', 0.0) or 0.0
-        if highest_after_a > current_b and self.mp_daily.get('start'):
-            old_b = current_b
-            self.mp_daily['end'] = highest_after_a
-            self.mp_daily['levels'], self.mp_daily['level9'] = self.calculate_levels(
-                self.mp_daily['start'], highest_after_a, self.mp_daily['direction']
-            )
-            levels = self.mp_daily['levels']
-            self.output(
-                f'【日线】修正B点: {old_b:.2f} → {highest_after_a:.2f}（历史最高点）\n'
-                f'  线位: 1线={levels[0]:.2f} | 3线={levels[2]:.2f} | '
-                f'5线={levels[4]:.2f} | 8线={levels[7]:.2f} | 9线={self.mp_daily["level9"]:.2f}'
-            )
+        zone_desc, _, _, _ = self.get_line_zone(self.mp_daily, current_price)
 
-        # 更新State
+        if trend == 1:
+            measure_info = f'A={start:.2f}(最低价) B={end:.2f}(最高价) 向上测量'
+            dir_str = '上涨趋势'
+        else:
+            measure_info = f'A={start:.2f}(最高价) B={end:.2f}(最低价) 向下测量'
+            dir_str = '下跌趋势'
+
+        recent_high = max(self.highest_since_ab, current_price) if self.highest_since_ab > 0 else current_price
+        recent_low = min(self.lowest_since_ab, current_price) if self.lowest_since_ab < 999999.0 else current_price
+
+        tol_pct = 0.01
+        is_pullback = False
+        is_rebound = False
+        waiting_pattern = False
+        pullback_from = ''
+        rebound_from = ''
+
+        if producer and len(producer.high) >= 3:
+            highs = np.array(producer.high, dtype=float)
+            lows = np.array(producer.low, dtype=float)
+
+            if trend == 1:
+                pullback_low = min(self.lowest_since_high, current_price) if self.lowest_since_high < 999999.0 else current_price
+                space_condition_met = recent_high >= levels[2] * (1 - tol_pct) and pullback_low < recent_high * 0.99
+                if space_condition_met:
+                    if recent_high >= levels[7] * (1 - tol_pct):
+                        pullback_from = "8线"
+                    elif recent_high >= levels[5] * (1 - tol_pct):
+                        pullback_from = "6线"
+                    elif recent_high >= levels[4] * (1 - tol_pct):
+                        pullback_from = "5线"
+                    elif recent_high >= levels[2] * (1 - tol_pct):
+                        pullback_from = "3线"
+                    pattern_confirmed = self._check_pattern_realtime(highs, lows, -1, current_price)
+                    if pattern_confirmed:
+                        is_pullback = True
+                    else:
+                        waiting_pattern = True
+            else:
+                rebound_high = max(self.highest_since_low, current_price) if self.highest_since_low > 0 else current_price
+                space_condition_rebound = recent_low <= levels[2] * (1 + tol_pct) and rebound_high > recent_low * 1.01
+                if space_condition_rebound:
+                    if recent_low <= levels[7] * (1 + tol_pct):
+                        rebound_from = "8线"
+                    elif recent_low <= levels[5] * (1 + tol_pct):
+                        rebound_from = "6线"
+                    elif recent_low <= levels[4] * (1 + tol_pct):
+                        rebound_from = "5线"
+                    elif recent_low <= levels[2] * (1 + tol_pct):
+                        rebound_from = "3线"
+                    pattern_confirmed_rebound = self._check_pattern(highs, lows, 1)
+                    if pattern_confirmed_rebound:
+                        is_rebound = True
+                    else:
+                        waiting_pattern = True
+
+        # 计算回调结束信息
+        pullback_bottom = 0.0
+        pullback_end_confirmed = False
+        rebound_zone = ''
+        rebound_pattern_confirmed = False
+        rebound_high_price = 0.0
+
+        if trend == 1 and is_pullback:
+            pullback_bottom = self.lowest_since_high if self.lowest_since_high < 999999.0 else 0.0
+            if pullback_bottom > 0 and current_price > pullback_bottom * 1.003:
+                pullback_end_confirmed = True
+                rebound_zone, _, _, _ = self.get_line_zone(self.mp_daily, current_price)
+                rebound_high_price = self.highest_since_low if self.highest_since_low > 0 else current_price
+                if producer and len(producer.high) >= 3:
+                    highs = np.array(producer.high, dtype=float)
+                    lows = np.array(producer.low, dtype=float)
+                    rebound_pattern_confirmed = self._check_pattern_realtime(highs, lows, 1, current_price)
+
+        # 获取回调分析数据
+        pullback_data = None
+        if (trend == 1 and is_pullback) or (trend == -1 and is_rebound):
+            pullback_data = self._get_pullback_analysis_data(current_price)
+
+        self._print_action_summary(
+            current_price=current_price,
+            trend=trend,
+            dir_str=dir_str,
+            advice='',
+            pullback_data=pullback_data,
+            is_pullback=is_pullback,
+            is_rebound=is_rebound,
+            waiting_pattern=waiting_pattern,
+            recent_high=recent_high,
+            recent_low=recent_low,
+            pullback_from=pullback_from if trend == 1 else rebound_from,
+            pullback_bottom=pullback_bottom,
+            pullback_end_confirmed=pullback_end_confirmed,
+            rebound_zone=rebound_zone,
+            rebound_pattern_confirmed=rebound_pattern_confirmed,
+            rebound_high_price=rebound_high_price
+        )
+
+    def _get_pullback_analysis_data(self, current_price):
+        """获取回调/反弹分析数据（共振区）"""
+        data = {'resonance_zones': [], 'closest_zone': None, 'closest_diff': 9999}
+        mp = self.mp_daily_down
+        if mp['start'] is None:
+            return data
+
+        groups = []
+        if mp['shadow_levels']:
+            groups.append(('日线影线', mp['shadow_levels'], mp['shadow_level9']))
+        if mp['levels']:
+            groups.append(('日线单体', mp['levels'], mp['level9']))
+
+        resonance_zones = []
+        if len(groups) >= 2:
+            tolerance = 8.0
+            d_shadow = next((g for g in groups if g[0] == '日线影线'), None)
+            d_body = next((g for g in groups if g[0] == '日线单体'), None)
+            daily_internal = []
+            if d_shadow and d_body:
+                d_sl, d_sl9 = d_shadow[1], d_shadow[2]
+                d_bl, d_bl9 = d_body[1], d_body[2]
+                s_pts = [(lv, '日线影线', i+1) for i, lv in enumerate(d_sl)]
+                if d_sl9: s_pts.append((d_sl9, '日线影线', 9))
+                b_pts = [(lv, '日线单体', i+1) for i, lv in enumerate(d_bl)]
+                if d_bl9: b_pts.append((d_bl9, '日线单体', 9))
+                used_s, used_b = set(), set()
+                for si, (sp, sl, sn) in enumerate(s_pts):
+                    if si in used_s: continue
+                    for bi, (bp, bl, bn) in enumerate(b_pts):
+                        if bi in used_b: continue
+                        if abs(sp - bp) <= tolerance:
+                            avg_p = (sp + bp) / 2
+                            daily_internal.append((avg_p, [(sp, sl, sn), (bp, bl, bn)], 2))
+                            used_s.add(si); used_b.add(bi); break
+            for avg_p, matched, cnt in daily_internal:
+                resonance_zones.append((avg_p, matched, cnt))
+            resonance_zones.sort(key=lambda x: (-x[2], -x[0]))
+            for avg_p, matched, cnt in resonance_zones[:10]:
+                star = '*' * cnt
+                match_desc = ' + '.join(f'{l}{n}线' for p, l, n in matched)
+                data['resonance_zones'].append({
+                    'price': avg_p,
+                    'desc': f'{star} {avg_p:.0f}区 ({match_desc})',
+                    'stars': cnt
+                })
+        if resonance_zones:
+            below = [(p, m, c) for p, m, c in resonance_zones if p < current_price - 5]
+            if below:
+                avg_p, matched, cnt = below[0]
+                star = '*' * cnt
+                match_desc = ' + '.join(f'{l}{n}线' for p, l, n in matched)
+                data['closest_zone'] = f'{star} {avg_p:.0f}区 ({match_desc})'
+                data['closest_diff'] = current_price - avg_p
+        return data
+
+    def _print_action_summary(self, current_price, trend, dir_str, advice, pullback_data,
+                               is_pullback, is_rebound, waiting_pattern=False,
+                               recent_high=0.0, recent_low=0.0, pullback_from='',
+                               pullback_bottom=0.0, pullback_end_confirmed=False,
+                               rebound_zone='', rebound_pattern_confirmed=False,
+                               rebound_high_price=0.0):
+        """输出叙述式日线提示"""
+        lines = ["--------------------------------"]
+        start = self.mp_daily.get('start', 0.0)
+        end = self.mp_daily.get('end', 0.0)
+        mp_levels = self.mp_daily.get('levels', [])
+        mp_level9 = self.mp_daily.get('level9', 0.0)
+
+        lines.append(f"日线大方向：{dir_str}")
+        lock_status = '✅已锁定（走完8线才解锁）' if self._ab_locked else '⚠️未锁定'
+        lines.append(f"日线测量基准：A点={start:.2f}，B点={end:.2f} [{lock_status}]")
         if self.mp_daily.get('levels'):
-            levels = self.mp_daily['levels']
-            self.state_map.line1 = levels[0]
-            self.state_map.line3 = levels[2]
-            self.state_map.line5 = levels[4]
-            self.state_map.line8 = levels[7]
+            lvs = self.mp_daily['levels']
+            lines.append(f"  线位: 1线={lvs[0]:.1f} | 3线={lvs[2]:.1f} | 5线={lvs[4]:.1f} | 8线={lvs[7]:.1f}")
 
-        current_price = float(closes[-1])
-        self.output(
-            f'【初始化完成】当前价格={current_price:.2f} '
-            f'日线方向={"向上" if self.daily_direction == 1 else "向下" if self.daily_direction == -1 else "未知"} '
-            f'信号阶段={self.signal_stage}'
-        )
+        if (is_pullback or is_rebound) and pullback_end_confirmed and pullback_bottom > 0:
+            action_type = "回调" if is_pullback else "反弹"
+            if is_pullback and recent_high > 0:
+                lines.append(f"本波段最高走到了 {pullback_from}区域，最高点位 {recent_high:.2f}")
+            elif is_rebound and recent_low > 0:
+                lines.append(f"本波段最低走到了 {pullback_from}区域，最低点位 {recent_low:.2f}")
+            lines.append(f"然后从{pullback_from}开始向下{action_type}，{action_type}形态已得到确认。")
+            if pullback_data and pullback_data.get('closest_zone'):
+                lines.append(f"大概{action_type}到：{pullback_data['closest_zone']}。")
+            pullback_bottom_zone, _, _, _ = self.get_line_zone(self.mp_daily, pullback_bottom)
+            lines.append(f"实际{action_type}结束位置：{pullback_bottom_zone}（{pullback_bottom:.2f}）。")
+            cur_zone, _, _, _ = self.get_line_zone(self.mp_daily, current_price)
+            lines.append(f"目前已从最低点 {pullback_bottom:.2f} 上涨到了 {cur_zone}，当前点位 {current_price:.2f}。")
+            if rebound_pattern_confirmed:
+                if mp_levels and trend == 1:
+                    next_targets = [(ln, mp_levels[ln-1]) for ln in [3, 5, 6, 8] if mp_levels[ln-1] > current_price]
+                    if mp_level9 and mp_level9 > current_price:
+                        next_targets.append((9, mp_level9))
+                    if next_targets:
+                        ln, lv = next_targets[0]
+                        lname = '极线(9线)' if ln == 9 else f'{ln}线'
+                        lines.append(f"向上形态已确认，未来大概上涨到 {lname} = {lv:.2f} 位置。")
+            else:
+                if rebound_high_price > 0:
+                    rh_zone, _, _, _ = self.get_line_zone(self.mp_daily, rebound_high_price)
+                    lines.append(f"目前反弹高点在 {rh_zone}（{rebound_high_price:.2f}）。")
+                lines.append("向上形态尚未成立，等待新K线突破反弹高点后才能确认上涨。")
+                lines.append("如果有K线跌破最低点，则下跌形态再次成立，需重新向下测量。")
 
-    # ============================================================
-    # 框架回调
-    # ============================================================
+        elif is_pullback or is_rebound:
+            action_type = "回调" if is_pullback else "反弹"
+            if is_pullback and recent_high > 0:
+                lines.append(f"本波段最高走到了 {pullback_from}区域，最高点位 {recent_high:.2f}")
+            elif is_rebound and recent_low > 0:
+                lines.append(f"本波段最低走到了 {pullback_from}区域，最低点位 {recent_low:.2f}")
+            lines.append(f"然后从{pullback_from}开始向下{action_type}，{action_type}形态已得到确认。")
+            cur_zone, _, _, _ = self.get_line_zone(self.mp_daily, current_price)
+            lines.append(f"当前价格回落到了 {cur_zone}，当前点位 {current_price:.2f}")
+            down_a = self.mp_daily_down.get('start', 0.0) or 0.0
+            down_b = 0.0
+            if self.mp_daily_down.get('start'):
+                down_b = self.mp_daily_down.get('shadow_end', 0.0) if self.mp_daily_down.get('use_shadow') \
+                    else self.mp_daily_down.get('body_end', 0.0)
+            if down_a > 0 and down_b > 0:
+                lines.append(f"日线{action_type}测量：A点是 {down_a:.2f}，B点是 {down_b:.2f}")
+            if pullback_data and pullback_data.get('closest_zone'):
+                lines.append(f"{action_type}得出的结论是：大概在 {pullback_data['closest_zone']} 位置。")
+            else:
+                lines.append(f"{action_type}得出的结论是：等待进一步确认目标位。")
 
-    def on_tick(self, tick: TickData) -> None:
-        super().on_tick(tick)
-        self._last_tick = tick
-        # 分发tick到各K线生成器
-        self.kg_daily.tick_to_kline(tick)
-        self.kg_h1.tick_to_kline(tick)
-        self.kg_m15.tick_to_kline(tick)
-        self.kg_m5.tick_to_kline(tick)
+        elif waiting_pattern:
+            action_type = "回调" if trend == 1 else "反弹"
+            cur_zone, _, _, _ = self.get_line_zone(self.mp_daily, current_price)
+            if trend == 1 and recent_high > 0:
+                lines.append(f"本波段最高走到了 {pullback_from}区域，最高点位 {recent_high:.2f}")
+            elif trend == -1 and recent_low > 0:
+                lines.append(f"本波段最低走到了 {pullback_from}区域，最低点位 {recent_low:.2f}")
+            lines.append(f"当前价格回落到了 {cur_zone}，当前点位 {current_price:.2f}")
+            lines.append(f"目前正在{action_type}，但尚未形成向下的 K 线形态，无法确认{action_type}是否正式开始。")
+            lines.append("继续等待，形态未成立前不做任何判断。")
 
-    def on_order_cancel(self, order: OrderData) -> None:
-        super().on_order_cancel(order)
-        self.order_id = None
-
-    def on_trade(self, trade: TradeData, log: bool = False) -> None:
-        super().on_trade(trade, log=True)
-        self.order_id = None
-
-    def on_start(self) -> None:
-        # 创建四个K线生成器
-        self.kg_daily = KLineGenerator(
-            callback=self._on_daily_bar,
-            real_time_callback=self._on_daily_realtime,
-            exchange=self.params_map.exchange,
-            instrument_id=self.params_map.instrument_id,
-            style='D1'
-        )
-        self.kg_h1 = KLineGenerator(
-            callback=self._on_h1_bar,
-            real_time_callback=self._on_h1_realtime,
-            exchange=self.params_map.exchange,
-            instrument_id=self.params_map.instrument_id,
-            style='H1'
-        )
-        self.kg_m15 = KLineGenerator(
-            callback=self._on_m15_bar,
-            real_time_callback=self._on_m15_realtime,
-            exchange=self.params_map.exchange,
-            instrument_id=self.params_map.instrument_id,
-            style='M15'
-        )
-        self.kg_m5 = KLineGenerator(
-            callback=self._on_m5_bar,
-            real_time_callback=self._on_m5_realtime,
-            exchange=self.params_map.exchange,
-            instrument_id=self.params_map.instrument_id,
-            style='M5'
-        )
-
-        # 推送历史数据（日线用于建立A/B点）
-        self._is_history = True
-        self.kg_daily.push_history_data()
-        self._is_history = False
-
-        # 历史数据加载完成后修正B点
-        self._post_history_init()
-
-        # 启动框架（初始化widget等）
-        super().on_start()
-
-        # monkey-patch widget.update_kline，在主线程初始化水平横线
-        self._patch_widget_for_hlines()
-
-        auto_str = '已开启' if self.params_map.auto_trade else '未开启（仅信号提示）'
-        self.output(
-            f'【波神策略V3启动】\n'
-            f'  品种={self.params_map.instrument_id} '
-            f'风险比例={self.params_map.risk_pct}% '
-            f'自动交易={auto_str}\n'
-            f'  信号阶段={self.signal_stage}'
-        )
-
-    def on_stop(self) -> None:
-        super().on_stop()
-        self.output('【波神策略V3停止】')
-
-    def _patch_widget_for_hlines(self) -> None:
-        """monkey-patch widget.update_kline，在主线程安全初始化水平横线"""
-        try:
-            if not self.widget:
-                return
-            original_update = self.widget.update_kline
-            hlines_initialized = [False]
-            strategy_ref = self
-
-            def patched_update_kline(data):
-                original_update(data)
-                if not hlines_initialized[0]:
-                    strategy_ref._init_hlines()
-                    hlines_initialized[0] = True
+        else:
+            cur_zone, cur_zone_num, _, _ = self.get_line_zone(self.mp_daily, current_price)
+            lines.append(f"当前走到了 {cur_zone}，点位 {current_price:.2f}")
+            if mp_levels:
+                if trend == 1:
+                    next_targets = [(ln, mp_levels[ln-1]) for ln in [3, 5, 6, 8] if mp_levels[ln-1] > current_price]
+                    if mp_level9 and mp_level9 > current_price:
+                        next_targets.append((9, mp_level9))
+                    if next_targets:
+                        ln, lv = next_targets[0]
+                        lname = '极线(9线)' if ln == 9 else f'{ln}线'
+                        lines.append(f"日线大方向向上，上方最近目标线位：{lname} = {lv:.2f}")
+                    else:
+                        lines.append("已超过所有线位，待重新测量。")
                 else:
-                    strategy_ref._update_hlines()
+                    next_targets = [(ln, mp_levels[ln-1]) for ln in [3, 5, 6, 8] if mp_levels[ln-1] < current_price]
+                    if mp_level9 and mp_level9 < current_price:
+                        next_targets.append((9, mp_level9))
+                    if next_targets:
+                        ln, lv = next_targets[0]
+                        lname = '极线(9线)' if ln == 9 else f'{ln}线'
+                        lines.append(f"日线大方向向下，下方最近目标线位：{lname} = {lv:.2f}")
+                    else:
+                        lines.append("已超过所有线位，待重新测量。")
 
-            self.widget.update_kline = patched_update_kline
-            self.output('[hlines] 已注入水平横线更新挂钩')
-        except Exception as e:
-            self.output(f'[hlines] 注入失败: {e}')
+        lines.append("--------------------------------")
+        summary_text = "\n".join(lines)
+        if self._last_summary_text != summary_text:
+            self.output("\n" + summary_text)
+            self._last_summary_text = summary_text
