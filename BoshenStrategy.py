@@ -1239,18 +1239,17 @@ class BoshenStrategy(BaseStrategy):
                 if rebound_high_price > 0:
                     rh_zone, _, _, _ = self.get_line_zone(self.mp_daily, rebound_high_price)
                     lines.append(f"目前反弹高点在 {rh_zone}（{rebound_high_price:.2f}）。")
-                # 根据知识库：日线到3线后回调结束反弹阶段，不是等日线向上形态！
-                # 应该切挆60分钟找新的做空机会（回调反弹到高点处做空）
+                # 根据知识库：回调结束后反弹 = 顺着日线大方向找多单机会！
+                # 日线大方向是向上，回调结束就是新的做多机会
                 if is_pullback and trend == 1:
-                    pullback_from_num = {'3线': 3, '5线': 5, '6线': 6, '7线': 7, '8线': 8}.get(pullback_from, 0)
-                    if pullback_from_num >= 3:
-                        lines.append("▶ 日线回调反弹中，这是新的做空机会！")
-                        lines.append("  ✅ 切挆60分钟图，在反弹高点附近等昆60分钟向下形态")
-                        lines.append("  ✅ 形态成立后再切挆15分钟找精确入场点做空")
-                        lines.append("  ⚠️ 空单目标：60分钟2-3线就要考虑出场，不要贪心")
-                    else:
-                        lines.append("向上形态尚未成立，等待新K线突破反弹高点后才能确认上涨。")
-                        lines.append("如果有K线跌破最低点，则下跌形态再次成立，需重新向下测量。")
+                    lines.append("▶ 日线回调已结束，现在是顺着日线大方向做多的机会！")
+                    lines.append("  ✅ 切挆60分钟图，等昆60分钟出现向上形态（阳包阴/止跌信号）")
+                    lines.append("  ✅ 形态成立后再切挆15分钟找精确入场点做多")
+                    if mp_levels:
+                        next_targets = [(ln, mp_levels[ln-1]) for ln in [3, 5, 6, 8] if ln <= len(mp_levels) and mp_levels[ln-1] > current_price]
+                        if next_targets:
+                            ln, lv = next_targets[0]
+                            lines.append(f"  ★ 多单目标：日线{ln}线 = {lv:.2f}")
                 else:
                     lines.append("向上形态尚未成立，等待新K线突破反弹高点后才能确认上涨。")
                     lines.append("如果有K线跌破最低点，则下跌形态再次成立，需重新向下测量。")
