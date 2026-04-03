@@ -251,8 +251,8 @@ class BoshenStrategy(BaseStrategy):
             # 检查影线振幅是否合理
             shadow_amp = abs(mp_down['start'] - mp_down['shadow_end']) if mp_down.get('shadow_end') else 0
             body_amp = abs(mp_down['start'] - mp_down['body_end']) if mp_down.get('body_end') else 0
-            # 影线振幅太小（小于单体振幅的50%），改用单体测量
-            if shadow_amp > 0 and body_amp > 0 and shadow_amp < body_amp * 0.5:
+            # 影线振幅太小（小于单体振幅的70%），改用单体测量
+            if shadow_amp > 0 and body_amp > 0 and shadow_amp < body_amp * 0.7:
                 return mp_down['levels'], mp_down['level9'], '单体(影线过短降级)'
             return mp_down['shadow_levels'], mp_down['shadow_level9'], '影线'
         return mp_down['levels'], mp_down['level9'], '单体'
