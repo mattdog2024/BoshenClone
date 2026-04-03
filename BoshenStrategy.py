@@ -564,8 +564,8 @@ class BoshenStrategy(BaseStrategy):
     def _init_60min_down_measurement(self):
         """初始化60分钟向下测量
         
-        从60分钟数据中找到日线高点（highest_since_ab）对应的60分钟K线
-        以该K线作为基准，向下测量8条线
+        从60分钟数据中找到最近的最高点K线（对应日线highest_since_ab）
+        直接用该K线的high/low作为基准，向下测量8条线
         """
         n = len(self._60min_highs)
         if n < 3:
@@ -590,13 +590,40 @@ class BoshenStrategy(BaseStrategy):
         k_open = float(o_recent[max_idx])
         k_close = float(c_recent[max_idx])
 
-        # 初始化60分钟向下测量
+        # 直接用找到的K线数据初始化，不再重复搜索
         self.mp_60min_down = self._new_mp_down()
-        result = self._init_down_measurement(
-            self.mp_60min_down, h_recent, l_recent, o_recent, c_recent, '60分钟',
-            start_idx=max_idx
-        )
-        return result
+        mp = self.mp_60min_down
+
+        is_shadow, shadow_start, shadow_end, body_start, body_end = \
+            self._detect_shadow_bar(k_high, k_low, k_open, k_close, -1)
+
+        shadow_levels, shadow_level9 = self.calculate_levels(shadow_start, shadow_end, -1)
+        body_levels, body_level9 = self.calculate_levels(body_start, body_end, -1)
+
+        mp.update({
+            'start': body_start, 'end': body_end,
+            'use_shadow': is_shadow, 'shadow_end': shadow_end, 'body_end': body_end,
+            'k_high': k_high, 'k_low': k_low, 'k_open': k_open, 'k_close': k_close,
+            'shadow_levels': shadow_levels, 'shadow_level9': shadow_level9,
+            'levels': body_levels, 'level9': body_level9,
+            'phase': 'shadow' if is_shadow else 'body', 'bar_idx': max_idx,
+        })
+
+        if is_shadow:
+            self.output(
+                f'【60分钟向下测量】影线测量法: high={k_high:.2f}, 实体顶={max(k_open,k_close):.2f}\n'
+                f'  影线线位: 1线={shadow_levels[0]:.2f} | 3线={shadow_levels[2]:.2f} | '
+                f'6线={shadow_levels[5]:.2f} | 8线={shadow_levels[7]:.2f} | 9线={shadow_level9:.2f}\n'
+                f'  单体线位: 1线={body_levels[0]:.2f} | 3线={body_levels[2]:.2f} | '
+                f'6线={body_levels[5]:.2f} | 8线={body_levels[7]:.2f} | 9线={body_level9:.2f}'
+            )
+        else:
+            self.output(
+                f'【60分钟向下测量】单体测量法: high={k_high:.2f}, low={k_low:.2f}\n'
+                f'  线位: 1线={body_levels[0]:.2f} | 3线={body_levels[2]:.2f} | '
+                f'6线={body_levels[5]:.2f} | 8线={body_levels[7]:.2f} | 9线={body_level9:.2f}'
+            )
+        return True
 
     def _update_60min_analysis(self):
         """实盘阶段更新60分钟分析（每根60分钟K线完成后调用）"""
@@ -1281,12 +1308,15 @@ class BoshenStrategy(BaseStrategy):
                     )
                     lines.append(f"60分钟当前位置: {zone_60}（{phase_60}）")
                 pattern_60 = self._check_60min_pattern()
+                # 回调结束后反弹：找多单形态
                 if pattern_60:
                     lines.append(f"60分钟形态: ❗ {pattern_60}")
-                    if '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
-                        lines.append("→ 60分钟向下形态已确认！可切挆15分钟找精确入场点做空")
+                    if '看多' in pattern_60 or '阳包阴' in pattern_60 or '止跌' in pattern_60 or '锤子' in pattern_60:
+                        lines.append("→ ✅ 60分钟向上形态已确认！现在可以切挆15分钟找精确入场点做多")
+                    elif '看空' in pattern_60 or '阴包阳' in pattern_60 or '止涨' in pattern_60:
+                        lines.append("→ ⚠️ 60分钟出现向下形态，谨慎！如果日线回调未结束则继续观望")
                 else:
-                    lines.append("【60分钟形态】: 尚未出现向下形态，继续等待...")
+                    lines.append("【60分钟形态】: 尚未出现向上形态，继续等待（阳包阴/锤子线/止跌信号）...")
                 if m60.get('levels') and self.mp_daily_down.get('levels'):
                     lines.append("")
                     lines.append("【共振目标区】（日线影线+日线单体+60分钟单体重合）")
