@@ -561,38 +561,62 @@ class BoshenStrategy(BaseStrategy):
         # 实盘阶段：更新60分钟向下测量
         self._update_60min_analysis()
 
+    def _find_recent_swing_high(self, lookback=80, min_left=2):
+        """找最近的阶段性顶部（从最新往前找第一个满足条件的局部高点）
+        
+        规则：
+        1. 候选高点：它的high >= 左边min_left根K线的high（局部高点）
+        2. 形态确认：右边有K线跌破了它的low
+        3. 从最新往前找，返回第一个满足条件的（最近的阶段性顶部）
+        """
+        n = len(self._60min_highs)
+        h = self._60min_highs
+        l = self._60min_lows
+        o = self._60min_opens
+        c = self._60min_closes
+        start = max(min_left, n - lookback)
+        # 从倒数第2根开始往前找（最后一根还没确认）
+        for i in range(n - 2, start - 1, -1):
+            left_start = max(0, i - min_left)
+            is_local_high = all(h[i] >= h[j] for j in range(left_start, i))
+            if not is_local_high:
+                continue
+            right_broken = any(l[j] < l[i] for j in range(i + 1, n))
+            if not right_broken:
+                continue
+            return i, float(h[i]), float(l[i]), float(o[i]), float(c[i])
+        return None, None, None, None, None
+
     def _init_60min_down_measurement(self):
         """初始化60分钟向下测量
         
-        从60分钟数据中找到最近的最高点K线（对应日线highest_since_ab）
-        直接用该K线的high/low作为基准，向下测量8条线
+        找距离当前行情最近的阶段性顶部（局部高点且右边已跌破其low），
+        用该K线的high/low作为基准，向下测量8条线。
         """
         n = len(self._60min_highs)
         if n < 3:
             return
 
-        h = np.array(self._60min_highs)
-        l = np.array(self._60min_lows)
-        o = np.array(self._60min_opens)
-        c = np.array(self._60min_closes)
+        # 找最近的阶段性顶部
+        max_idx, k_high, k_low, k_open, k_close = self._find_recent_swing_high(lookback=80, min_left=2)
 
-        # 找60分钟最高点（对应日线highest_since_ab）
-        # 在最近60根60分钟K线里找最高点
-        lookback = min(n, 60)
-        h_recent = h[-lookback:]
-        l_recent = l[-lookback:]
-        o_recent = o[-lookback:]
-        c_recent = c[-lookback:]
-
-        max_idx = int(np.argmax(h_recent))
-        k_high = float(h_recent[max_idx])
-        k_low = float(l_recent[max_idx])
-        k_open = float(o_recent[max_idx])
-        k_close = float(c_recent[max_idx])
+        if max_idx is None:
+            # 没找到阶段性顶部，回退到绝对最高点
+            self.output('[DEBUG] 60分钟未找到阶段性顶部，回退到绝对最高点')
+            lookback = min(n, 60)
+            h_r = self._60min_highs[-lookback:]
+            l_r = self._60min_lows[-lookback:]
+            o_r = self._60min_opens[-lookback:]
+            c_r = self._60min_closes[-lookback:]
+            max_idx = int(np.argmax(h_r))
+            k_high = float(h_r[max_idx])
+            k_low = float(l_r[max_idx])
+            k_open = float(o_r[max_idx])
+            k_close = float(c_r[max_idx])
 
         # 调试：输出找到的K线详情
         self.output(
-            f'[DEBUG] 60分钟最高K线: high={k_high:.2f}, low={k_low:.2f}, '
+            f'[DEBUG] 60分钟阶段性顶部K线: high={k_high:.2f}, low={k_low:.2f}, '
             f'open={k_open:.2f}, close={k_close:.2f}, '
             f'实体={abs(k_open-k_close):.2f}, 上影线={k_high-max(k_open,k_close):.2f}'
         )
