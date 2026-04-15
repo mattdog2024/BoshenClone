@@ -75,7 +75,7 @@ jobs:
         shell: powershell
         working-directory: DualScreenPlayer
         run: |
-          $zipName = "DualScreenPlayer_v1.0_Windows_便携版.zip"
+          $zipName = "DualScreenPlayer_v1.0_Windows_Portable.zip"
           Compress-Archive -Path "dist\DualScreenPlayer\*" -DestinationPath $zipName -Force
           $size = [math]::Round((Get-Item $zipName).Length / 1MB, 1)
           Write-Host "ZIP created: $zipName ($size MB)"
@@ -84,5 +84,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: DualScreenPlayer-Windows-Portable
-          path: DualScreenPlayer/DualScreenPlayer_v1.0_Windows_便携版.zip
+          path: DualScreenPlayer/DualScreenPlayer_v1.0_Windows_Portable.zip
           retention-days: 30
