@@ -58,16 +58,19 @@ class OutputWindow(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         # 视频输出区域
-        self.video_widget = QVideoWidget()
+        self.video_widget = QVideoWidget(self)
         self.video_widget.setStyleSheet("background-color: black;")
+        # 关键：强制创建原生 Win32 窗口句柄，否则 Windows 上视频只显示黑色
+        self.video_widget.setAttribute(Qt.WA_NativeWindow, True)
         layout.addWidget(self.video_widget)
 
         # 图片显示标签
-        self.image_label = QLabel()
+        self.image_label = QLabel(self)
         self.image_label.setAlignment(Qt.AlignCenter)
-        self.image_label.setStyleSheet("background-color: black;")
+        self.image_label.setStyleSheet("background-color: black; color: white;")
         self.image_label.hide()
         layout.addWidget(self.image_label)
 
@@ -77,6 +80,7 @@ class OutputWindow(QWidget):
         self._black_overlay.hide()
 
         self._is_black = False
+        self._player_ref = None  # 持有播放器引用，用于重新绑定
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -95,6 +99,9 @@ class OutputWindow(QWidget):
         """切换到视频模式"""
         self.image_label.hide()
         self.video_widget.show()
+        # 重新绑定播放器，确保窗口显示后视频输出正常
+        if self._player_ref is not None:
+            self._player_ref.setVideoOutput(self.video_widget)
 
     def set_black(self, black: bool):
         self._is_black = black
@@ -175,7 +182,6 @@ class MainWindow(QMainWindow):
 
         # 主播放器
         self._player = QMediaPlayer()
-        self._player.setVideoOutput(self._output.video_widget)
         self._player.positionChanged.connect(self._on_position_changed)
         self._player.durationChanged.connect(self._on_duration_changed)
         self._player.stateChanged.connect(self._on_state_changed)
@@ -188,8 +194,15 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._build_menu()
 
-        # 移动输出窗口到第二屏
+        # 先移动输出窗口到第二屏并显示，再绑定视频输出
+        # 顺序非常重要：必须先 show()，再 setVideoOutput()
         self._move_output_to_screen2()
+
+        # 绑定视频输出（窗口已显示后再绑定）
+        self._output._player_ref = self._player
+        self._player.setVideoOutput(self._output.video_widget)
+        # 强制触发原生句柄初始化
+        _ = self._output.video_widget.winId()
 
     def _apply_dark_theme(self):
         self.setStyleSheet("""
@@ -881,13 +894,20 @@ class MainWindow(QMainWindow):
         if len(screens) >= 2:
             screen2 = screens[1]
             geo = screen2.geometry()
+            # 先设置位置，再显示，再全屏
             self._output.setGeometry(geo)
+            self._output.show()
+            QApplication.processEvents()  # 确保窗口真正显示
             self._output.showFullScreen()
+            QApplication.processEvents()  # 确保全屏生效
+            msg = f"检测到 {len(screens)} 个屏幕，输出到屏幕2（{geo.width()}x{geo.height()}）"
         else:
             # 单屏模式：输出窗口作为独立窗口
-            self._output.resize(800, 600)
+            self._output.resize(960, 540)
             self._output.show()
-        self.statusBar().showMessage(f"检测到 {len(screens)} 个屏幕")
+            QApplication.processEvents()
+            msg = "单屏模式：输出窗口已显示（建议连接第二个屏幕）"
+        self.statusBar().showMessage(msg)
 
     def _show_screen_settings(self):
         screens = QApplication.screens()
