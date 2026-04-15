@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'DualScreenPlayer/**'
+      - '.github/workflows/build_player.yml'
   workflow_dispatch:
 
 jobs:
@@ -19,17 +20,23 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install VLC (64-bit)
+      - name: Install VLC via Chocolatey
         shell: powershell
         run: |
-          $vlcUrl = "https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.exe"
-          $vlcInstaller = "$env:TEMP\vlc-installer.exe"
-          Write-Host "Downloading VLC..."
-          Invoke-WebRequest -Uri $vlcUrl -OutFile $vlcInstaller -UseBasicParsing
-          Write-Host "Installing VLC silently..."
-          Start-Process -FilePath $vlcInstaller -ArgumentList "/S" -Wait
+          Write-Host "Installing VLC via Chocolatey..."
+          choco install vlc -y --no-progress
           $vlcPath = "C:\Program Files\VideoLAN\VLC"
-          echo "$vlcPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          if (Test-Path $vlcPath) {
+            Write-Host "VLC installed at: $vlcPath"
+            echo "$vlcPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          } else {
+            # Try x86 path
+            $vlcPath = "C:\Program Files (x86)\VideoLAN\VLC"
+            Write-Host "VLC installed at: $vlcPath"
+            echo "$vlcPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
+          # List VLC files
+          Get-ChildItem $vlcPath | Select-Object Name | Format-Table
 
       - name: Install Python dependencies
         shell: cmd
@@ -38,30 +45,42 @@ jobs:
           pip install PyQt5==5.15.9 python-vlc Pillow mutagen pyinstaller
 
       - name: Build EXE with PyInstaller
-        shell: cmd
+        shell: powershell
         working-directory: DualScreenPlayer
         run: |
-          set VLC_PATH=C:\Program Files\VideoLAN\VLC
-          pyinstaller --noconfirm --onedir --windowed ^
-            --name "DualScreenPlayer" ^
-            --add-binary "%VLC_PATH%\libvlc.dll;." ^
-            --add-binary "%VLC_PATH%\libvlccore.dll;." ^
-            --add-binary "%VLC_PATH%\plugins;plugins" ^
-            --hidden-import vlc ^
-            --hidden-import PyQt5.QtCore ^
-            --hidden-import PyQt5.QtGui ^
-            --hidden-import PyQt5.QtWidgets ^
-            --collect-all vlc ^
+          # Find VLC path
+          $vlcPath = "C:\Program Files\VideoLAN\VLC"
+          if (-not (Test-Path $vlcPath)) {
+            $vlcPath = "C:\Program Files (x86)\VideoLAN\VLC"
+          }
+          Write-Host "Using VLC from: $vlcPath"
+          
+          # Find plugins dir
+          $pluginsDir = Join-Path $vlcPath "plugins"
+          
+          pyinstaller --noconfirm --onedir --windowed `
+            --name "DualScreenPlayer" `
+            --add-binary "$vlcPath\libvlc.dll;." `
+            --add-binary "$vlcPath\libvlccore.dll;." `
+            --add-binary "$pluginsDir;plugins" `
+            --hidden-import vlc `
+            --hidden-import PyQt5.QtCore `
+            --hidden-import PyQt5.QtGui `
+            --hidden-import PyQt5.QtWidgets `
+            --hidden-import PyQt5.QtMultimedia `
+            --collect-all vlc `
             main.py
 
       - name: Create portable ZIP
         shell: powershell
         working-directory: DualScreenPlayer
         run: |
-          Compress-Archive -Path "dist\DualScreenPlayer\*" -DestinationPath "DualScreenPlayer_v1.0_Windows_便携版.zip" -Force
-          Write-Host "ZIP size: $((Get-Item 'DualScreenPlayer_v1.0_Windows_便携版.zip').Length / 1MB) MB"
+          $zipName = "DualScreenPlayer_v1.0_Windows_便携版.zip"
+          Compress-Archive -Path "dist\DualScreenPlayer\*" -DestinationPath $zipName -Force
+          $size = [math]::Round((Get-Item $zipName).Length / 1MB, 1)
+          Write-Host "ZIP created: $zipName ($size MB)"
 
-      - name: Upload artifact
+      - name: Upload portable ZIP
         uses: actions/upload-artifact@v4
         with:
           name: DualScreenPlayer-Windows-Portable
