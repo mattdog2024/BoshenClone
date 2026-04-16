@@ -1016,89 +1016,115 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(msg)
 
     def _show_screen_settings(self):
-        dlg = QDialog(self)
-        dlg.setWindowTitle("输出屏幕设置")
-        dlg.setMinimumWidth(420)
-        layout = QVBoxLayout(dlg)
+        try:
+            dlg = QDialog(self)
+            dlg.setWindowTitle("输出屏幕设置")
+            dlg.setMinimumWidth(440)
+            dlg.setStyleSheet(self.styleSheet())
+            layout = QVBoxLayout(dlg)
+            layout.setSpacing(10)
+            layout.setContentsMargins(16, 16, 16, 16)
 
-        # 屏幕信息
-        screens = QApplication.screens()
-        info = f"检测到 {len(screens)} 个屏幕：\n"
-        for i, s in enumerate(screens):
-            g = s.geometry()
-            info += f"  屏幕{i+1}：{g.width()}x{g.height()} @ ({g.x()},{g.y()})\n"
-        lbl_info = QLabel(info)
-        lbl_info.setStyleSheet("color: #cdd6f4; font-size: 12px;")
-        layout.addWidget(lbl_info)
+            # 屏幕信息
+            screens = QApplication.screens()
+            info = f"检测到 {len(screens)} 个屏幕：\n"
+            for i, s in enumerate(screens):
+                g = s.geometry()
+                info += f"  屏幕{i+1}：{g.width()}x{g.height()} @ ({g.x()},{g.y()})\n"
+            lbl_info = QLabel(info, dlg)
+            lbl_info.setStyleSheet("color: #cdd6f4; font-size: 12px;")
+            layout.addWidget(lbl_info)
 
-        layout.addWidget(self._make_separator())
+            sep1 = QFrame(dlg)
+            sep1.setFrameShape(QFrame.HLine)
+            sep1.setStyleSheet("color: #45475a;")
+            layout.addWidget(sep1)
 
-        # 画面上移设置
-        grp = QGroupBox("画面上移设置（适用于舞台台子挡住屏幕下方的情况）")
-        grp.setStyleSheet("QGroupBox { color: #cdd6f4; border: 1px solid #45475a; margin-top: 8px; padding: 8px; } QGroupBox::title { subcontrol-origin: margin; left: 8px; }")
-        grp_layout = QVBoxLayout(grp)
+            # 画面上移设置
+            grp = QGroupBox("画面上移设置（适用于舞台台子挡住屏幕下方的情况）", dlg)
+            grp.setStyleSheet(
+                "QGroupBox { color: #cdd6f4; border: 1px solid #45475a; "
+                "margin-top: 10px; padding-top: 10px; } "
+                "QGroupBox::title { subcontrol-origin: margin; left: 8px; }"
+            )
+            grp_layout = QVBoxLayout(grp)
+            grp_layout.setSpacing(8)
 
-        desc = QLabel("拖动滑块可将画面整体向上移动，不缩放、不变形。\n"
-                      "上移 20% 表示画面向上移动屏幕高度的20%，下方显示黑色。")
-        desc.setStyleSheet("color: #a6adc8; font-size: 11px;")
-        desc.setWordWrap(True)
-        grp_layout.addWidget(desc)
+            desc = QLabel(
+                "拖动滑块可将画面整体向上移动，不缩放、不变形。\n"
+                "上移 20% = 画面向上移动屏幕高度的20%，下方显示黑色。",
+                grp
+            )
+            desc.setStyleSheet("color: #a6adc8; font-size: 11px;")
+            desc.setWordWrap(True)
+            grp_layout.addWidget(desc)
 
-        slider_row = QHBoxLayout()
-        lbl_slider = QLabel("上移量：")
-        lbl_slider.setStyleSheet("color: #cdd6f4;")
-        slider = QSlider(Qt.Horizontal)
-        slider.setRange(0, 50)
-        slider.setValue(self._output._offset_pct)
-        slider.setTickInterval(5)
-        slider.setTickPosition(QSlider.TicksBelow)
-        lbl_val = QLabel(f"{self._output._offset_pct}%")
-        lbl_val.setMinimumWidth(40)
-        lbl_val.setStyleSheet("color: #cba6f7; font-weight: bold;")
+            # 滑块行
+            slider_row = QHBoxLayout()
+            lbl_slider = QLabel("上移量：", grp)
+            lbl_slider.setStyleSheet("color: #cdd6f4;")
+            slider = QSlider(Qt.Horizontal, grp)
+            slider.setRange(0, 50)
+            slider.setValue(self._output._offset_pct)
+            slider.setTickInterval(5)
+            slider.setTickPosition(QSlider.TicksBelow)
+            lbl_val = QLabel(f"{self._output._offset_pct}%", grp)
+            lbl_val.setMinimumWidth(40)
+            lbl_val.setStyleSheet("color: #cba6f7; font-weight: bold;")
 
-        def on_slider(v):
-            lbl_val.setText(f"{v}%")
-            self._output.set_offset(v)  # 实时预览效果
+            def on_slider_change(v):
+                lbl_val.setText(f"{v}%")
+                self._output.set_offset(v)
 
-        slider.valueChanged.connect(on_slider)
-        slider_row.addWidget(lbl_slider)
-        slider_row.addWidget(slider)
-        slider_row.addWidget(lbl_val)
-        grp_layout.addLayout(slider_row)
+            slider.valueChanged.connect(on_slider_change)
+            slider_row.addWidget(lbl_slider)
+            slider_row.addWidget(slider)
+            slider_row.addWidget(lbl_val)
+            grp_layout.addLayout(slider_row)
 
-        # 快捷预设按鈕
-        preset_row = QHBoxLayout()
-        preset_row.addWidget(QLabel("快捷预设："))
-        for pct in [0, 10, 15, 20, 25, 30]:
-            btn = QPushButton(f"{pct}%")
-            btn.setFixedWidth(48)
-            btn.clicked.connect(lambda _, p=pct: (slider.setValue(p),))
-            preset_row.addWidget(btn)
-        preset_row.addStretch()
-        grp_layout.addLayout(preset_row)
+            # 快捷预设按鈕
+            preset_row = QHBoxLayout()
+            preset_lbl = QLabel("快捷预设：", grp)
+            preset_lbl.setStyleSheet("color: #cdd6f4;")
+            preset_row.addWidget(preset_lbl)
 
-        layout.addWidget(grp)
-        layout.addWidget(self._make_separator())
+            def make_preset_btn(p, sl):
+                b = QPushButton(f"{p}%", grp)
+                b.setFixedWidth(48)
+                b.clicked.connect(lambda: sl.setValue(p))
+                return b
 
-        # 底部按鈕
-        btn_row = QHBoxLayout()
-        btn_reassign = QPushButton("重新分配屏幕")
-        btn_reassign.clicked.connect(lambda: (self._move_output_to_screen2(),
-                                              QTimer.singleShot(500, self._bind_vlc_output)))
-        btn_close = QPushButton("关闭")
-        btn_close.clicked.connect(dlg.accept)
-        btn_row.addWidget(btn_reassign)
-        btn_row.addStretch()
-        btn_row.addWidget(btn_close)
-        layout.addLayout(btn_row)
+            for pct in [0, 10, 15, 20, 25, 30]:
+                preset_row.addWidget(make_preset_btn(pct, slider))
+            preset_row.addStretch()
+            grp_layout.addLayout(preset_row)
 
-        dlg.exec_()
+            layout.addWidget(grp)
 
-    def _make_separator(self):
-        line = QFrame()
-        line.setFrameShape(QFrame.HLine)
-        line.setStyleSheet("color: #45475a;")
-        return line
+            sep2 = QFrame(dlg)
+            sep2.setFrameShape(QFrame.HLine)
+            sep2.setStyleSheet("color: #45475a;")
+            layout.addWidget(sep2)
+
+            # 底部按鈕
+            btn_row = QHBoxLayout()
+
+            def do_reassign():
+                self._move_output_to_screen2()
+                QTimer.singleShot(500, self._bind_vlc_output)
+
+            btn_reassign = QPushButton("重新分配屏幕", dlg)
+            btn_reassign.clicked.connect(do_reassign)
+            btn_close = QPushButton("关闭", dlg)
+            btn_close.clicked.connect(dlg.accept)
+            btn_row.addWidget(btn_reassign)
+            btn_row.addStretch()
+            btn_row.addWidget(btn_close)
+            layout.addLayout(btn_row)
+
+            dlg.exec_()
+        except Exception as e:
+            QMessageBox.critical(self, "屏幕设置错误", f"打开设置对话框失败：{e}")
 
     def _toggle_output(self):
         if self._output.isVisible():
