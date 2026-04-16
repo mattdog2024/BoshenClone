@@ -121,50 +121,92 @@ class OutputWindow(QWidget):
         # 强制创建原生 Win32 窗口句柄
         self.setAttribute(Qt.WA_NativeWindow, True)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        # 画面垂直偏移百分比（0=不偏移，正数=向上移，范围 0~50）
+        self._offset_pct = 0
+        # 当前显示的图片原始路径（用于重新缩放时重新加载）
+        self._current_image_path = None
+
+        # 外层容器：黑色背景，内容区在其中定位
+        self._container = QWidget(self)
+        self._container.setStyleSheet("background-color: black;")
+        self._container.setGeometry(0, 0, 1920, 1080)
 
         # VLC 视频渲染区域（纯黑 Widget，VLC 直接渲染到它上面）
-        self.video_frame = QWidget(self)
+        self.video_frame = QWidget(self._container)
         self.video_frame.setStyleSheet("background-color: black;")
         self.video_frame.setAttribute(Qt.WA_NativeWindow, True)
-        self.video_frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        layout.addWidget(self.video_frame)
 
         # 图片显示标签
-        self.image_label = QLabel(self)
+        self.image_label = QLabel(self._container)
         self.image_label.setAlignment(Qt.AlignCenter)
         self.image_label.setStyleSheet("background-color: black;")
         self.image_label.hide()
-        layout.addWidget(self.image_label)
 
-        # 黑屏遮罩
+        # 黑屏遮罩（覆盖整个窗口）
         self._black_overlay = QWidget(self)
         self._black_overlay.setStyleSheet("background-color: black;")
         self._black_overlay.hide()
 
+    def _apply_layout(self):
+        """根据偏移量重新计算各子控件的位置和大小"""
+        w = self.width()
+        h = self.height()
+        if w <= 0 or h <= 0:
+            return
+
+        # 容器占满整个窗口
+        self._container.setGeometry(0, 0, w, h)
+
+        # 计算偏移像素：正数=向上移（y 减小）
+        offset_px = int(h * self._offset_pct / 100.0)
+
+        # 内容区域高度 = 屏幕高度（画面不缩放，只是上移，下面露出黑色）
+        # 视频帧：从 -offset_px 开始，高度为 h（超出部分被裁掉）
+        self.video_frame.setGeometry(0, -offset_px, w, h)
+        self.image_label.setGeometry(0, -offset_px, w, h)
+
+        # 黑屏遮罩覆盖整个窗口
+        self._black_overlay.resize(w, h)
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self._black_overlay.resize(self.size())
+        self._apply_layout()
         # 图片重新缩放
-        if not self.image_label.isHidden() and self.image_label.pixmap():
-            pix = self.image_label.pixmap()
-            if pix and not pix.isNull():
-                scaled = pix.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                self.image_label.setPixmap(scaled)
+        if self._current_image_path and not self.image_label.isHidden():
+            self._render_image()
+
+    def _render_image(self):
+        """重新渲染当前图片（考虑偏移后的可见区域）"""
+        if not self._current_image_path:
+            return
+        pixmap = QPixmap(self._current_image_path)
+        if pixmap.isNull():
+            return
+        # 图片缩放到整个屏幕大小（不是可见区域），这样上移后内容完整
+        scaled = pixmap.scaled(self.width(), self.height(),
+                               Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.image_label.setPixmap(scaled)
+
+    def set_offset(self, pct: int):
+        """设置画面向上偏移百分比（0~50）"""
+        self._offset_pct = max(0, min(50, pct))
+        self._apply_layout()
+        # 如果正在显示图片，重新渲染
+        if self._current_image_path and not self.image_label.isHidden():
+            self._render_image()
 
     def show_image(self, path):
+        self._current_image_path = path
         self.video_frame.hide()
         self.image_label.show()
-        pixmap = QPixmap(path)
-        if not pixmap.isNull():
-            scaled = pixmap.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.image_label.setPixmap(scaled)
+        self._apply_layout()
+        self._render_image()
 
     def show_video(self):
+        self._current_image_path = None
         self.image_label.hide()
         self.video_frame.show()
+        self._apply_layout()
 
     def set_black(self, black: bool):
         if black:
@@ -239,6 +281,7 @@ class MainWindow(QMainWindow):
         self._current_index = -1
         self._is_black = False
         self._loop_mode = 0  # 0=不循环 1=单曲 2=列表
+        self._clipboard_item = None  # 复制粘贴剪贴板
 
         # 图片计时器
         self._image_timer = QTimer()
@@ -691,10 +734,52 @@ class MainWindow(QMainWindow):
         menu.addAction("⬆ 上移", lambda: self._move_item(row, -1))
         menu.addAction("⬇ 下移", lambda: self._move_item(row, 1))
         menu.addSeparator()
+        menu.addAction("📋 复制", lambda: self._copy_item(row))
+        paste_action = menu.addAction("📌 粘贴到此列表", self._paste_item)
+        paste_action.setEnabled(self._clipboard_item is not None)
+        # 粘贴到其他列表子菜单
+        other_lists = [n for n in self._playlists if n != self._current_playlist]
+        if other_lists and self._clipboard_item is not None:
+            paste_sub = menu.addMenu("📌 粘贴到其他列表")
+            for pl_name in other_lists:
+                paste_sub.addAction(pl_name, lambda n=pl_name: self._paste_item_to(n))
+        menu.addSeparator()
         menu.addAction("⚙ 属性", lambda: self._show_properties(row))
         menu.addSeparator()
         menu.addAction("🗑 删除", lambda: self._remove_item(row))
         menu.exec_(self._media_list.mapToGlobal(pos))
+
+    def _copy_item(self, row):
+        """复制素材到剪贴板"""
+        items = self._playlists[self._current_playlist]
+        if 0 <= row < len(items):
+            src = items[row]
+            # 创建副本
+            new_item = MediaItem(src.path)
+            new_item.duration_ms = src.duration_ms
+            new_item.loop = src.loop
+            new_item.volume = src.volume
+            self._clipboard_item = new_item
+            self.statusBar().showMessage(f"已复制：{src.name}")
+
+    def _paste_item(self):
+        """粘贴到当前列表"""
+        self._paste_item_to(self._current_playlist)
+
+    def _paste_item_to(self, playlist_name):
+        """粘贴到指定列表"""
+        if self._clipboard_item is None:
+            return
+        # 创建新副本（每次粘贴都是独立的）
+        src = self._clipboard_item
+        new_item = MediaItem(src.path)
+        new_item.duration_ms = src.duration_ms
+        new_item.loop = src.loop
+        new_item.volume = src.volume
+        self._playlists[playlist_name].append(new_item)
+        if playlist_name == self._current_playlist:
+            self._refresh_media_list()
+        self.statusBar().showMessage(f"已粘贴到【{playlist_name}】：{new_item.name}")
 
     def _on_item_double_clicked(self, _):
         self._play_at(self._media_list.currentRow())
@@ -931,19 +1016,89 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(msg)
 
     def _show_screen_settings(self):
+        dlg = QDialog(self)
+        dlg.setWindowTitle("输出屏幕设置")
+        dlg.setMinimumWidth(420)
+        layout = QVBoxLayout(dlg)
+
+        # 屏幕信息
         screens = QApplication.screens()
-        msg = f"检测到 {len(screens)} 个屏幕：\n\n"
+        info = f"检测到 {len(screens)} 个屏幕：\n"
         for i, s in enumerate(screens):
             g = s.geometry()
-            msg += f"屏幕 {i+1}：{g.width()}x{g.height()} @ ({g.x()},{g.y()})\n"
-        dlg = QMessageBox(self)
-        dlg.setWindowTitle("屏幕信息")
-        dlg.setText(msg)
-        dlg.addButton("重新分配屏幕", QMessageBox.ActionRole)
-        dlg.addButton("关闭", QMessageBox.RejectRole)
-        if dlg.exec_() == 0:
-            self._move_output_to_screen2()
-            QTimer.singleShot(500, self._bind_vlc_output)
+            info += f"  屏幕{i+1}：{g.width()}x{g.height()} @ ({g.x()},{g.y()})\n"
+        lbl_info = QLabel(info)
+        lbl_info.setStyleSheet("color: #cdd6f4; font-size: 12px;")
+        layout.addWidget(lbl_info)
+
+        layout.addWidget(self._make_separator())
+
+        # 画面上移设置
+        grp = QGroupBox("画面上移设置（适用于舞台台子挡住屏幕下方的情况）")
+        grp.setStyleSheet("QGroupBox { color: #cdd6f4; border: 1px solid #45475a; margin-top: 8px; padding: 8px; } QGroupBox::title { subcontrol-origin: margin; left: 8px; }")
+        grp_layout = QVBoxLayout(grp)
+
+        desc = QLabel("拖动滑块可将画面整体向上移动，不缩放、不变形。\n"
+                      "上移 20% 表示画面向上移动屏幕高度的20%，下方显示黑色。")
+        desc.setStyleSheet("color: #a6adc8; font-size: 11px;")
+        desc.setWordWrap(True)
+        grp_layout.addWidget(desc)
+
+        slider_row = QHBoxLayout()
+        lbl_slider = QLabel("上移量：")
+        lbl_slider.setStyleSheet("color: #cdd6f4;")
+        slider = QSlider(Qt.Horizontal)
+        slider.setRange(0, 50)
+        slider.setValue(self._output._offset_pct)
+        slider.setTickInterval(5)
+        slider.setTickPosition(QSlider.TicksBelow)
+        lbl_val = QLabel(f"{self._output._offset_pct}%")
+        lbl_val.setMinimumWidth(40)
+        lbl_val.setStyleSheet("color: #cba6f7; font-weight: bold;")
+
+        def on_slider(v):
+            lbl_val.setText(f"{v}%")
+            self._output.set_offset(v)  # 实时预览效果
+
+        slider.valueChanged.connect(on_slider)
+        slider_row.addWidget(lbl_slider)
+        slider_row.addWidget(slider)
+        slider_row.addWidget(lbl_val)
+        grp_layout.addLayout(slider_row)
+
+        # 快捷预设按鈕
+        preset_row = QHBoxLayout()
+        preset_row.addWidget(QLabel("快捷预设："))
+        for pct in [0, 10, 15, 20, 25, 30]:
+            btn = QPushButton(f"{pct}%")
+            btn.setFixedWidth(48)
+            btn.clicked.connect(lambda _, p=pct: (slider.setValue(p),))
+            preset_row.addWidget(btn)
+        preset_row.addStretch()
+        grp_layout.addLayout(preset_row)
+
+        layout.addWidget(grp)
+        layout.addWidget(self._make_separator())
+
+        # 底部按鈕
+        btn_row = QHBoxLayout()
+        btn_reassign = QPushButton("重新分配屏幕")
+        btn_reassign.clicked.connect(lambda: (self._move_output_to_screen2(),
+                                              QTimer.singleShot(500, self._bind_vlc_output)))
+        btn_close = QPushButton("关闭")
+        btn_close.clicked.connect(dlg.accept)
+        btn_row.addWidget(btn_reassign)
+        btn_row.addStretch()
+        btn_row.addWidget(btn_close)
+        layout.addLayout(btn_row)
+
+        dlg.exec_()
+
+    def _make_separator(self):
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setStyleSheet("color: #45475a;")
+        return line
 
     def _toggle_output(self):
         if self._output.isVisible():
