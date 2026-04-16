@@ -26,24 +26,67 @@ jobs:
           python -m pip install --upgrade pip
           pip install PyQt5==5.15.9 python-vlc Pillow pyinstaller
 
-      - name: Verify imports
-        shell: cmd
-        working-directory: DualScreenPlayer_v2
+      - name: Install VLC via Chocolatey
+        shell: powershell
         run: |
-          python -c "from PyQt5.QtWidgets import QApplication; import vlc; print('All imports OK'); inst=vlc.Instance(); print('VLC instance OK'); inst.release()"
+          Write-Host "Installing VLC..."
+          choco install vlc --yes --no-progress 2>&1
+          $vlcPath = "C:\Program Files\VideoLAN\VLC"
+          if (Test-Path $vlcPath) {
+            Write-Host "VLC installed at: $vlcPath"
+            Get-ChildItem $vlcPath -Filter "*.dll" | Select-Object -First 5 | ForEach-Object { Write-Host $_.Name }
+          } else {
+            Write-Error "VLC installation failed!"
+            exit 1
+          }
 
-      - name: Build EXE with PyInstaller
-        shell: cmd
+      - name: Verify VLC + python-vlc
+        shell: powershell
+        run: |
+          $env:PATH = "C:\Program Files\VideoLAN\VLC;" + $env:PATH
+          python -c "
+          import os, sys
+          vlc_dir = r'C:\Program Files\VideoLAN\VLC'
+          os.environ['PATH'] = vlc_dir + os.pathsep + os.environ.get('PATH','')
+          try:
+              os.add_dll_directory(vlc_dir)
+          except Exception:
+              pass
+          import vlc
+          inst = vlc.Instance()
+          print('VLC OK, version:', vlc.libvlc_get_version())
+          inst.release()
+          "
+
+      - name: Build EXE with PyInstaller (include VLC dlls)
+        shell: powershell
         working-directory: DualScreenPlayer_v2
         run: |
-          pyinstaller --noconfirm --onedir --windowed ^
-            --name "DualScreenPlayer" ^
-            --hidden-import PyQt5.QtCore ^
-            --hidden-import PyQt5.QtGui ^
-            --hidden-import PyQt5.QtWidgets ^
-            --hidden-import PyQt5.sip ^
-            --hidden-import vlc ^
-            main.py
+          $vlcDir = "C:\Program Files\VideoLAN\VLC"
+          $env:PATH = "$vlcDir;" + $env:PATH
+
+          # 收集 VLC 所有 dll 和 plugins
+          $addData = @()
+          $addData += "--add-data `"$vlcDir\libvlc.dll;.`""
+          $addData += "--add-data `"$vlcDir\libvlccore.dll;.`""
+          if (Test-Path "$vlcDir\plugins") {
+            $addData += "--add-data `"$vlcDir\plugins;plugins`""
+          }
+
+          $addDataStr = $addData -join " "
+
+          $cmd = "pyinstaller --noconfirm --onedir --windowed " +
+            "--name DualScreenPlayer " +
+            "--hidden-import PyQt5.QtCore " +
+            "--hidden-import PyQt5.QtGui " +
+            "--hidden-import PyQt5.QtWidgets " +
+            "--hidden-import PyQt5.sip " +
+            "--hidden-import vlc " +
+            "$addDataStr " +
+            "main.py"
+
+          Write-Host "Running: $cmd"
+          Invoke-Expression $cmd
 
       - name: Verify EXE exists
         shell: powershell
@@ -53,6 +96,8 @@ jobs:
           if (Test-Path $exePath) {
             $size = [math]::Round((Get-Item $exePath).Length / 1MB, 1)
             Write-Host "EXE built successfully: $size MB"
+            $distSize = [math]::Round((Get-ChildItem "dist\DualScreenPlayer" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB, 1)
+            Write-Host "Total dist size: $distSize MB"
           } else {
             Write-Error "EXE not found!"
             exit 1
