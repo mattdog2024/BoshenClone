@@ -11,7 +11,8 @@ from PyQt5.QtWidgets import (
     QListWidget, QListWidgetItem, QLabel, QPushButton, QSlider,
     QToolBar, QAction, QFileDialog, QMessageBox, QFrame,
     QMenu, QInputDialog, QApplication, QDialog,
-    QDialogButtonBox, QFormLayout, QSpinBox, QCheckBox, QSizePolicy
+    QDialogButtonBox, QFormLayout, QSpinBox, QCheckBox, QSizePolicy,
+    QGroupBox
 )
 from PyQt5.QtCore import Qt, QTimer, QSize, QUrl
 from PyQt5.QtGui import QColor, QPixmap, QKeySequence
