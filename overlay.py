@@ -349,23 +349,104 @@ class Overlay(QWidget):
             logging.info(f"Pixel at click ({x}, {click_y}) is candle? {is_candle_pixel(click_y)} (Color: {QColor(image.pixelColor(x, click_y).rgb()).name()})")
 
             # ================================================================
-            # 4. 新算法：连续像素段检测（不依赖颜色匹配，深色/浅色主题通用）
-            # 原理：对点击列附近 ±scan_radius 列逐列扫描，
-            #   将每列的非背景色像素分成连续段，
+            # 4.0 干扰行检测（关键改进）
+            # 用户图上有大量"水平贯穿"的干扰元素：买入线、止损线、
+            # 红/蓝/黑水平测量线、"3163 多单40手 -1400元"等文字标注线。
+            # 这些都会被"非背景色"判定误当成 K 线像素，污染顶/底识别。
+            #
+            # 区分关键：K 线实体在水平方向最多十几像素宽；而横线/文字
+            # 标注在水平方向"贯穿"很长（几十~几百像素）。
+            # 因此：对每一行，统计点击列两侧较宽范围内的非背景像素数，
+            # 若该行水平方向"连得太长"（> H_LINE_MAX_WIDTH），判定为干扰行，
+            # 后续按列扫描 K 线段时把这些行当作背景跳过。
+            # ================================================================
+            # 横向检测范围：以点击列为中心取一个宽窗口（覆盖单根 K 线宽度的数倍）
+            h_probe_half = 90  # 左右各探测 90 物理像素
+            h_probe_start = max(0, x - h_probe_half)
+            h_probe_end = min(image.width(), x + h_probe_half + 1)
+            h_probe_total = h_probe_end - h_probe_start
+            # 一根 K 线（含影线列）的最大像素宽度估计。超过它一大截即视为横线/文字。
+            H_LINE_MAX_WIDTH = 40  # 物理像素：K线最多约这么宽，横线远超此值
+            interference_rows = set()
+            # 只在可能涉及的 y 区间做检测，省时间
+            y_scan_lo = max(0, (toolbar_bottom_y if toolbar_bottom_y > 0 else 0))
+            y_scan_hi = min(height, click_y + 800)
+            # ----------------------------------------------------------------
+            # 关键修正（避免误伤密集 K 线）：
+            # 横线/文字标注的本质是「水平方向连续贯穿很长」；而多根挨得很近的
+            # K 线，虽然非背景像素总数也可能很大，但它们之间有背景缝隙——不是
+            # 一条连续的横线。
+            # 因此判定干扰行时，不看「非背景像素总数」，而看
+            # 「最长的一段连续非背景像素」(max_run)。只有当某一行存在一段
+            # 远超单根 K 线宽度的连续非背景像素时，才判定为横线/文字干扰行。
+            # 这样：
+            #   · 真横线/文字带（连续几十~几百像素）→ 命中，剔除；
+            #   · 密集 K 线（各自≤十几像素、彼此有缝）→ 不命中，K线实体安全保留。
+            # ----------------------------------------------------------------
+            step = 2
+            run_thresh = max(1, H_LINE_MAX_WIDTH // step)  # 连续采样点数阈值
+            for yy in range(y_scan_lo, y_scan_hi):
+                cur_run = 0
+                max_run = 0
+                gap = 0
+                for xx in range(h_probe_start, h_probe_end, step):
+                    c = image.pixelColor(xx, yy)
+                    if color_distance(c, bg_color) > 30:
+                        cur_run += 1
+                        gap = 0
+                        if cur_run > max_run:
+                            max_run = cur_run
+                    else:
+                        # 容忍横线内 1 个采样点的微小断裂（抗锯齿/虚线），
+                        # 但 K 线之间的真实缝隙(≥2采样点≈4px)会真正断开连续段。
+                        gap += 1
+                        if gap >= 2:
+                            cur_run = 0
+                # max_run 是「最长连续段」的采样点数，超过阈值才算横线/文字
+                if max_run > run_thresh:
+                    interference_rows.add(yy)
+            logging.info(f"Detected {len(interference_rows)} interference (horizontal line/text) rows "
+                         f"in probe window x=[{h_probe_start},{h_probe_end}] (max_run thresh={run_thresh})")
+
+            def is_candle_pixel_clean(col_x, y):
+                """非背景 且 不在干扰行内，才算 K 线像素。"""
+                if y < 0 or y >= height:
+                    return False
+                if y in interference_rows:
+                    return False
+                c = image.pixelColor(col_x, y)
+                return color_distance(c, bg_color) > 30
+
+            # ================================================================
+            # 4. 连续像素段检测（不依赖颜色匹配，深色/浅色主题通用）
+            # 先定位目标 K 线中心列，再在该 K 线列簇内逐列扫描连续段：
             #   最长的段 = K线实体，整体范围顶底 = 完整K线（含影线）
-            # ================================================================
-            scan_radius = 12
-            x_start = max(0, x - scan_radius)
-            x_end = min(image.width(), x + scan_radius + 1)
-            
-            # ================================================================
-            # 新算法：连续像素段检测
-            # 不依赖颜色匹配，深色/浅色主题通用
+            # 干扰横线/文字行已在 find_segments_in_col 中通过
+            # is_candle_pixel_clean 排除，不会污染顶/底判定。
             # ================================================================
             
             def find_segments_in_col(col_x, y_start, y_end, gap_tol=8):
                 """
                 在指定列的 y_start~y_end 范围内，找出所有连续非背景色像素段。
+
+                关键改进（修复"长下影线被横线截断、最高点丢失"的 BUG）：
+                ─────────────────────────────────────────────────────────
+                干扰行（买入线/止损线/各种水平测量线/文字标注）会把它覆盖到
+                的 K 线像素"遮住"。这些行既不是背景、也不是可信的 K 线，
+                而是"未知/被遮挡"区域。
+
+                如果像之前那样把干扰行简单当成背景，那么当一条（或几条叠加的）
+                横线/文字带跨在 K 线上、其高度超过 gap_tol 时，整根 K 线会被
+                "切断"成上下两段：
+                    上段 = 实体 + 上影（含最高点 3152）
+                    下段 = 下影（含最低点 3136）
+                用户点击在下影附近 → 只选中下段 → 最高点 3152(B点) 丢失。
+                这正是用户截图反映的现象。
+
+                修复：把"干扰行"视为"可穿透/桥接"，它不计入 gap 预算。
+                只有"真背景行"才累加 gap，gap 超过 gap_tol 才真正断段。
+                这样横线/文字无论多高都不会把同一根 K 线切断，
+                同时仍然不让横线本身的像素污染顶/底（顶底只取真实 K 线像素）。
                 返回列表：[(seg_top, seg_bottom), ...]
                 """
                 segments = []
@@ -374,68 +455,118 @@ class Overlay(QWidget):
                 gap_count = 0
                 last_valid = -1
                 for y in range(y_start, y_end):
-                    c = image.pixelColor(col_x, y)
-                    is_non_bg = color_distance(c, bg_color) > 30
-                    if is_non_bg:
+                    # 真实 K 线像素（非背景 且 不在干扰行）
+                    is_candle = is_candle_pixel_clean(col_x, y)
+                    if is_candle:
                         if not in_seg:
                             in_seg = True
                             seg_start = y
                         last_valid = y
                         gap_count = 0
-                    else:
-                        if in_seg:
-                            gap_count += 1
-                            if gap_count > gap_tol:
-                                segments.append((seg_start, last_valid))
-                                in_seg = False
-                                gap_count = 0
+                        continue
+                    # 不是 K 线像素：要区分"干扰行(被遮挡)"还是"真背景"
+                    if y in interference_rows:
+                        # 干扰行：被横线/文字遮挡，视为可穿透。
+                        # 不累加 gap，也不结束当前段——让 K 线跨过横线继续连接。
+                        # （注意：不更新 last_valid，避免把横线像素当成 K 线顶/底）
+                        continue
+                    # 真背景行
+                    if in_seg:
+                        gap_count += 1
+                        if gap_count > gap_tol:
+                            segments.append((seg_start, last_valid))
+                            in_seg = False
+                            gap_count = 0
                 if in_seg:
                     segments.append((seg_start, last_valid))
                 return segments
 
-            # 在 ±scan_radius 列范围内，对每列找连续段
-            # 并找到包含点击点的段（或最靠近点击点的段）
-            # 全局 top/bottom = 所有列中包含点击点的段的联合范围
-            # 实体 top/bottom = 各列中最长段的联合范围
+            # 工具栏底部 y 坐标（扫描不超过工具栏）
+            scan_top_limit = toolbar_bottom_y if toolbar_bottom_y > 0 else 0
+            scan_y_end = min(height, click_y + 800)
 
-            all_full_top = None    # 完整K线范围（含影线）
+            # ============================================================
+            # 第1步：定位"目标 K 线"的水平中心列
+            # 用户点击位置可能略偏（落在相邻小K线/间隙上），所以不能死守点击列。
+            # 在点击列左右一个较大半径内，找出"在点击 y 附近有 K 线像素"的列，
+            # 取离点击列最近的一簇连续列，其中心即为目标 K 线中心列。
+            # ============================================================
+            locate_radius = 25  # 物理像素：左右各找 25 列定位 K 线
+            loc_start = max(0, x - locate_radius)
+            loc_end = min(image.width(), x + locate_radius + 1)
+            # 点击点附近的容差：判断某列在点击 y 上下是否有 K 线像素
+            cand_cols = []  # 含点击点附近 K 线段的列
+            for cx in range(loc_start, loc_end):
+                segs = find_segments_in_col(cx, scan_top_limit, scan_y_end, gap_tol=12)
+                for seg in segs:
+                    if seg[0] - 25 <= click_y <= seg[1] + 25:
+                        cand_cols.append(cx)
+                        break
+
+            if cand_cols:
+                # 把 cand_cols 按连续性聚簇，选包含/最接近点击列 x 的那一簇
+                clusters = []
+                cur = [cand_cols[0]]
+                for c in cand_cols[1:]:
+                    if c - cur[-1] <= 3:  # 允许 ≤3px 小缝隙
+                        cur.append(c)
+                    else:
+                        clusters.append(cur)
+                        cur = [c]
+                clusters.append(cur)
+                # 选离点击列 x 最近的簇
+                def cluster_dist(cl):
+                    if cl[0] <= x <= cl[-1]:
+                        return 0
+                    return min(abs(cl[0] - x), abs(cl[-1] - x))
+                best_cluster = min(clusters, key=cluster_dist)
+                candle_center_x = (best_cluster[0] + best_cluster[-1]) // 2
+                candle_left = best_cluster[0]
+                candle_right = best_cluster[-1]
+                logging.info(f"Located candle cluster cols [{candle_left},{candle_right}], center={candle_center_x}")
+            else:
+                # 退回到点击列
+                candle_center_x = x
+                candle_left = max(0, x - 6)
+                candle_right = min(image.width() - 1, x + 6)
+                logging.info("No candle cluster located, fallback to click column.")
+
+            # ============================================================
+            # 第2步：以目标 K 线为范围扫描完整高低点
+            # 扫描列严格限制在该 K 线的列簇内（再各扩 2px 容噪），
+            # 这样不会吃到相邻 K 线，也不会被干扰横线污染（已在段检测中排除）。
+            # full 范围 = 含影线的整根K线；body 范围 = 各列最长段（实体）
+            # ============================================================
+            seg_x_start = max(0, candle_left - 2)
+            seg_x_end = min(image.width(), candle_right + 2 + 1)
+
+            all_full_top = None
             all_full_bottom = None
-            all_body_top = None    # 实体范围（最长段）
+            all_body_top = None
             all_body_bottom = None
             found_any_candle = False
 
-            # 工具栏底部 y 坐标（扫描不超过工具栏）
-            scan_top_limit = toolbar_bottom_y if toolbar_bottom_y > 0 else 0
-
-            for scan_x in range(x_start, x_end):
-                segs = find_segments_in_col(
-                    scan_x,
-                    y_start=scan_top_limit,
-                    y_end=min(height, click_y + 800),
-                    gap_tol=12
-                )
+            for scan_x in range(seg_x_start, seg_x_end):
+                segs = find_segments_in_col(scan_x, scan_top_limit, scan_y_end, gap_tol=12)
                 if not segs:
                     continue
 
-                # 只取包含点击点的段（允许 ±30px 偏差）
-                # 不用所有段的联合，避免工具栏/价格轴等非K线像素混入
+                # 取包含点击点的段（容差 ±25px）
                 target_seg = None
                 for seg in segs:
-                    if seg[0] - 20 <= click_y <= seg[1] + 20:
+                    if seg[0] - 25 <= click_y <= seg[1] + 25:
                         target_seg = seg
                         break
-                # 如果没有包含点击点的段，跳过这列（不用最近段，避免误判）
                 if target_seg is None:
+                    # 该列没有命中点击点的段：可能是只含影线的列，
+                    # 取与已知 K 线范围重叠最大的段作为补充（不强制）
                     continue
 
-                # 实体：该列所有段中最长的段
                 longest_seg = max(segs, key=lambda s: s[1] - s[0])
-                # 但实体必须与 target_seg 相邻或重叠，否则用 target_seg 本身
                 if abs(longest_seg[0] - target_seg[0]) > 200:
                     longest_seg = target_seg
 
-                # full 范围 = target_seg（就是包含点击点的那根K线段）
-                col_full_top    = target_seg[0]
+                col_full_top = target_seg[0]
                 col_full_bottom = target_seg[1]
 
                 found_any_candle = True
@@ -454,6 +585,9 @@ class Overlay(QWidget):
                 logging.warning("No candle found in scan width.")
                 self.setVisible(True)
                 return
+
+            # 用 K 线中心列作为测量竖线 x（更准），后面 global point 用它
+            x = candle_center_x
 
             top_y    = all_full_top
             bottom_y = all_full_bottom
@@ -515,26 +649,32 @@ class Overlay(QWidget):
             # 原理：实体是宽的（多列有像素），影线是细的（1~2列有像素）
             # ================================================================
             if wick_mode and top_y < bottom_y:
-                # 对 top_y~bottom_y 每一行，统计 x_start~x_end 内有多少列有非背景色像素
+                # 对 top_y~bottom_y 每一行，统计该 K 线列簇内有多少列是 K 线像素
+                # （使用 is_candle_pixel_clean 排除干扰横线/文字行）
                 row_widths = []
                 for ry in range(top_y, bottom_y + 1):
                     w = 0
-                    for rx in range(x_start, x_end):
-                        c = image.pixelColor(rx, ry)
-                        if color_distance(c, bg_color) > 30:
+                    for rx in range(seg_x_start, seg_x_end):
+                        if is_candle_pixel_clean(rx, ry):
                             w += 1
                     row_widths.append((ry, w))
-                # 找宽度 >= 2 的行（实体行）
-                body_rows = [ry for (ry, w) in row_widths if w >= 2]
+                # 实体行：宽度达到列簇宽度的一定比例（实体占满，影线只有中间1~2列）
+                cluster_w = max(1, seg_x_end - seg_x_start)
+                body_threshold = max(2, int(cluster_w * 0.5))
+                body_rows = [ry for (ry, w) in row_widths if w >= body_threshold]
                 if body_rows:
                     body_top_y    = body_rows[0]
                     body_bottom_y = body_rows[-1]
-                    logging.info(f"Wick horizontal scan: body=({body_top_y},{body_bottom_y}), full=({top_y},{bottom_y})")
+                    logging.info(f"Wick horizontal scan: body=({body_top_y},{body_bottom_y}), full=({top_y},{bottom_y}), thr={body_threshold}/{cluster_w}")
                 else:
-                    # 如果没有宽度>=2的行，回退到全范围
+                    # 如果没有达标的实体行，回退到全范围
                     body_top_y    = top_y
                     body_bottom_y = bottom_y
                     logging.info(f"Wick horizontal scan: no body rows found, fallback to full")
+
+            # 测量竖线 x：用识别到的 K 线中心列（物理）转回逻辑坐标，
+            # 这样即使用户点偏了，竖线也精准落在目标 K 线上。
+            line_x_logical = int(candle_center_x / dpr)
 
             # Create global QPoints
             if wick_mode:
@@ -554,12 +694,12 @@ class Overlay(QWidget):
                     wick_a_y = bottom_y / dpr
                     wick_b_y = body_bottom_y / dpr
                     logging.info(f"Wick mode DOWN: A=wick_bottom({wick_a_y}), B=body_bottom({wick_b_y})")
-                global_start_p = QPoint(pos.x(), int(wick_a_y))
-                global_end_p   = QPoint(pos.x(), int(wick_b_y))
+                global_start_p = QPoint(line_x_logical, int(wick_a_y))
+                global_end_p   = QPoint(line_x_logical, int(wick_b_y))
             else:
                 # K线模式：A/B = 整根K线最高/最低，根据点击位置判断哪端是A
-                global_start_p = QPoint(pos.x(), int(bottom_y_logical if dist_to_bottom < dist_to_top else top_y_logical))
-                global_end_p = QPoint(pos.x(), int(top_y_logical if dist_to_bottom < dist_to_top else bottom_y_logical))
+                global_start_p = QPoint(line_x_logical, int(bottom_y_logical if dist_to_bottom < dist_to_top else top_y_logical))
+                global_end_p = QPoint(line_x_logical, int(top_y_logical if dist_to_bottom < dist_to_top else bottom_y_logical))
             
             # Map to local
             start_p = self.mapFromGlobal(global_start_p)
