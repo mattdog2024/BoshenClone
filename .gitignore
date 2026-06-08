@@ -9,3 +9,6 @@ temp_*.png
 debug_*.png
 session_state.json
 presets.json
+regions.json
+region_drawings.json
+test_regions.json

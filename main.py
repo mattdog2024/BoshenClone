@@ -74,6 +74,11 @@ def main():
     toolbar.fast_mode_toggled.connect(overlay.toggle_fast_mode)
     toolbar.timeframe_changed.connect(overlay.set_timeframe)
     toolbar.save_requested.connect(overlay.save_snapshot)
+
+    # ---- 多周期窗格信号 ----
+    toolbar.define_region_requested.connect(overlay.start_define_region)
+    toolbar.clear_region_requested.connect(overlay.clear_active_region_measurements)
+    toolbar.clear_all_regions_requested.connect(overlay.clear_all_region_measurements)
     
     # Optional: Position toolbar initially
     toolbar.move(100, 100)

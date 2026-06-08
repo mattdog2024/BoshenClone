@@ -4,6 +4,7 @@ from PySide6.QtGui import QPainter, QPen, QColor, QFont, QCursor, QGuiApplicatio
 from algorithms import BoshenAlgorithms
 from preset_manager import PresetManager
 from ocr_helper import BoshenOCR
+from region_manager import RegionManager
 from typing import List, Dict
 
 class CalibrationWorker(QThread):
@@ -62,7 +63,17 @@ class Overlay(QWidget):
         self.free_draw_color = QColor(Qt.red)
         self.free_draw_width = 2
 
-        
+        # ==============================================================
+        # 多周期窗格（Region）支持
+        # 用户的新交易软件是一个屏幕显示 6 个周期的网格界面。
+        # 我们让用户先“框选”出每个周期窗格的矩形区域，
+        # 之后每条测量线都会带上 region_id 标签，归属到对应的周期窗格。
+        # 所有窗格的测量线会“同时显示并保持”，互不影响。
+        # ==============================================================
+        self.region_manager = RegionManager()
+        # 是否正在框选一个新的周期区域（由工具栏“框选周期”按钮触发）
+        self.defining_region = False
+
         # Strategy UI Removed per user request
         self.current_timeframe = "日线" # Default to daily or None
         self.analysis_data = {
@@ -71,6 +82,8 @@ class Overlay(QWidget):
             '1小时': []
         }
         self.load_analysis_data()
+        # 从文件恢复各周期窗格的历史测量线
+        self.load_region_drawings()
         
         # Interaction state
         self.dragging_handle = None 
@@ -84,6 +97,20 @@ class Overlay(QWidget):
             'handle_fill': QColor(255, 0, 0, 100)
         }
 
+        # ----------------------------------------------------------
+        # 关键初始化（原代码误把这段放进了 apply_calibration 内部，
+        # 导致 poll_timer 等从未执行、悬停编辑失效，这里修复并移回 __init__）
+        # ----------------------------------------------------------
+        # Screen geometry
+        self.setGeometry(QApplication.primaryScreen().geometry())
+        # Transparent background
+        self.setStyleSheet("background-color: transparent;")
+        # Mouse tracking
+        self.setMouseTracking(True)
+        # Polling timer for interaction when transparent
+        self.poll_timer = QTimer(self)
+        self.poll_timer.timeout.connect(self.check_mouse_hover)
+        self.poll_timer.start(50)  # Check every 50ms
 
     def toggle_fast_mode(self, enabled):
         self.fast_mode = enabled
@@ -547,12 +574,31 @@ class Overlay(QWidget):
                 # but might be good for visual debugging.
                 'timeframe': self.current_timeframe 
             }
-            
+
+            # ----------------------------------------------------------
+            # 绑定到所属周期窗格(Region)
+            # 优先用“点击位置落在哪个区域”，其次用当前激活区域。
+            # 这样无论用户先框选哪个窗格，测量线都会归到正确的周期，
+            # 并随该窗格一起锁定保持。
+            # ----------------------------------------------------------
+            local_click = self.mapFromGlobal(pos)
+            region = self.region_manager.region_at(local_click)
+            if region is None:
+                region = self.region_manager.get_active_region()
+            if region is not None:
+                new_drawing['region_id'] = region.id
+                # 测量后把该窗格设为激活，方便“删除本周期”定位
+                self.region_manager.set_active(region.id)
+
             # Apply global calibration if available
             self.apply_calibration(new_drawing)
             
             self.drawings.append(new_drawing)
-            
+
+            # 若归属某个周期窗格，持久化以便重启后保持
+            if new_drawing.get('region_id'):
+                self.save_region_drawings()
+
             self.set_tool(None)
             
         except Exception as e:
@@ -617,57 +663,6 @@ class Overlay(QWidget):
         except Exception as e:
              print(f"Error saving analysis data: {e}")
 
-    def apply_calibration(self, drawing):
-        """
-        Applies global calibration to a new drawing to auto-calculate prices.
-        """
-        if not self.global_calibration:
-            return
-            
-        scale = self.global_calibration['scale']
-        ref_y = self.global_calibration['ref_y']
-        ref_price = self.global_calibration['ref_price']
-        
-        # Calculate Price A
-        y_a = drawing['start'].y()
-        drawing['price_a'] = ref_price + (y_a - ref_y) * scale
-        
-        # Calculate Price B
-        y_b = drawing['end'].y()
-        drawing['price_b'] = ref_price + (y_b - ref_y) * scale
-        
-        # Store scale
-        drawing['scale'] = scale
-        print(f"DEBUG: Applied calibration to new drawing. PA={drawing['price_a']}, PB={drawing['price_b']}")
-
-        
-        # Interaction state for editing
-        self.dragging_handle = None # (drawing_index, handle_type) handle_type: 'start' or 'end'
-        self.hover_handle = None    # (drawing_index, handle_type)
-
-        # Style Config
-        # Style Config
-        self.styles = {
-            'default': {'color': QColor(255, 0, 0), 'width': 1, 'style': Qt.DotLine}, 
-            'highlight': {'color': QColor(255, 0, 127), 'width': 3, 'style': Qt.SolidLine}, # Solid, thick magenta
-            'measurement': {'color': QColor(255, 0, 0), 'width': 1, 'style': Qt.SolidLine},
-            'handle_fill': QColor(255, 0, 0, 100)
-        }
-
-        # Screen geometry
-        self.setGeometry(QApplication.primaryScreen().geometry())
-        
-        # Transparent background
-        self.setStyleSheet("background-color: transparent;")
-        
-        # Mouse tracking
-        self.setMouseTracking(True)
-        
-        # Polling timer for interaction when transparent
-        self.poll_timer = QTimer(self)
-        self.poll_timer.timeout.connect(self.check_mouse_hover)
-        self.poll_timer.start(50) # Check every 50ms
-
     def set_line_color(self, color):
         """
         Updates the global line colors for this session.
@@ -690,7 +685,8 @@ class Overlay(QWidget):
         # Enable for K-Line and Single tools.
         if tool_name in ["k线", "单", "ocr_selection"]:
              self.auto_calibrate_axis()
-             
+
+        # 框选周期模式不需要做价格轴校准
         if tool_name:
             self.setCursor(Qt.CrossCursor)
             self.setAttribute(Qt.WA_TransparentForMouseEvents, False)
@@ -858,9 +854,27 @@ class Overlay(QWidget):
         # DRAWING MODE
         if event.button() == Qt.LeftButton:
             print(f"DEBUG: MousePress - Tool: {self.current_tool}, FastMode: {self.fast_mode}, Pos: {event.pos()}")
-            
-            # Auto-measure moved to "k线" tool (when Fast Mode is ON)
-            if self.current_tool == "k线" and self.fast_mode:
+
+            # 框选周期窗格：开始拖一个矩形
+            if self.current_tool == "define_region":
+                self.start_point = event.pos()
+                self.end_point = event.pos()
+                self.is_drawing = True
+                return
+
+            # 选周期：点击某个已框选的窗格，把它设为当前周期
+            if self.current_tool == "select_region":
+                region = self.region_manager.set_active_by_point(event.pos())
+                if region:
+                    print(f"[Region] 已选中当前周期: {region.name}")
+                self.set_tool(None)
+                self.update()
+                return
+
+            # K 线工具：点击 K 线即自动识别最高/最低点并测量
+            # 用户的核心流程是“点 K 按钮 -> 点 K 线 -> 自动测量”，
+            # 不再要求先打开“快”模式，因此这里只要工具是 k线就触发自动测量。
+            if self.current_tool == "k线":
                 print("DEBUG: Triggering auto_measure on K-Line tool")
                 # Use global position for screen analysis to avoid local coord issues
                 self.auto_measure(event.globalPosition().toPoint())
@@ -1019,7 +1033,10 @@ class Overlay(QWidget):
 
     def delete_drawing(self, index):
         if 0 <= index < len(self.drawings):
+            had_region = bool(self.drawings[index].get('region_id'))
             del self.drawings[index]
+            if had_region:
+                self.save_region_drawings()
             self.update()
 
     def input_prices(self, index):
@@ -1045,7 +1062,12 @@ class Overlay(QWidget):
         # DRAWING MODE
         if self.is_drawing:
             self.end_point = event.pos()
-            
+
+            # 框选周期窗格：实时显示矩形
+            if self.current_tool == "define_region":
+                self.update()
+                return
+
             if self.current_tool == "free_draw":
                 self.current_free_drawing.append(event.pos())
                 self.update()
@@ -1087,7 +1109,16 @@ class Overlay(QWidget):
 
     def mouseReleaseEvent(self, event):
         print(f"DEBUG: MouseRelease - is_drawing: {self.is_drawing}")
-        
+
+        # 拖动调整某条测量线结束：若它属于某个周期窗格，保存最新位置
+        if self.dragging_handle and not self.current_tool:
+            idx, _ = self.dragging_handle
+            self.dragging_handle = None
+            if 0 <= idx < len(self.drawings) and self.drawings[idx].get('region_id'):
+                self.save_region_drawings()
+            self.update()
+            return
+
         if self.current_tool == "free_draw" and self.is_drawing:
             if self.current_free_drawing:
                 # Store a copy of the points
@@ -1099,6 +1130,21 @@ class Overlay(QWidget):
             self.end_point = None
             self.update()
             # Do NOT reset tool to None. Keep drawing.
+            return
+
+        # 框选周期窗格：松开鼠标即完成区域定义
+        if self.current_tool == "define_region" and self.is_drawing:
+            self.is_drawing = False
+            if self.start_point and self.end_point:
+                rect = QRect(self.start_point, self.end_point).normalized()
+                self.start_point = None
+                self.end_point = None
+                self.finish_define_region(rect)
+            else:
+                self.start_point = None
+                self.end_point = None
+                self.set_tool(None)
+            self.update()
             return
 
         if self.is_drawing and self.start_point and self.end_point:
@@ -1183,11 +1229,12 @@ class Overlay(QWidget):
         Returns (index, handle_type) if hit, else None.
         """
         threshold = 15 # Slightly larger radius for easier hitting
-        threshold = 15 # Slightly larger radius for easier hitting
         for i, d in enumerate(self.drawings):
-            # Only hit-test visible drawings!
-            if d.get('timeframe') and d.get('timeframe') != self.current_timeframe:
-                continue
+            # 带 region_id 的测量线永远可命中编辑（多周期同时存在）；
+            # 没有 region_id 的旧临时线仍按 current_timeframe 过滤。
+            if not d.get('region_id'):
+                if d.get('timeframe') and d.get('timeframe') != self.current_timeframe:
+                    continue
 
             # Check Start
             if (d['start'] - pos).manhattanLength() < threshold:
@@ -1205,15 +1252,38 @@ class Overlay(QWidget):
         if self.current_tool:
              painter.fillRect(self.rect(), QColor(255, 255, 255, 1))
 
-        # Draw all committed drawings
-        for i, d in enumerate(self.drawings):
-            # FILTER: Only draw if matches current timeframe (or if drawing has no timeframe for legacy)
-            # Default to showing if no tag (backward compatibility)
-            tf = d.get('timeframe', self.current_timeframe) 
-            if tf == self.current_timeframe:
-                 self.draw_item(painter, d, is_hovering=(self.hover_handle and self.hover_handle[0] == i))
+        # 先画各周期窗格的边框 + 名字（让用户看清楚有哪些窗格、哪个是激活的）
+        self.draw_regions(painter)
 
-        if self.is_drawing and self.start_point and self.end_point and self.current_tool != "free_draw":
+        # Draw all committed drawings
+        # 规则：
+        #  - 带 region_id 的测量线 => 永远显示（多周期同时锁定保持），
+        #    并且 A/B 线与波神线只在所属窗格的矩形宽度内绘制，互不干扰。
+        #  - 没有 region_id 的旧临时线 => 仍按 current_timeframe 过滤（向后兼容）。
+        for i, d in enumerate(self.drawings):
+            region_id = d.get('region_id')
+            if region_id:
+                region = self.region_manager.get_region(region_id)
+                if region is None:
+                    continue  # 区域已被删除，跳过
+                self.draw_item(painter, d,
+                               is_hovering=(self.hover_handle and self.hover_handle[0] == i),
+                               clip_region=region)
+            else:
+                tf = d.get('timeframe', self.current_timeframe)
+                if tf == self.current_timeframe:
+                    self.draw_item(painter, d,
+                                   is_hovering=(self.hover_handle and self.hover_handle[0] == i))
+
+        # 框选周期窗格时，实时显示蓝色矩形
+        if self.current_tool == "define_region" and self.is_drawing and self.start_point and self.end_point:
+            rect = QRect(self.start_point, self.end_point).normalized()
+            painter.setPen(QPen(QColor(0, 120, 255), 2, Qt.DashLine))
+            painter.setBrush(QColor(0, 120, 255, 40))
+            painter.drawRect(rect)
+            painter.setBrush(Qt.NoBrush)
+
+        if self.is_drawing and self.start_point and self.end_point and self.current_tool not in ("free_draw", "define_region"):
             if self.current_tool == "ocr_selection":
                  # Draw Selection Rect
                  rect = QRect(self.start_point, self.end_point).normalized()
@@ -1250,10 +1320,47 @@ class Overlay(QWidget):
              rect = self.rect()
              painter.drawText(rect, Qt.AlignCenter, text)
 
-    def draw_item(self, painter, data, is_hovering=False):
+    def draw_regions(self, painter):
+        """绘制每个周期窗格的边框与名字标签，激活窗格高亮。"""
+        active_id = self.region_manager.active_region_id
+        for region in self.region_manager.regions:
+            rect = region.rect
+            is_active = (region.id == active_id)
+            if is_active:
+                # 激活窗格：醒目的蓝色实线边框
+                pen = QPen(QColor(0, 120, 255), 2, Qt.SolidLine)
+            else:
+                # 其它窗格：淡灰色虚线边框
+                pen = QPen(QColor(120, 120, 120, 160), 1, Qt.DashLine)
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(rect)
+
+            # 名字标签（左上角小标牌）
+            label = region.name + ("  [当前]" if is_active else "")
+            painter.setFont(QFont("SimHei", 10, QFont.Bold))
+            metrics = painter.fontMetrics()
+            tw = metrics.horizontalAdvance(label) + 10
+            th = metrics.height() + 4
+            tag_rect = QRect(rect.left(), rect.top(), tw, th)
+            bg = QColor(0, 120, 255, 200) if is_active else QColor(120, 120, 120, 160)
+            painter.fillRect(tag_rect, bg)
+            painter.setPen(QColor(255, 255, 255))
+            painter.drawText(tag_rect, Qt.AlignCenter, label)
+
+    def draw_item(self, painter, data, is_hovering=False, clip_region=None):
         start = data['start']
         end = data['end']
         dtype = data['type']
+
+        # 若指定了所属窗格，则水平线只在窗格矩形宽度内绘制，
+        # 这样不同周期的测量线不会横穿整个屏幕、互相干扰。
+        if clip_region is not None:
+            line_x_left = clip_region.rect.left()
+            line_x_right = clip_region.rect.right()
+        else:
+            line_x_left = 0
+            line_x_right = self.width()
 
         if dtype == 'boshen_single':
             # Draw the measurement line
@@ -1264,7 +1371,7 @@ class Overlay(QWidget):
             screen_width = self.width()
             
             # Line A
-            painter.drawLine(0, start.y(), screen_width, start.y())
+            painter.drawLine(line_x_left, start.y(), line_x_right, start.y())
             
             label_a = "1 (a)"
             if 'price_a' in data:
@@ -1272,7 +1379,7 @@ class Overlay(QWidget):
             painter.drawText(start.x() + 10, start.y() - 5, label_a)
             
             # Line B
-            painter.drawLine(0, end.y(), screen_width, end.y())
+            painter.drawLine(line_x_left, end.y(), line_x_right, end.y())
             
             label_b = "1 (b)"
             if 'price_b' in data:
@@ -1309,7 +1416,7 @@ class Overlay(QWidget):
                     s = self.styles['default']
                     painter.setPen(QPen(s['color'], s['width'], s['style']))
                 
-                painter.drawLine(0, y, screen_width, y)
+                painter.drawLine(line_x_left, y, line_x_right, y)
                 label = f"-1 ({i+1})"
                 
                 if price_levels:
@@ -1395,9 +1502,143 @@ class Overlay(QWidget):
         print(f"DEBUG: Applied calibration to new drawing. PA={price_a}, PB={price_b}")
 
     def clear_all(self):
-        self.drawings.clear()
+        """旧的“Dx”按钮：清空当前屏幕上的全部临时绘制（不含已锁定的周期测量）。
+
+        为了向后兼容，这里仍然清掉 self.drawings 里没有 region_id 的临时线
+        以及自由绘制；带 region_id 的周期测量线请用 clear_all_regions() 删除。
+        """
+        # 只清掉“未归属任何周期窗格”的临时线，保留各周期锁定的测量
+        self.drawings = [d for d in self.drawings if d.get('region_id')]
         self.free_drawings.clear() # Clear free drawings too
         self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         self.update()
-        self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+
+    # ==================================================================
+    # 多周期窗格（Region）相关方法
+    # ==================================================================
+    def start_define_region(self):
+        """进入“框选周期”模式：用户拖一个矩形框出某个周期窗格。"""
+        self.defining_region = True
+        self.set_tool("define_region")
+
+    def finish_define_region(self, rect):
+        """框选结束，新增一个区域并设为激活区域。"""
+        from PySide6.QtWidgets import QInputDialog
+        # 防止误触：太小的框忽略
+        if rect.width() < 30 or rect.height() < 30:
+            self.defining_region = False
+            self.set_tool(None)
+            return
+
+        # 让用户给这个周期窗格起个名字（可留空自动命名）
+        default_name = f"周期{len(self.region_manager.regions) + 1}"
+        name, ok = QInputDialog.getText(
+            self, "命名周期窗格",
+            "请输入该窗格的周期名称（如 周线/日线/2小时/30分/5分/3分）：",
+            text=default_name
+        )
+        if not ok:
+            self.defining_region = False
+            self.set_tool(None)
+            return
+
+        region = self.region_manager.add_region(rect, name=name.strip() or default_name)
+        print(f"[Region] 新增周期窗格: {region.name} @ {region.rect}")
+        self.defining_region = False
+        self.set_tool(None)
         self.update()
+
+    def get_active_region(self):
+        return self.region_manager.get_active_region()
+
+    def set_active_region_by_point(self, global_point):
+        """根据屏幕坐标激活对应的周期窗格。"""
+        local = self.mapFromGlobal(global_point)
+        region = self.region_manager.set_active_by_point(local)
+        if region:
+            print(f"[Region] 激活周期窗格: {region.name}")
+        self.update()
+        return region
+
+    def clear_active_region_measurements(self):
+        """删除“当前激活周期窗格”里的全部测量线，可重新测量。"""
+        active = self.region_manager.get_active_region()
+        if not active:
+            print("[Region] 没有激活的周期窗格，无法删除当前周期测量")
+            return
+        before = len(self.drawings)
+        self.drawings = [d for d in self.drawings if d.get('region_id') != active.id]
+        removed = before - len(self.drawings)
+        print(f"[Region] 删除周期 '{active.name}' 的测量线 {removed} 条")
+        self.save_region_drawings()
+        self.update()
+
+    def clear_all_region_measurements(self):
+        """删除所有周期窗格里的全部测量线。"""
+        before = len(self.drawings)
+        self.drawings = [d for d in self.drawings if not d.get('region_id')]
+        removed = before - len(self.drawings)
+        print(f"[Region] 删除全部周期测量线 {removed} 条")
+        self.save_region_drawings()
+        self.update()
+
+    def clear_all_regions(self):
+        """彻底删除所有周期窗格定义 + 其测量线（重置多周期布局）。"""
+        self.region_manager.clear_regions()
+        self.drawings = [d for d in self.drawings if not d.get('region_id')]
+        self.save_region_drawings()
+        self.update()
+
+    # ---- 周期测量线的持久化 ----
+    def save_region_drawings(self, filename="region_drawings.json"):
+        """把带 region_id 的测量线保存到文件，重启后可恢复。"""
+        import json
+        out = []
+        for d in self.drawings:
+            if not d.get('region_id'):
+                continue
+            out.append({
+                'region_id': d['region_id'],
+                'type': d.get('type', 'boshen_single'),
+                'start_x': d['start'].x(),
+                'start_y': d['start'].y(),
+                'end_x': d['end'].x(),
+                'end_y': d['end'].y(),
+                'price_a': d.get('price_a', 0.0),
+                'price_b': d.get('price_b', 0.0),
+                'scale': d.get('scale', 0.0),
+            })
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                json.dump(out, f, ensure_ascii=False, indent=4)
+        except Exception as e:
+            print(f"[Region] save_region_drawings error: {e}")
+
+    def load_region_drawings(self, filename="region_drawings.json"):
+        """启动时从文件恢复各周期窗格的测量线。"""
+        import json
+        import os
+        if not os.path.exists(filename):
+            return
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                items = json.load(f)
+            valid_ids = {r.id for r in self.region_manager.regions}
+            for it in items:
+                rid = it.get('region_id')
+                # 只恢复仍然存在的区域的测量线
+                if rid not in valid_ids:
+                    continue
+                d = {
+                    'type': it.get('type', 'boshen_single'),
+                    'start': QPoint(int(it['start_x']), int(it['start_y'])),
+                    'end': QPoint(int(it['end_x']), int(it['end_y'])),
+                    'price_a': it.get('price_a', 0.0),
+                    'price_b': it.get('price_b', 0.0),
+                    'scale': it.get('scale', 0.0),
+                    'region_id': rid,
+                }
+                self.drawings.append(d)
+            print(f"[Region] 恢复周期测量线 {len(self.drawings)} 条")
+        except Exception as e:
+            print(f"[Region] load_region_drawings error: {e}")
