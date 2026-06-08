@@ -36,6 +36,11 @@ class BoshenToolbar(DraggableWidget):
     timeframe_changed = Signal(str) # Emits the selected timeframe name
     save_requested = Signal() # Emits when "Save" button is clicked
 
+    # ---- 多周期相关信号 ----
+    define_region_requested = Signal()       # 进入“框选周期窗格”模式
+    clear_region_requested = Signal()        # 删除当前激活周期窗格的测量
+    clear_all_regions_requested = Signal()   # 删除全部周期窗格的测量
+
     def __init__(self):
         super().__init__()
         self.init_ui()
@@ -168,6 +173,41 @@ class BoshenToolbar(DraggableWidget):
         line2.setFrameShape(QFrame.VLine)
         line2.setFrameShadow(QFrame.Sunken)
         row2.addWidget(line2)
+
+        # ----------------------------------------------------------
+        # 多周期窗格按钮组：框选周期 / 删除本周期 / 删除全部周期
+        # ----------------------------------------------------------
+        region_btn = QToolButton()
+        region_btn.setText("框周期")
+        region_btn.setToolTip("框选一个周期窗格区域；框好后在该窗格里点 K 线即可测量并锁定保持")
+        region_btn.clicked.connect(self.define_region_requested.emit)
+        row2.addWidget(region_btn)
+
+        select_region_btn = QToolButton()
+        select_region_btn.setText("选周期")
+        select_region_btn.setToolTip("点击某个已框选的周期窗格，把它设为【当前周期】")
+        select_region_btn.clicked.connect(lambda: self.on_tool_click("select_region"))
+        row2.addWidget(select_region_btn)
+
+        del_region_btn = QToolButton()
+        del_region_btn.setText("删本期")
+        del_region_btn.setToolTip("删除【当前选中周期窗格】内的全部测量结果，可重新测量")
+        del_region_btn.setStyleSheet("color: #c0392b;")
+        del_region_btn.clicked.connect(self.clear_region_requested.emit)
+        row2.addWidget(del_region_btn)
+
+        del_all_btn = QToolButton()
+        del_all_btn.setText("删全部")
+        del_all_btn.setToolTip("删除【所有周期窗格】里的全部测量结果")
+        del_all_btn.setStyleSheet("color: #c0392b; font-weight: bold;")
+        del_all_btn.clicked.connect(self.clear_all_regions_requested.emit)
+        row2.addWidget(del_all_btn)
+
+        # Separator
+        line2b = QFrame()
+        line2b.setFrameShape(QFrame.VLine)
+        line2b.setFrameShadow(QFrame.Sunken)
+        row2.addWidget(line2b)
 
         # Drawing tools icons (Lines, Rect, etc.)
         # Using text to represent shapes for now: \ \\ [] G % T ||| |||| / V ^ v
