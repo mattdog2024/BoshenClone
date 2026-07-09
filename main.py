@@ -158,12 +158,8 @@ def main():
         hotkey_signals.clear_all.emit()
 
     def _activate_single():
-        """主线程：激活"单"工具并确保面板可见"""
+        """主线程：静默激活"单"工具，面板保持隐藏状态"""
         overlay.set_tool("单")
-        # 如果面板隐藏，短暂显示一下让用户知道已激活
-        if not toolbar.isVisible():
-            toolbar.show()
-            action_show.setText("隐藏面板")
         tray.showMessage("波神凯线", "已激活「单」画线工具", QSystemTrayIcon.MessageIcon.Information, 1500)
 
     def _do_clear_all():
