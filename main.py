@@ -159,7 +159,15 @@ def main():
 
     def _activate_single():
         """主线程：静默激活"单"工具，面板保持隐藏状态"""
+        # 记录调用前 toolbar 的可见状态
+        was_visible = toolbar.isVisible()
         overlay.set_tool("单")
+        # overlay.set_tool 里的 raise_()/activateWindow() 会将同一应用的 Tool 窗口一起带出来
+        # 用极短延迟（等 Qt 事件循环处理完毕）后强制恢复 toolbar 原来的状态
+        def _restore_toolbar():
+            if not was_visible:
+                toolbar.hide()
+        QTimer.singleShot(0, _restore_toolbar)
         tray.showMessage("波神凯线", "已激活「单」画线工具", QSystemTrayIcon.MessageIcon.Information, 1500)
 
     def _do_clear_all():
