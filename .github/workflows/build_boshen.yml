@@ -1,0 +1,131 @@
+name: Build BoshenKaiLine Windows EXE
+
+on:
+  push:
+    paths:
+      - 'main.py'
+      - 'ui_toolbar.py'
+      - 'overlay.py'
+      - 'ui_analysis.py'
+      - 'algorithms.py'
+      - 'ocr_helper.py'
+      - 'preset_manager.py'
+      - 'strategy_manager.py'
+      - 'verifier.py'
+      - 'boshen_tray.ico'
+      - 'version.txt'
+      - '.github/workflows/build_boshen.yml'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g. v3.4.0)'
+        required: false
+        default: 'v3.4.0'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        shell: powershell
+        run: |
+          $tag = "${{ github.event.inputs.release_tag }}"
+          if (-not $tag) { $tag = "v3.4.0" }
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+          echo "Version: $tag"
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        shell: cmd
+        run: |
+          python -m pip install --upgrade pip
+          pip install PySide6==6.7.3
+          pip install rapidocr-onnxruntime
+          pip install numpy
+          pip install keyboard
+          pip install pyinstaller
+
+      - name: Verify imports
+        shell: cmd
+        run: |
+          python -c "import PySide6; print('PySide6 OK:', PySide6.__version__)"
+          python -c "from rapidocr_onnxruntime import RapidOCR; print('RapidOCR OK')"
+          python -c "import keyboard; print('keyboard OK')"
+          python -c "import numpy; print('numpy OK:', numpy.__version__)"
+
+      - name: Build EXE with PyInstaller
+        shell: cmd
+        run: |
+          pyinstaller ^
+            --noconfirm ^
+            --onefile ^
+            --windowed ^
+            --name "BoshenKaiLine_${{ steps.version.outputs.tag }}" ^
+            --icon "boshen_tray.ico" ^
+            --add-data "boshen_tray.ico;." ^
+            --add-data "config.json;." ^
+            --hidden-import="rapidocr_onnxruntime" ^
+            --collect-all="rapidocr_onnxruntime" ^
+            --hidden-import="keyboard" ^
+            --hidden-import="PySide6.QtCore" ^
+            --hidden-import="PySide6.QtGui" ^
+            --hidden-import="PySide6.QtWidgets" ^
+            --hidden-import="PySide6.QtNetwork" ^
+            main.py
+
+      - name: Verify EXE exists
+        shell: powershell
+        run: |
+          $exeName = "BoshenKaiLine_${{ steps.version.outputs.tag }}.exe"
+          $exePath = "dist\$exeName"
+          if (Test-Path $exePath) {
+            $size = [math]::Round((Get-Item $exePath).Length / 1MB, 2)
+            Write-Host "EXE built successfully: $exeName ($size MB)"
+          } else {
+            Write-Error "EXE not found at $exePath"
+            Get-ChildItem dist\ -ErrorAction SilentlyContinue
+            exit 1
+          }
+
+      - name: Create GitHub Release and upload EXE
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "波神凯线系统 ${{ steps.version.outputs.tag }}"
+          body: |
+            ## 波神凯线系统 ${{ steps.version.outputs.tag }}
+
+            ### 新功能
+            - 🖥️ **系统托盘模式**：程序启动后自动缩到右下角托盘，不再遮挡操作界面
+            - 🖱️ **双击托盘图标**：显示/隐藏工具面板
+            - ⌨️ **全局热键 `Ctrl+Alt+S`**：在任何窗口下激活「单」画线工具
+            - ⌨️ **全局热键 `Ctrl+Alt+D`**：在任何窗口下快速清除所有画线
+            - 🎨 **精美 ICO 图标**：K线风格，深蓝黑背景 + 金色边框 + 红绿蜡烛
+
+            ### 使用说明
+            | 操作 | 效果 |
+            |------|------|
+            | 双击托盘图标 | 显示/隐藏工具面板 |
+            | `Ctrl+Alt+S` | 激活「单」画线工具 |
+            | `Ctrl+Alt+D` | 清除所有画线 |
+            | 面板「_」按钮 | 隐藏到托盘 |
+            | 面板「X」按钮 | 退出程序 |
+
+            > ⚠️ **注意**：全局热键需要以**管理员身份运行**程序。
+
+            ### 下载
+            直接下载下方的 `.exe` 文件，无需安装，双击运行即可。
+          files: dist/BoshenKaiLine_${{ steps.version.outputs.tag }}.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
