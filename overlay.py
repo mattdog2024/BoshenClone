@@ -682,21 +682,26 @@ class Overlay(QWidget):
     def set_tool(self, tool_name):
         print(f"Overlay.set_tool called with: {tool_name}")
         self.current_tool = tool_name
-        self.dragging_handle = None 
-        
-        # User requested to REMOVE auto-calibration on K-line selection to avoid lag used AND BAD DATA.
-        # Calibration should only happen via "Auto" button (ocr_selection).
-        # User requested Auto-Calibration for "Fluency".
-        # Enable for K-Line and Single tools.
-        if tool_name in ["k线", "单", "ocr_selection"]:
-             self.auto_calibrate_axis()
-             
+        self.dragging_handle = None
+
+        # v3.4.1 修复：
+        #   1) 不再在这里自动触发 auto_calibrate_axis()。
+        #      在 v3.4.0 中，热键 Ctrl+Alt+S 会走到 set_tool("单")，
+        #      进而触发 auto_calibrate_axis()；该函数会先 setVisible(False)
+        #      截图再恢复，并启动 CalibrationWorker。在和 keyboard 库钩子
+        #      互相作用时会引发进程崩溃。
+        #      校准只在用户实际点击 K 线（auto_measure）和「自动」按钮
+        #      (ocr_selection) 时按需触发即可。
+        #   2) 不再 raise_()/activateWindow()。
+        #      主程序调用 set_tool 是从全局热键路径来的，不应该让 overlay
+        #      主动抢 Windows 焦点，否则会引起看盘软件的焦点冲突，进而
+        #      触发出错。overlay 自启动起就 showFullScreen() 一直在最上层，
+        #      不需要再 raise。
+
         if tool_name:
             self.setCursor(Qt.CrossCursor)
             self.setAttribute(Qt.WA_TransparentForMouseEvents, False)
             print("Overlay active.")
-            self.raise_()
-            self.activateWindow()
         else:
             self.setCursor(Qt.ArrowCursor)
             # When idle, default to transparent so user can click through
@@ -704,7 +709,7 @@ class Overlay(QWidget):
             self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
             self.update()
         self.update()
-        self.repaint() 
+        self.repaint()
         print(f"Debug: Overlay Geometry: {self.geometry()}")
 
     def auto_calibrate_axis(self):
@@ -712,59 +717,85 @@ class Overlay(QWidget):
         Automatically captures the Left AND Right strips of the screen
         and picks the one that looks like a valid Price Axis (consistent, sparse).
         NON-BLOCKING: Uses CalibrationWorker (QThread).
+
+        v3.4.1 修复：
+          - 用 try/finally 确保即便 grabWindow / save 抛异常，
+            overlay 的可见状态一定会被恢复，不会被永久隐藏。
+          - 对 pixmap.isNull() 做防御，避免后续 .save() 抛错。
         """
         import logging
-        try:
-             screen = QGuiApplication.primaryScreen()
-             if not screen: return
-             
-             geo = screen.geometry()
-             w_total = geo.width()
-             h_total = geo.height()
-             
-             # Define scan candidates
-             # Prioritize Left as user reported data is there.
-             candidates = [
-                 {'name': 'Left', 'x': 0, 'y': 0, 'w': 150, 'h': h_total},
-                 {'name': 'Right', 'x': w_total - 200, 'y': 0, 'w': 200, 'h': h_total}
-             ]
-             
-             was_visible = self.isVisible()
-             if was_visible:
-                 self.setVisible(False)
-                 # FORCE UI update to ensure overlay is gone before grab
-                 QApplication.processEvents() 
-             
-             captured_paths = []
-             
-             for cand in candidates:
-                 # Capture on Main Thread (Required)
-                 pixmap = screen.grabWindow(0, cand['x'], cand['y'], cand['w'], cand['h'])
-                 temp_path = f"temp_ocr_{cand['name']}.png"
-                 pixmap.save(temp_path)
-                 captured_paths.append(temp_path)
-                     
-             if was_visible:
-                 self.setVisible(True)
-                 QApplication.processEvents() # Restore UI immediately
 
-             # Start Async Worker
-             # Cleanup existing worker if running
-             if hasattr(self, 'calib_worker') and self.calib_worker is not None:
-                 if self.calib_worker.isRunning():
-                     logging.info("Terminating previous calibration worker...")
-                     self.calib_worker.terminate()
-                     self.calib_worker.wait()
-                 self.calib_worker.deleteLater()
-             
-             self.calib_worker = CalibrationWorker(self.ocr_helper, captured_paths)
-             self.calib_worker.finished.connect(self.on_calibration_finished)
-             self.calib_worker.start()
-             
-             logging.info("Started Calibration Worker in background...")
-             
+        screen = QGuiApplication.primaryScreen()
+        if not screen:
+            return
+
+        geo = screen.geometry()
+        w_total = geo.width()
+        h_total = geo.height()
+
+        # Define scan candidates
+        # Prioritize Left as user reported data is there.
+        candidates = [
+            {'name': 'Left', 'x': 0, 'y': 0, 'w': 150, 'h': h_total},
+            {'name': 'Right', 'x': w_total - 200, 'y': 0, 'w': 200, 'h': h_total}
+        ]
+
+        was_visible = self.isVisible()
+        captured_paths = []
+
+        try:
+            if was_visible:
+                self.setVisible(False)
+                # FORCE UI update to ensure overlay is gone before grab
+                QApplication.processEvents()
+
+            for cand in candidates:
+                # Capture on Main Thread (Required)
+                pixmap = screen.grabWindow(0, cand['x'], cand['y'], cand['w'], cand['h'])
+                # 防御：grabWindow 在多屏/最小化切换瞬间可能返回空 pixmap
+                if pixmap is None or pixmap.isNull() or pixmap.width() == 0:
+                    logging.warning(
+                        f"Calibration: grabWindow returned empty pixmap for {cand['name']}, skip"
+                    )
+                    continue
+                temp_path = f"temp_ocr_{cand['name']}.png"
+                if not pixmap.save(temp_path):
+                    logging.warning(f"Calibration: failed to save {temp_path}, skip")
+                    continue
+                captured_paths.append(temp_path)
+
+            if was_visible:
+                self.setVisible(True)
+                QApplication.processEvents()  # Restore UI immediately
+
+            if not captured_paths:
+                logging.warning("Calibration: no valid screenshot captured, abort")
+                return
+
+            # Start Async Worker
+            # Cleanup existing worker if running
+            if hasattr(self, 'calib_worker') and self.calib_worker is not None:
+                if self.calib_worker.isRunning():
+                    logging.info("Terminating previous calibration worker...")
+                    self.calib_worker.terminate()
+                    self.calib_worker.wait()
+                self.calib_worker.deleteLater()
+
+            self.calib_worker = CalibrationWorker(self.ocr_helper, captured_paths)
+            self.calib_worker.finished.connect(self.on_calibration_finished)
+            self.calib_worker.start()
+
+            logging.info("Started Calibration Worker in background...")
         except Exception as e:
-             logging.error(f"Auto-Calibration Error: {e}", exc_info=True)
+            # 关键：哪怕中间发生异常也要把 overlay 恢复显示，
+            # 否则程序会"看起来死了"（overlay 永久消失）
+            if was_visible:
+                try:
+                    self.setVisible(True)
+                    QApplication.processEvents()
+                except Exception:
+                    pass
+            logging.error(f"Auto-Calibration Error: {e}", exc_info=True)
 
     def on_calibration_finished(self, result):
         import logging
