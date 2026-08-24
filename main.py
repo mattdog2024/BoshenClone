@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-波神凯线系统 v3.4.1
+波神凯线系统 v3.4.2
 修复记录（v3.4.0 → v3.4.1）：
   - 修复按 Ctrl+Alt+S 后程序偶发崩溃/自动退出的问题。
     v3.4.0 用了 `keyboard` 库监听全局热键，该库依赖 Windows 低级键盘钩子
@@ -199,7 +199,7 @@ def main():
     )
 
     tray = QSystemTrayIcon(tray_icon_obj, parent=app)
-    tray.setToolTip("波神凯线系统 v3.4.1\n双击显示/隐藏面板\nCtrl+Alt+S: 单线工具\nCtrl+Alt+D: 清除画线")
+    tray.setToolTip("波神凯线系统 v3.4.2\n双击显示/隐藏面板\nCtrl+Alt+S: 单线工具\nCtrl+Alt+D: 清除画线")
 
     tray_menu = QMenu()
     action_show = QAction("显示面板", tray_menu)
@@ -321,7 +321,7 @@ def main():
 
     # ── 启动提示 ──────────────────────────────────────────────────────────
     QTimer.singleShot(800, lambda: tray.showMessage(
-        "波神凯线 v3.4.1",
+        "波神凯线 v3.4.2",
         "程序已在托盘运行\n双击图标显示面板\nCtrl+Alt+S: 单线工具\nCtrl+Alt+D: 清除画线",
         QSystemTrayIcon.MessageIcon.Information,
         3000

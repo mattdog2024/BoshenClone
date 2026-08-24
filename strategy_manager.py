@@ -121,12 +121,15 @@ class StrategyManager:
         levels = BoshenAlgorithms.calculate_levels(price_a, price_b)
         range_span = abs(price_b - price_a)
         
-        # Boshen Line Names (Approximate mapping based on effective usage)
-        # 1-2: Trend Start
+        # Boshen line names share the same ordering as the configured ratios.
+        # Opening/closing lines bracket the eight numbered target lines.
         # 3: Key Reversal 1
         # 6: Key Reversal 2
         # 8: Final Reversal
-        line_names = ["1线", "2线", "3线 (关键)", "4线", "5线", "6线 (关键)", "7线", "8线 (终极)"]
+        line_names = [
+            "开门线", "1线", "2线 (常见回调)", "3线 (回调概率85%+)",
+            "4线", "5线 (常见回调)", "6线", "7线", "8线", "关门线"
+        ]
         
         nearest_line_idx = -1
         nearest_line_name = ""
@@ -163,9 +166,9 @@ class StrategyManager:
         advice = ""
         
         # --- Logic: Reversal Zones ---
-        # Line 3 (i=2), Line 6 (i=5), Line 8 (i=7)
+        # Line 3 (i=3), Line 6 (i=6), Line 8 (i=8); i=0 is the opening line.
         is_reversal_zone = False
-        if nearest_line_idx in [2, 5, 7]: 
+        if nearest_line_idx in [3, 6, 8]:
              if min_dist <= tolerance:
                  is_reversal_zone = True
                  advice += f"⚠️【警惕翻转】价格触及 {nearest_line_name}！\n这是波神法则的标准回调/反弹位。\n"
@@ -178,11 +181,11 @@ class StrategyManager:
              advice += "💡【回调口诀】若之前的最高点在3线附近：\n此位置 (B线) 是标准支撑位。\n等待形态成立确认回调结束。\n"
              
         # Rule 2: Line 5 calls back to Line 1
-        elif nearest_line_idx == 0: # Line 1
+        elif nearest_line_idx == 1: # Line 1
              advice += "💡【回调支撑判断】请对照前高：\n1. 若前高曾触及5线 -> 此处(1线)为标准支撑，可关注形态。\n2. 若前高仅触及3线 -> 此时应回调至B线。停在1线说明回调力度偏弱或未到位。\n"
              
         # Rule 3: Line 6 calls back to Line 2
-        elif nearest_line_idx == 1: # Line 2
+        elif nearest_line_idx == 2: # Line 2
              advice += "💡【回调支撑判断】请对照前高：\n1. 若前高曾触及6线 -> 此处(2线)为标准支撑。\n2. 若前高触及7/8线 -> 回调可能更深。\n"
 
         # --- Logic: Multi-Timeframe ---

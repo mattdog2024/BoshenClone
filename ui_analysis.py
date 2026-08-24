@@ -149,14 +149,14 @@ class AnalysisDialog(QDialog):
         
         # Helper to find line number from ratio
         
-        # Helper to find line number from ratio
-        # Ratios: [1.784, 2.351, 3.027, 3.459, 3.865, 4.622, 5.135, 5.865, 6.676]
-        # We can just look it up or pass it in.
-        ratios = [1.784, 2.351, 3.027, 3.459, 3.865, 4.622, 5.135, 5.865, 6.676]
+        # 与画线算法共用同一套比例和名称，避免配置变更后分析结果错位。
+        ratios = BoshenAlgorithms.get_config().get(
+            "ratios", BoshenAlgorithms.DEFAULT_RATIOS
+        )
         
         # User requested Key Lines only: 3, 5, 6, 7, 8
-        # Indices: 2, 4, 5, 6, 7
-        KEY_LINE_INDICES = [2, 4, 5, 6, 7] 
+        # 开门线位于索引 0，因此 3、5、6、7、8 线对应以下索引。
+        KEY_LINE_INDICES = [3, 5, 6, 7, 8]
 
         def get_line_index(r):
             try:
@@ -167,9 +167,11 @@ class AnalysisDialog(QDialog):
             except:
                 return -1
 
-        def get_line_num(r):
+        def get_line_name(r):
             idx = get_line_index(r)
-            return idx + 1 if idx != -1 else "?"
+            if 0 <= idx < len(BoshenAlgorithms.LINE_NAMES):
+                return BoshenAlgorithms.LINE_NAMES[idx]
+            return "未知线位"
 
         def is_key_line(r):
             return get_line_index(r) in KEY_LINE_INDICES
@@ -178,11 +180,11 @@ class AnalysisDialog(QDialog):
             # l1 and l2 are dicts: {'price', 'ratio', ...}
             # Simplified output: "日线1线 和 4小时2线 重合"
             
-            line1_num = get_line_num(l1['ratio'])
-            line2_num = get_line_num(l2['ratio'])
+            line1_name = get_line_name(l1['ratio'])
+            line2_name = get_line_name(l2['ratio'])
             
             # Use '和' as requested, remove ratios from main text.
-            return (f"{t1_name}{line1_num}线 和 {t2_name}{line2_num}线 重合 "
+            return (f"{t1_name}{line1_name} 和 {t2_name}{line2_name} 重合 "
                     f"(价格: {l1['price']:.2f} ≈ {l2['price']:.2f}, 差: {abs(l1['price'] - l2['price']):.2f})")
 
         # Compare Daily vs 4H

@@ -61,7 +61,10 @@ class BoshenVerifier(QWidget):
         self.table.setRowCount(len(levels))
         for i, (ratio, val) in enumerate(levels):
             # Line Number
-            self.table.setItem(i, 0, QTableWidgetItem(f"Line {i+1}"))
+            line_name = (BoshenAlgorithms.LINE_NAMES[i]
+                         if i < len(BoshenAlgorithms.LINE_NAMES)
+                         else f"线位{i + 1}")
+            self.table.setItem(i, 0, QTableWidgetItem(line_name))
             
             # Ratio
             self.table.setItem(i, 1, QTableWidgetItem(str(ratio)))

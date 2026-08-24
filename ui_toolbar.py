@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-波神凯线工具栏 v3.4.0
+波神凯线工具栏 v3.4.2
 改动：
   - 关闭按钮(X) 改为「隐藏到托盘」而非退出程序
   - 新增 hide_to_tray 信号供 main.py 处理
@@ -37,7 +37,7 @@ class DraggableWidget(QWidget):
 
 class BoshenToolbar(DraggableWidget):
     """
-    波神凯线主工具栏 v3.4.0
+    波神凯线主工具栏 v3.4.2
     """
     tool_selected     = Signal(str)   # 工具被选中
     clear_requested   = Signal()      # 清除画线

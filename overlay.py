@@ -1328,7 +1328,8 @@ class Overlay(QWidget):
             if 'price_a' in data and 'price_b' in data:
                 price_levels = BoshenAlgorithms.calculate_levels(data['price_a'], data['price_b'])
 
-            highlight_indices = [2, 5, 7] # 3, 6, 8 lines (0-based: 2, 5, 7)
+            # 三线、六线、八线沿用重点线样式；开门线占第 0 项。
+            highlight_indices = [3, 6, 8]
             
             for i, (ratio, y_pos) in enumerate(levels):
                 y = int(y_pos)
@@ -1341,7 +1342,10 @@ class Overlay(QWidget):
                     painter.setPen(QPen(s['color'], s['width'], s['style']))
                 
                 painter.drawLine(0, y, screen_width, y)
-                label = f"-1 ({i+1})"
+                line_name = (BoshenAlgorithms.LINE_NAMES[i]
+                             if i < len(BoshenAlgorithms.LINE_NAMES)
+                             else f"线位{i + 1}")
+                label = f"-1 ({line_name})"
                 
                 if price_levels:
                     # price_levels should correspond index-wise since ratios are same

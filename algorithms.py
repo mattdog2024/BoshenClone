@@ -9,13 +9,20 @@ class BoshenAlgorithms:
     
     _config_cache = None
 
+    LINE_NAMES = [
+        "开门线", "一线", "二线", "三线", "四线",
+        "五线", "六线", "七线", "八线", "关门线"
+    ]
+
+    DEFAULT_RATIOS = [1.508, 2.0, 2.4, 3.05, 3.75, 4.15, 4.8, 5.5, 6.1, 6.9]
+
     @staticmethod
     def get_config():
         if BoshenAlgorithms._config_cache:
             return BoshenAlgorithms._config_cache
             
         default_config = {
-            "ratios": [1.784, 2.351, 3.027, 3.459, 3.865, 4.622, 5.135, 5.865, 6.676]
+            "ratios": BoshenAlgorithms.DEFAULT_RATIOS
         }
         
         try:

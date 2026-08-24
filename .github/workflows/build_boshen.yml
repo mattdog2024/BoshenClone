@@ -18,9 +18,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag (e.g. v3.4.1)'
+        description: 'Release tag (e.g. v3.4.2); empty uses version.txt'
         required: false
-        default: 'v3.4.1'
+        default: 'v3.4.2'
 
 permissions:
   contents: write
@@ -38,7 +38,8 @@ jobs:
         shell: powershell
         run: |
           $tag = "${{ github.event.inputs.release_tag }}"
-          if (-not $tag) { $tag = "v3.4.1" }
+          if (-not $tag) { $tag = (Get-Content version.txt -Raw).Trim() }
+          if (-not $tag) { throw "Release tag is empty" }
           echo "tag=$tag" >> $env:GITHUB_OUTPUT
           echo "Version: $tag"
 
@@ -106,25 +107,16 @@ jobs:
           body: |
             ## 波神凯线系统 ${{ steps.version.outputs.tag }}
 
-            ### 🐛 修复
-            - **修复按 `Ctrl+Alt+S` 后程序偶发崩溃退出的问题**：
-              v3.4.0 用了 `keyboard` 库注册全局热键，该库依赖 Windows 低级键盘钩子
-              （WH_KEYBOARD_LL），与 PySide6 事件循环不在同一线程，竞态时会让 Python
-              进程直接 crash，且需要以管理员身份运行。
-              v3.4.1 改用 Windows 原生 **RegisterHotKey API**（通过 ctypes 调用
-              `user32.dll`），配合 `QAbstractNativeEventFilter` 在 Qt 主线程消化
-              `WM_HOTKEY` 消息，完全不引入第三方钩子库。
-            - **修复 `overlay.set_tool()` 在热键路径上抢焦点的问题**：
-              移除 `set_tool()` 里的 `raise_()` / `activateWindow()`，避免热键触发时
-              强制夺走看盘软件的 Windows 焦点。
-            - **加固 `overlay.auto_calibrate_axis()`**：
-              增加 `try/finally` 兜底及 `pixmap.isNull()` 防御，截屏异常时 overlay
-              可见状态一定会被恢复。
+            ### 📐 波神画线比例更新
+            - 开门线：150.8%
+            - 一线至八线：200%、240%、305%、375%、415%、480%、550%、610%
+            - 关门线：690%
+            - 画线标签、数值验证器、共振分析和策略提示已同步适配新的 10 个线位。
+            - 修正新增开门线后，3线、6线、8线重点判断的索引偏移。
 
-            ### ✅ 改进
-            - 全局热键现在**不再需要管理员权限**运行。
-            - 退出会主动调用 `UnregisterHotKey` 释放资源，不会留下系统级热键残影。
-            - 使用 `MOD_NOREPEAT` 标志，避免按住 Ctrl+Alt+S 时被反复触发。
+            ### ✅ 版本改进
+            - 软件界面版本更新为 ${{ steps.version.outputs.tag }}。
+            - Actions 发布版本默认从 `version.txt` 读取，防止新构建覆盖旧版本 Release。
 
             ### 使用说明
             | 操作 | 效果 |
